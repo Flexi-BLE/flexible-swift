@@ -1,3 +1,3 @@
 # aeble-swift
 
-A description of this package.
+Adaptive Experimentation over Bluetooth Low Energy.
