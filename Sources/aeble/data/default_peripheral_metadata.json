@@ -1,0 +1,202 @@
+{
+    "peripherals": [
+        {
+            "name": "Feather nRF52840 Express",
+            "description": "generic ble feather board",
+            "tags": ["research"],
+            "services": [
+                {
+                    "uuid": "5A80",
+                    "characteristics": [
+                        {
+                            "uuid": "5A01",
+                            "name": "thermistor_reading",
+                            "description": "Thermistor Temperature (C) - [timestamp, therm index, temperature]",
+                            "notify": true,
+                            "timestamp_value": "realtime",
+                            "data_values": [
+                                {
+                                    "byte_start": 0,
+                                    "byte_end": 1,
+                                    "type": "float",
+                                    "name": "temperature",
+                                    "description": "temperature value",
+                                    "unit": "celsius",
+                                    "multiplier": 0.01,
+                                    "index": false
+                                },
+                                {
+                                    "byte_start": 2,
+                                    "byte_end": 2,
+                                    "type": "float",
+                                    "name": "therm_index_",
+                                    "description": "therm index",
+                                    "unit": null,
+                                    "multiplier": null,
+                                    "index": true
+                                },
+                                {
+                                    "byte_start": 3,
+                                    "byte_end": 6,
+                                    "type": "float",
+                                    "name": "timestamp",
+                                    "description": "timestamp",
+                                    "unit": "millisecond",
+                                    "multiplier": null,
+                                    "index": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "uuid": "5A10",
+                    "characteristics": [
+                        {
+                            "uuid": "5A11",
+                            "name": "accelerometer",
+                            "description": "Accelerometer (m/s^2) - [x, y, z, timestamp]",
+                            "notify": true,
+                            "timestamp_value": "realtime",
+                            "data_values": [
+                                {
+                                    "byte_start": 0,
+                                    "byte_end": 1,
+                                    "type": "float",
+                                    "name": "x_axis",
+                                    "description": "acceleration in X axis",
+                                    "unit": "m/s^2",
+                                    "multiplier": 1,
+                                    "index": false
+                                },
+                                {
+                                    "byte_start": 2,
+                                    "byte_end": 3,
+                                    "type": "float",
+                                    "name": "y_axis",
+                                    "description": "acceleration in the Y axis",
+                                    "unit": "m/s^",
+                                    "multiplier": 1,
+                                    "index": false
+                                },
+                                {
+                                    "byte_start": 4,
+                                    "byte_end": 5,
+                                    "type": "float",
+                                    "name": "z_axis",
+                                    "description": "acceleration in the Z axis",
+                                    "unit": "m/s^2",
+                                    "multiplier": 1,
+                                    "index": false
+                                },
+                                {
+                                    "byte_start": 6,
+                                    "byte_end": 9,
+                                    "type": "float",
+                                    "name": "timestamp",
+                                    "description": "timestamp",
+                                    "unit": "milliseconds",
+                                    "multiplier": 1,
+                                    "index": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "uuid": "5A20",
+                    "characteristics": [
+                        {
+                            "uuid": "5A21",
+                            "name": "ppg",
+                            "description": "optical heart rate data",
+                            "notify": true,
+                            "timestamp_value": "realtime",
+                            "data_values": [
+                                {
+                                    "byte_start": 0,
+                                    "byte_end": 1,
+                                    "type": "float",
+                                    "name": "ppg",
+                                    "description": "ppg data",
+                                    "unit": "arb",
+                                    "multiplier": 1,
+                                    "index": false
+                                },
+                                {
+                                    "byte_start": 2,
+                                    "byte_end": 5,
+                                    "type": "float",
+                                    "name": "timestamp",
+                                    "description": "timestamp",
+                                    "unit": "milliseconds",
+                                    "multiplier": 1,
+                                    "index": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "uuid": "5A30",
+                    "characteristics": [
+                        {
+                            "uuid": "5A31",
+                            "name": "unix_time",
+                            "description": "unix time",
+                            "notify": true,
+                            "timestamp_value": "realtime",
+                            "data_values": [
+                                {
+                                    "byte_start": 0,
+                                    "byte_end": 3,
+                                    "type": "float",
+                                    "name": "epoch_time",
+                                    "description": "epoch time",
+                                    "unit": "seconds",
+                                    "multiplier": 1,
+                                    "index": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "uuid": "5A40",
+                    "characteristics": [
+                        {
+                            "uuid": "5A41",
+                            "name": "battery_voltage",
+                            "description": "battery voltage",
+                            "notify": true,
+                            "timestamp_value": "realtime",
+                            "data_values": [
+                                {
+                                    "byte_start": 0,
+                                    "byte_end": 1,
+                                    "type": "float",
+                                    "name": "battery_voltage",
+                                    "description": "battery voltage",
+                                    "unit": "arb_12_bit",
+                                    "multiplier": 0.0017578125,
+                                    "index": false
+                                },
+                                {
+                                    "byte_start": 2,
+                                    "byte_end": 5,
+                                    "type": "float",
+                                    "name": "timestamp",
+                                    "description": "timestamp",
+                                    "unit": "milliseconds",
+                                    "multiplier": 1,
+                                    "index": false
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+

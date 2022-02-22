@@ -9,7 +9,7 @@ import Foundation
 import GRDB
 
 /// Initializes and manages a local SQLite database for storing all data related to aeble, including:
-internal class DBManager {
+public class DBManager {
     let dbQueue: DatabaseQueue?
     let dbPath: URL
     
@@ -36,8 +36,8 @@ internal class DBManager {
     
     // MARK: - Static Helpers
     
-    /// Create and retrurn data direction url in application file structure
-    static func dataDir(dbName: String="db") throws -> URL {
+    /// Create and retrurn data directory url in application file structure
+    static func dataDir(dbName: String="aeble") throws -> URL {
         let fileManager = FileManager()
         
         let dirPath = try fileManager
@@ -74,7 +74,7 @@ internal class DBManager {
     
     // MARK: - Database Utilities
     
-    func getTableNames() -> [String] {
+    public func getTableNames() -> [String] {
         var tableNames: [String] = []
         
         let sql = """
@@ -93,7 +93,7 @@ internal class DBManager {
         return tableNames.filter({ !excludedTables.contains($0) })
     }
     
-    func getTableMetadata(for table: String) -> [TableInfo] {
+    public func tableInfo(for table: String) -> [TableInfo] {
         var metadata: [TableInfo] = []
         
         let sql = """
@@ -109,7 +109,7 @@ internal class DBManager {
         return metadata
     }
     
-    func getData(tableName: String, metadata: [TableInfo], offset: Int=0, limit: Int=100) async -> [GenericRow]? {
+    public func data(for tableName: String, metadata: [TableInfo], offset: Int=0, limit: Int=100) async -> [GenericRow]? {
         
         let sql = """
             SELECT \(metadata.map({$0.name}).joined(separator: ", "))
@@ -155,10 +155,16 @@ internal class DBManager {
             try? db.create(table: tableName) { t in
                 t.autoIncrementedPrimaryKey("id")
                 t.column("created_at", .datetime).defaults(to: Date())
+                t.column("uploaded", .boolean).defaults(to: false)
 
                 // TODO: add alternative types to data values (string, integer).
                 for dv in dataValues {
-                    t.column(dv.name, .double)
+                    switch dv.type {
+                    case .float: t.column(dv.name, .double)
+                    case .int: t.column(dv.name, .integer)
+                    case .string: t.column(dv.name, .text)
+                    }
+    
                 }
             }
     
@@ -169,7 +175,7 @@ internal class DBManager {
         }
     }
     
-    func arbInsert(for cm: PeripheralCharacteristicMetadata, values: [Float]) {
+    func arbInsert(for cm: PeripheralCharacteristicMetadata, values: [PeripheralDataValue]) {
         guard let dataValues = cm.dataValues else { return }
         
         let tableName = tableName(from: cm.name)
@@ -186,7 +192,7 @@ internal class DBManager {
         try? self.dbQueue?.write { db in
             try? db.execute(
                 sql: sql,
-                arguments: StatementArguments(values + [Date()])
+                arguments: StatementArguments(values + [Date()]) ?? StatementArguments()
             )
         }
     }

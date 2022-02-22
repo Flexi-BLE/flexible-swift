@@ -24,7 +24,11 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "aeble",
-            dependencies: ["GRDB"]),
+            dependencies: ["GRDB"],
+            resources: [
+                .process("data/default_peripheral_metadata.json")
+            ]
+        ),
         .testTarget(
             name: "aebleTests",
             dependencies: ["aeble"]),

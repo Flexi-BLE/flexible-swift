@@ -9,14 +9,14 @@ import Foundation
 import GRDB
 
 /// Representation of database table metadata from `PRAGMA table_info([tableName])`
-internal struct TableInfo: Codable {
-    var cid: Int
-    var name: String
-    var type: String
-    var notNull: Int
-    var pk: Int
+public struct TableInfo: Codable {
+    public var cid: Int
+    public var name: String
+    public var type: String
+    public var notNull: Int
+    public var pk: Int
     
-    static func make(from row: Row) -> TableInfo {
+    internal static func make(from row: Row) -> TableInfo {
         return TableInfo(
             cid: row["cid"],
             name: row["name"],
@@ -28,9 +28,9 @@ internal struct TableInfo: Codable {
 }
 
 /// untyped column for table metadata
-internal class GenericColumn<T> {
-    var tableInfo: TableInfo
-    var value: T
+public class GenericColumn<T> {
+    public var tableInfo: TableInfo
+    public var value: T
     
     init(tableInfo: TableInfo, value: T) {
         self.tableInfo = tableInfo
@@ -38,10 +38,10 @@ internal class GenericColumn<T> {
     }
 }
 
-internal class GenericRow: Identifiable {
-    var id = UUID()
-    var metadata: [TableInfo]
-    var columns = [GenericColumn<Any>]()
+public class GenericRow: Identifiable {
+    public var id = UUID()
+    public var metadata: [TableInfo]
+    public var columns = [GenericColumn<Any>]()
     
     init(metadata: [TableInfo], row: Row) {
         self.metadata = metadata
