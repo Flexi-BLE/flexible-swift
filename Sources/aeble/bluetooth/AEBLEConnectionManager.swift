@@ -9,7 +9,7 @@ import Foundation
 import CoreBluetooth
 import Combine
 
-internal class AEBLEConnectionManager: NSObject, ObservableObject {
+public class AEBLEConnectionManager: NSObject, ObservableObject {
     var centralManager: CBCentralManager!
     
     @Published var centralState: CBManagerState = .unknown
@@ -23,17 +23,16 @@ internal class AEBLEConnectionManager: NSObject, ObservableObject {
         self.centralManager = CBCentralManager(delegate: self, queue: nil)
     }
     
-    func scan(with payload: PeripheralMetadataPayload) -> [AEBLEPeripheral] {
+    internal func scan(with payload: PeripheralMetadataPayload) {
         for peripheralMetadata in payload.peripherals ?? [] {
             let AEBLEPeripheral = AEBLEPeripheral(metadata: peripheralMetadata)
             self.peripherals.append(AEBLEPeripheral)
         }
         
-        guard centralManager.state == .poweredOn else { return self.peripherals }
+        guard centralManager.state == .poweredOn else { return }
         
         if isScanning { stopScan() }
         startScan()
-        return self.peripherals
     }
     
     private func startScan() {
@@ -56,12 +55,12 @@ internal class AEBLEConnectionManager: NSObject, ObservableObject {
         isScanning = centralManager.isScanning
     }
     
-    func stopScan() {
+    internal func stopScan() {
         centralManager.stopScan()
         isScanning = centralManager.isScanning
     }
     
-    func disconnect(_ peripheral: AEBLEPeripheral) {
+    internal func disconnect(_ peripheral: AEBLEPeripheral) {
         guard let p = peripheral.peripheral else { return }
         
         centralManager.cancelPeripheralConnection(p)
@@ -73,7 +72,7 @@ internal class AEBLEConnectionManager: NSObject, ObservableObject {
 }
 
 extension AEBLEConnectionManager: CBCentralManagerDelegate {
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+    public func centralManagerDidUpdateState(_ central: CBCentralManager) {
         self.centralState = central.state
         
         switch central.state {
@@ -84,7 +83,7 @@ extension AEBLEConnectionManager: CBCentralManagerDelegate {
         }
     }
     
-    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+    public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         guard let peri = peripherals.first(where: { $0.metadata.name == peripheral.name }) else { return }
         
         peri.set(peripheral: peripheral)
@@ -99,14 +98,14 @@ extension AEBLEConnectionManager: CBCentralManagerDelegate {
         )
     }
     
-    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+    public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         guard let peri = peripherals.first(where: { $0.metadata.name == peripheral.name }) else { return }
         bleLog.info("connceted to: \(peri.metadata.name)")
         peri.didUpdateState()
         stopScan()
     }
     
-    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+    public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         guard let peri = peripherals.first(where: { $0.metadata.name == peripheral.name }) else { return }
         bleLog.info("\(peri.metadata.name) disconnected")
         peri.didUpdateState()
@@ -116,7 +115,7 @@ extension AEBLEConnectionManager: CBCentralManagerDelegate {
 }
 
 extension AEBLEConnectionManager: CBPeripheralDelegate {
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         bleLog.info("Services Discovered: \(peripheral.services ?? [])")
     }
 }

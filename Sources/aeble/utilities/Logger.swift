@@ -9,10 +9,10 @@ import Foundation
 import OSLog
 
 /// General Logging
-let gLog = Logger(subsystem: "com.hesterlab.aeble", category: "general")
+internal let gLog = Logger(subsystem: "com.hesterlab.aeble", category: "general")
 
 /// Bluetooth Logging
-let bleLog = Logger(subsystem: "com.hesterlab.aeble", category: "ble")
+internal let bleLog = Logger(subsystem: "com.hesterlab.aeble", category: "ble")
 
 /// Persistence (Data) Logging
-let pLog = Logger(subsystem: "com.hesterlab.aeble", category: "persistence")
+internal let pLog = Logger(subsystem: "com.hesterlab.aeble", category: "persistence")

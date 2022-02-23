@@ -1,7 +1,7 @@
 {
     "peripherals": [
         {
-            "name": "Feather nRF52840 Express",
+            "name": "Feather nRF52840 Ex",
             "description": "generic ble feather board",
             "tags": ["research"],
             "services": [
@@ -9,7 +9,7 @@
                     "uuid": "5A80",
                     "characteristics": [
                         {
-                            "uuid": "5A01",
+                            "uuid": "5A81",
                             "name": "thermistor_reading",
                             "description": "Thermistor Temperature (C) - [timestamp, therm index, temperature]",
                             "notify": true,

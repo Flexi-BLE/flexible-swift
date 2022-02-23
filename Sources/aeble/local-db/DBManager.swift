@@ -9,7 +9,7 @@ import Foundation
 import GRDB
 
 /// Initializes and manages a local SQLite database for storing all data related to aeble, including:
-public class DBManager {
+public final class AEBLEDBManager {
     let dbQueue: DatabaseQueue?
     let dbPath: URL
     
@@ -33,22 +33,6 @@ public class DBManager {
         
         self.migrator.migrate(self.dbQueue!)
     }
-    
-    // MARK: - Static Helpers
-    
-    /// Create and retrurn data directory url in application file structure
-    static func dataDir(dbName: String="aeble") throws -> URL {
-        let fileManager = FileManager()
-        
-        let dirPath = try fileManager
-            .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-                .appendingPathComponent("data", isDirectory: true)
-        
-        try fileManager.createDirectory(at: dirPath, withIntermediateDirectories: true)
-
-        return dirPath.appendingPathComponent("\(dbName).sqlite")
-    }
-    
     
     // MARK: - Not Public
     
