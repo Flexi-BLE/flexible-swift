@@ -15,8 +15,9 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
     @Published var centralState: CBManagerState = .unknown
     @Published var isScanning: Bool = false
         
-    private var scanOnPoweredOn: Bool = true
     @Published private(set) var peripherals: [AEBLEPeripheral] = []
+    
+    private var scanOnPoweredOn: Bool = true
     
     required override init() {
         super.init()
