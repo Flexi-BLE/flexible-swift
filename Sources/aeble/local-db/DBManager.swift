@@ -10,13 +10,14 @@ import GRDB
 
 /// Initializes and manages a local SQLite database for storing all data related to aeble, including:
 public final class AEBLEDBManager {
-    let dbQueue: DatabaseQueue?
     let dbPath: URL
+    
+    internal let dbQueue: DatabaseQueue
     
     private let migrator = DBMigrator()
     
     /// parameter url: URL for SQLite database with `.sqlite` extension. Will create if does not exist.
-    init(with url: URL) {
+    init(with url: URL) throws {
                 
         self.dbPath = url
         
@@ -25,12 +26,12 @@ public final class AEBLEDBManager {
         var configuration = Configuration()
         configuration.qos = DispatchQoS.userInitiated
                     
-        self.dbQueue = try? DatabaseQueue(
+        self.dbQueue = try DatabaseQueue(
             path: dbPath.path,
             configuration: configuration
         )
         
-        self.migrator.migrate(self.dbQueue!)
+        self.migrator.migrate(self.dbQueue)
     }
     
     // MARK: - Not Public
@@ -70,7 +71,7 @@ public final class AEBLEDBManager {
                 name not LIKE 'sqlite_%';
         """
         
-        try? dbQueue?.read { db in
+        try? dbQueue.read { db in
             let result = try Row.fetchAll(db, sql: sql)
             tableNames = result.map({ $0["name"] })
         }
@@ -85,7 +86,7 @@ public final class AEBLEDBManager {
             PRAGMA table_info('\(table)');
         """
         
-        try? dbQueue?.read { db in
+        try? dbQueue.read { db in
             let result = try Row.fetchAll(db, sql: sql)
             metadata = result.map({ TableInfo.make(from: $0) })
             print(result)
@@ -104,7 +105,7 @@ public final class AEBLEDBManager {
             OFFSET \(offset);
         """
         
-        let data: [GenericRow]? = try? await dbQueue?.read { db in
+        let data: [GenericRow]? = try? await dbQueue.read { db in
             let result = try Row.fetchAll(db, sql: sql)
             return result.map({ row in
                 GenericRow(metadata: metadata, row: row)
@@ -119,7 +120,7 @@ public final class AEBLEDBManager {
         guard let dataValues = metadata.dataValues else { return }
         let tableName = tableName(from: metadata.name)
 
-        try? self.dbQueue?.write { db in
+        try? self.dbQueue.write { db in
             let tables = try? DynamicTable.fetchAll(db)
             
             if let table = tables?.first(where: { $0.name == metadata.name }),

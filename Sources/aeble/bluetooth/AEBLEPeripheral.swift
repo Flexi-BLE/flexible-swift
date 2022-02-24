@@ -33,7 +33,7 @@ internal class AEBLEPeripheral: NSObject, ObservableObject {
 //        )
 //    }()
     
-    private var peripheral: CBPeripheral?
+    internal var cbp: CBPeripheral?
     
     init(metadata: PeripheralMetadata, db: AEBLEDBManager) {
         self.metadata = metadata
@@ -41,12 +41,12 @@ internal class AEBLEPeripheral: NSObject, ObservableObject {
     }
     
     func set(peripheral: CBPeripheral) {
-        self.peripheral = peripheral
+        self.cbp = peripheral
         self.didUpdateState()
     }
     
     func didUpdateState() {
-        guard let peripheral = self.peripheral else { return }
+        guard let peripheral = self.cbp else { return }
         
         switch peripheral.state {
         case .connected, .connecting: self.onConnect()
@@ -55,7 +55,7 @@ internal class AEBLEPeripheral: NSObject, ObservableObject {
     }
     
     private func onConnect() {
-        guard let peripheral = self.peripheral else { return }
+        guard let peripheral = self.cbp else { return }
         self.state = .connected
         peripheral.delegate = self
         

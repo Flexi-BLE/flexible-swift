@@ -67,7 +67,7 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
     }
     
     internal func disconnect(_ peripheral: AEBLEPeripheral) {
-        guard let p = peripheral.peripheral else { return }
+        guard let p = peripheral.cbp else { return }
         
         centralManager.cancelPeripheralConnection(p)
     }

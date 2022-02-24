@@ -25,6 +25,12 @@ internal class DBMigrator {
                 ifNotExists: true,
                 body: Event.create
             )
+            
+            try? db.create(
+                table: Timestamp.databaseTableName,
+                ifNotExists: true,
+                body: Timestamp.create
+            )
         }
         
         #if DEBUG

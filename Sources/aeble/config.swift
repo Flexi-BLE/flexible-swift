@@ -6,21 +6,26 @@
 //
 
 import Foundation
-import UIKit
 
 
 public class AEBLEConfig {
     
     internal var metadata: PeripheralMetadataPayload
-    private(set) var dbURL: URL
+    public let dbURL: URL
     
-    let deviceId: String = UIDevice.current.id
+    let deviceId: String
+    
     let userId: String
     
-    public init(dbName: String="aeble", userId: String) {
+    public init(
+        dbName: String="aeble",
+        userId: String,
+        deviceId: String
+    ) {
         self.metadata = AEBLEConfig.loadDefaultMetadata()
         self.dbURL = AEBLEConfig.documentDirPath(for: dbName)
         self.userId = userId
+        self.deviceId = deviceId
     }
     
     private static func loadDefaultMetadata(fileName: String = "default_peripheral_metadata.json") -> PeripheralMetadataPayload {
