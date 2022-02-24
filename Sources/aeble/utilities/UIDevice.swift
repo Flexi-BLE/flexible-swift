@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 
 internal extension UIDevice {
-    var Id: String {
+    var id: String {
         return self.identifierForVendor?.uuidString ?? "--none--"
     }
 }

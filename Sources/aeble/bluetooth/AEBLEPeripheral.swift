@@ -8,7 +8,7 @@
 import Foundation
 import CoreBluetooth
 import Combine
-//import InfluxDBSwift
+import GRDB
 
 internal enum AEBLEPeripheralState: String {
     case notFound = "not found"
@@ -19,15 +19,25 @@ internal enum AEBLEPeripheralState: String {
 internal class AEBLEPeripheral: NSObject, ObservableObject {
     @Published private(set) var state: AEBLEPeripheralState = .disconnected
     
-    typealias PeriperalRecord = (PeripheralCharacteristicMetadata, [PeripheralDataValue])
-    @Published private(set) var record: PeriperalRecord?
+    typealias PeriperalRecord = (metadata: PeripheralCharacteristicMetadata, values: [PeripheralDataValue])
     
-    var metadata: PeripheralMetadata
+    let metadata: PeripheralMetadata
+    private let db: AEBLEDBManager
+//    lazy var dbQueue: DatabaseQueue? = {
+//        var configuration = Configuration()
+//        configuration.qos = DispatchQoS.utility
+//
+//        return try? DatabaseQueue(
+//            path: self.dbUrl.path,
+//            configuration: configuration
+//        )
+//    }()
     
-    var peripheral: CBPeripheral?
+    private var peripheral: CBPeripheral?
     
-    init(metadata: PeripheralMetadata) {
+    init(metadata: PeripheralMetadata, db: AEBLEDBManager) {
         self.metadata = metadata
+        self.db = db
     }
     
     func set(peripheral: CBPeripheral) {
@@ -134,14 +144,10 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
                 bleLog.debug("string value: \(value)")
             }
         }
-    
-        // TODO: insert into db
-//        bleLog.info("peripheral values: \(values)")
-//        DBManager.shared.arbInsert(for: characteristicMetadata, values: values)
-//        let point = InfluxDBClient
-//            .Point(characteristicMetadata.name)
-        
-        self.record = (characteristicMetadata, values)
+        self.db.arbInsert(
+            for: characteristicMetadata,
+            values: values
+        )
         
 //        TODO: batch update to influx
 //        for (i, dv) in dataValues.enumerated() {

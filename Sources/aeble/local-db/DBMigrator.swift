@@ -17,7 +17,14 @@ internal class DBMigrator {
             try? db.create(
                 table: DynamicTable.databaseTableName,
                 ifNotExists: true,
-                body: DynamicTable.create)
+                body: DynamicTable.create
+            )
+            
+            try? db.create(
+                table: Event.databaseTableName,
+                ifNotExists: true,
+                body: Event.create
+            )
         }
         
         #if DEBUG

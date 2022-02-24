@@ -18,15 +18,20 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
     @Published private(set) var peripherals: [AEBLEPeripheral] = []
     
     private var scanOnPoweredOn: Bool = true
+    private let db: AEBLEDBManager
     
-    required override init() {
+    required init(db: AEBLEDBManager) {
+        self.db = db
         super.init()
         self.centralManager = CBCentralManager(delegate: self, queue: nil)
     }
     
     internal func scan(with payload: PeripheralMetadataPayload) {
         for peripheralMetadata in payload.peripherals ?? [] {
-            let AEBLEPeripheral = AEBLEPeripheral(metadata: peripheralMetadata)
+            let AEBLEPeripheral = AEBLEPeripheral(
+                metadata: peripheralMetadata,
+                db: self.db
+            )
             self.peripherals.append(AEBLEPeripheral)
         }
         

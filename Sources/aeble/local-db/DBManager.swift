@@ -13,7 +13,6 @@ public final class AEBLEDBManager {
     let dbQueue: DatabaseQueue?
     let dbPath: URL
     
-    private let excludedTables = ["grdb_migrations"]
     private let migrator = DBMigrator()
     
     /// parameter url: URL for SQLite database with `.sqlite` extension. Will create if does not exist.
@@ -57,8 +56,10 @@ public final class AEBLEDBManager {
     }
     
     // MARK: - Database Utilities
-    
+   
     public func getTableNames() -> [String] {
+        let excludedTables = ["grdb_migrations"]
+        
         var tableNames: [String] = []
         
         let sql = """
@@ -114,7 +115,7 @@ public final class AEBLEDBManager {
         return data
     }
     
-    func createTable(from metadata: PeripheralCharacteristicMetadata, forceNew: Bool=false) {
+    internal func createTable(from metadata: PeripheralCharacteristicMetadata, forceNew: Bool=false) {
         guard let dataValues = metadata.dataValues else { return }
         let tableName = tableName(from: metadata.name)
 
@@ -140,8 +141,8 @@ public final class AEBLEDBManager {
                 t.autoIncrementedPrimaryKey("id")
                 t.column("created_at", .datetime).defaults(to: Date())
                 t.column("uploaded", .boolean).defaults(to: false)
+                t.column("user_id", .text).notNull(onConflict: .fail)
 
-                // TODO: add alternative types to data values (string, integer).
                 for dv in dataValues {
                     switch dv.type {
                     case .float: t.column(dv.name, .double)
@@ -155,11 +156,11 @@ public final class AEBLEDBManager {
             let metadataData = try? Data.sharedJSONEncoder.encode(metadata)
             let dynamicTable = DynamicTable(name: tableName, metadata: metadataData)
             try? dynamicTable.insert(db)
-            pLog.info("Dynamic Table Create \(tableName)")
+            pLog.info("Dynamic Table Created \(tableName)")
         }
     }
     
-    func arbInsert(for cm: PeripheralCharacteristicMetadata, values: [PeripheralDataValue]) {
+    internal func arbInsert(for cm: PeripheralCharacteristicMetadata, values: [PeripheralDataValue], with dbQueue: DatabaseQueue?=nil) {
         guard let dataValues = cm.dataValues else { return }
         
         let tableName = tableName(from: cm.name)
@@ -169,14 +170,14 @@ public final class AEBLEDBManager {
         
         let sql = """
             "INSERT INTO \(tableName)
-            (\(cols), created_at) VALUES
+            (\(cols), created_at, user_id) VALUES
             (\(placeholders), ?)
         """
         
-        try? self.dbQueue?.write { db in
+        try? (dbQueue ?? self.dbQueue)?.write { db in
             try? db.execute(
                 sql: sql,
-                arguments: StatementArguments(values + [Date()]) ?? StatementArguments()
+                arguments: StatementArguments(values + [Date(), "--id--"]) ?? StatementArguments()
             )
         }
     }

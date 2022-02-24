@@ -9,8 +9,8 @@ public final class AEBLE: ObservableObject {
     
     public init(config: AEBLEConfig) {
         self.config = config
-        self.conn = AEBLEConnectionManager()
         self.db = AEBLEDBManager(with: config.dbURL)
+        self.conn = AEBLEConnectionManager(db: db)
         
         self.startScan()
     }
