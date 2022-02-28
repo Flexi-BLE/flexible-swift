@@ -1,7 +1,7 @@
 {
     "peripherals": [
         {
-            "name": "Feather nRF52840 Ex",
+            "name": "Feather nRF52840 Express",
             "description": "generic ble feather board",
             "tags": ["research"],
             "services": [
@@ -50,12 +50,12 @@
                     ]
                 },
                 {
-                    "uuid": "5A10",
+                    "uuid": "5A90",
                     "characteristics": [
                         {
-                            "uuid": "5A11",
-                            "name": "accelerometer",
-                            "description": "Accelerometer (m/s^2) - [x, y, z, timestamp]",
+                            "uuid": "5A91",
+                            "name": "ecg",
+                            "description": "ECG data",
                             "notify": true,
                             "timestamp_value": "realtime",
                             "data_values": [
@@ -63,35 +63,15 @@
                                     "byte_start": 0,
                                     "byte_end": 1,
                                     "type": "float",
-                                    "name": "x_axis",
-                                    "description": "acceleration in X axis",
-                                    "unit": "m/s^2",
-                                    "multiplier": 1,
+                                    "name": "ecg",
+                                    "description": "",
+                                    "unit": "",
+                                    "multiplier": 0.01,
                                     "index": false
                                 },
                                 {
                                     "byte_start": 2,
-                                    "byte_end": 3,
-                                    "type": "float",
-                                    "name": "y_axis",
-                                    "description": "acceleration in the Y axis",
-                                    "unit": "m/s^",
-                                    "multiplier": 1,
-                                    "index": false
-                                },
-                                {
-                                    "byte_start": 4,
                                     "byte_end": 5,
-                                    "type": "float",
-                                    "name": "z_axis",
-                                    "description": "acceleration in the Z axis",
-                                    "unit": "m/s^2",
-                                    "multiplier": 1,
-                                    "index": false
-                                },
-                                {
-                                    "byte_start": 6,
-                                    "byte_end": 9,
                                     "type": "float",
                                     "name": "timestamp",
                                     "description": "timestamp",

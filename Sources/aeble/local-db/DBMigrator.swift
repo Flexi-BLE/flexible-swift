@@ -21,9 +21,9 @@ internal class DBMigrator {
             )
             
             try? db.create(
-                table: Event.databaseTableName,
+                table: Experiment.databaseTableName,
                 ifNotExists: true,
-                body: Event.create
+                body: Experiment.create
             )
             
             try? db.create(

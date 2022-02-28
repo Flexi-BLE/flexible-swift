@@ -92,7 +92,7 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
                 peripheral.setNotifyValue(true, for: characteristic)
             }
              
-//            DBManager.shared.createTable(from: charMetadata, forceNew: false)
+            db.createTable(from: charMetadata, forceNew: false)
             
             peripheral.readValue(for: characteristic)
         }

@@ -161,6 +161,7 @@ public final class AEBLEDBManager {
         }
     }
     
+    // TODO: make async response
     internal func arbInsert(for cm: PeripheralCharacteristicMetadata, values: [PeripheralDataValue], with dbQueue: DatabaseQueue?=nil) {
         guard let dataValues = cm.dataValues else { return }
         
@@ -170,9 +171,9 @@ public final class AEBLEDBManager {
         let placeholders = "\(dataValues.map({ _ in "?" }).joined(separator: ", "))"
         
         let sql = """
-            "INSERT INTO \(tableName)
+            INSERT INTO \(tableName)
             (\(cols), created_at, user_id) VALUES
-            (\(placeholders), ?)
+            (\(placeholders), ?, ?)
         """
         
         try? (dbQueue ?? self.dbQueue)?.write { db in

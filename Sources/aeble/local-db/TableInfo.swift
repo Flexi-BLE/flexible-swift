@@ -25,6 +25,10 @@ public struct TableInfo: Codable {
             pk: row["pk"]
         )
     }
+    
+    public static func dummy() -> TableInfo {
+        return TableInfo(cid: 1, name: "dummy_tbl", type: "table", notNull: 0, pk: 0)
+    }
 }
 
 /// untyped column for table metadata
@@ -35,6 +39,10 @@ public class GenericColumn<T> {
     init(tableInfo: TableInfo, value: T) {
         self.tableInfo = tableInfo
         self.value = value
+    }
+    
+    public static func dummy() -> GenericColumn<Any> {
+        return GenericColumn<Any>(tableInfo: TableInfo.dummy(), value: 1)
     }
 }
 
@@ -48,5 +56,9 @@ public class GenericRow: Identifiable {
         for p in self.metadata {
             columns.append(GenericColumn<Any>(tableInfo: p, value: row[p.name] ?? 0))
         }
+    }
+    
+    public static func dummy() -> GenericRow {
+        return GenericRow(metadata: [TableInfo.dummy()], row: Row())
     }
 }
