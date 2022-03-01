@@ -10,24 +10,23 @@ import GRDB
 
 /// Initializes and manages a local SQLite database for storing all data related to aeble, including:
 public final class AEBLEDBManager {
-    let dbPath: URL
+    private let config: AEBLEConfig
     
     internal let dbQueue: DatabaseQueue
-    
     private let migrator = DBMigrator()
     
     /// parameter url: URL for SQLite database with `.sqlite` extension. Will create if does not exist.
-    init(with url: URL) throws {
+    init(config: AEBLEConfig) throws {
                 
-        self.dbPath = url
+        self.config = config
         
-        pLog.info("Database Path: \(self.dbPath)")
+        pLog.info("Database Path: \(self.config.dbURL)")
         
         var configuration = Configuration()
         configuration.qos = DispatchQoS.userInitiated
                     
         self.dbQueue = try DatabaseQueue(
-            path: dbPath.path,
+            path: self.config.dbURL.path,
             configuration: configuration
         )
         
@@ -44,14 +43,21 @@ public final class AEBLEDBManager {
     /// Inactivate a dynamically created table (update name and set active=0)
     private func replaceDynamicTable(db: Database, existingTable: DynamicTable, tableName: String, nextNum: Int) {
         let newName = "\(tableName)_\(nextNum)"
-        let sql = """
+        let tableUpdateSQL = """
             UPDATE \(DynamicTable.databaseTableName)
             SET name = '\(newName)',
                 active = 0
             WHERE id = \(existingTable.id!)
         """
         try? db.execute(sql: "ALTER TABLE `\(tableName)` RENAME TO `\(newName)`")
-        try? db.execute(sql: sql)
+        try? db.execute(sql: tableUpdateSQL)
+        
+        let updateSchemaFlagSQL = """
+            UPDATE \(newName)
+            SET is_current_schema = 0;
+        """
+        
+        try? db.execute(sql: updateSchemaFlagSQL)
         
         pLog.info("found duplicate dynamic table: renamed existing table: \(tableName)_\(nextNum)")
     }
@@ -142,6 +148,10 @@ public final class AEBLEDBManager {
                 t.autoIncrementedPrimaryKey("id")
                 t.column("created_at", .datetime).defaults(to: Date())
                 t.column("uploaded", .boolean).defaults(to: false)
+                t.column("experiment_id", .integer)
+                    .indexed()
+                    .references(Experiment.databaseTableName)
+                t.column("is_current_schema", .boolean).defaults(to: true)
                 t.column("user_id", .text).notNull(onConflict: .fail)
 
                 for dv in dataValues {
@@ -179,8 +189,24 @@ public final class AEBLEDBManager {
         try? (dbQueue ?? self.dbQueue)?.write { db in
             try? db.execute(
                 sql: sql,
-                arguments: StatementArguments(values + [Date(), "--id--"]) ?? StatementArguments()
+                arguments: StatementArguments(values + [Date(), self.config.userId]) ?? StatementArguments()
             )
+        }
+    }
+    
+    internal static func activeDynamicTables(dbQueue: DatabaseQueue) async -> Result<[String], Error> {
+        do {
+            let dts = try await dbQueue.read { db -> [String] in
+                let dts = try DynamicTable
+                    .filter(Column(DynamicTable.CodingKeys.active.stringValue) == true)
+                    .fetchAll(db)
+                
+                return dts.map({ $0.name })
+            }
+            
+            return .success(dts)
+        } catch {
+            return .failure(error)
         }
     }
 }

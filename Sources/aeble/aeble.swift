@@ -9,7 +9,7 @@ public final class AEBLE: ObservableObject {
     
     public init(config: AEBLEConfig) throws {
         self.config = config
-        self.db = try AEBLEDBManager(with: config.dbURL)
+        self.db = try AEBLEDBManager(config: config)
         self.conn = AEBLEConnectionManager(db: db)
         self.exp = AEBLEExperiment(dbQueue: db.dbQueue)
         

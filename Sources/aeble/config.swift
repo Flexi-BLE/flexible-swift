@@ -15,7 +15,7 @@ public class AEBLEConfig {
     
     let deviceId: String
     
-    let userId: String
+    public var userId: String
     
     public init(
         dbName: String="aeble",

@@ -51,6 +51,14 @@ public struct Experiment: Codable {
     }
 }
 
+extension  Experiment: TableRecord {
+    static let timestampForeignKey = ForeignKey([Timestamp.CodingKeys.experimentId.rawValue])
+        static var timestamps = hasMany(Timestamp.self, using: timestampForeignKey)
+        var timestamps: QueryInterfaceRequest<Timestamp> {
+            request(for: Experiment.timestamps)
+        }
+}
+
 extension Experiment: FetchableRecord, MutablePersistableRecord {
     enum Columns {
         static let id = Column(CodingKeys.id)
