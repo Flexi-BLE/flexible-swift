@@ -1,0 +1,83 @@
+//
+//  DataBatch.swift
+//  
+//
+//  Created by blaine on 3/3/22.
+//
+
+import Foundation
+import GRDB
+
+internal class DataBatch {
+    private var limit = 100
+    private var counter: Int = 0
+    private var cursor: Date = Date.now
+    private var tables = [String]()
+    
+    private let db: AEBLEDBManager
+    
+    init(db: AEBLEDBManager) {
+        self.db = db
+    }
+    
+    
+    internal func increment(for name: String) {
+        self.counter += 1
+        if !tables.contains(name) { tables.append(name) }
+        if counter == limit {
+            let c = self.cursor
+            let t = self.tables
+            Task(priority: .background) {
+                await insert(cursor: c, tables: t)
+            }
+            self.counter = 0
+            self.cursor = Date.now
+            self.tables = []
+        }
+    }
+    
+    private func insert(cursor: Date, tables: [String]) async {
+        do {
+        
+            for table in tables {
+                let tblInfo = db.tableInfo(for: table)
+                let dtRes = await db.dynamicTable(for: table)
+                
+                guard case .success(let dt) = dtRes,
+                    let dynamicTbl = dt,
+                      let md = dynamicTbl.metadata else {
+                    return
+                }
+                
+                let metadata = try Data.sharedJSONDecoder.decode(
+                    PeripheralCharacteristicMetadata.self,
+                    from: md
+                )
+            
+                let sql = """
+                SELECT \(tblInfo.map({$0.name}).joined(separator: ", "))
+                FROM \(table)
+                WHERE created_at > ?
+                ORDER BY created_at DESC
+                """
+                    
+                let data: [GenericRow]? = try await db.dbQueue.read { db in
+                    let result = try Row.fetchAll(db, sql: sql, arguments: StatementArguments([cursor]))
+                    return result.map({ row in
+                        GenericRow(metadata: tblInfo, row: row)
+                    })
+                }
+                
+                guard let data = data else { return }
+                
+                let _ = InfluxDB.writeGenericRows(
+                    rows: data,
+                    name: table,
+                    metadata: metadata
+                )
+            }
+        } catch {
+            print("TODO HANDLE, unable read records")
+        }
+    }
+}

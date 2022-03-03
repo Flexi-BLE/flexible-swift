@@ -29,4 +29,10 @@ internal extension Data {
         
         return encoder
     }
+    
+    static var sharedISODateDecoder: DateFormatter {
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd HH:mm:ss.S Z"
+        return df
+    }
 }

@@ -14,6 +14,9 @@ public final class AEBLEDBManager {
     
     internal let dbQueue: DatabaseQueue
     private let migrator = DBMigrator()
+    private lazy var batch: DataBatch = {
+        return DataBatch(db: self)
+    }()
     
     /// parameter url: URL for SQLite database with `.sqlite` extension. Will create if does not exist.
     init(config: AEBLEConfig) throws {
@@ -99,6 +102,17 @@ public final class AEBLEDBManager {
         }
         
         return metadata
+    }
+    
+    internal func dynamicTable(for table: String) async -> Result<DynamicTable?, Error> {
+        do {
+            let t = try await dbQueue.read { db in
+                return try DynamicTable.fetchOne(db, key: ["name": table])
+            }
+            return .success(t)
+        } catch {
+            return .failure(error)
+        }
     }
     
     public func data(for tableName: String, metadata: [TableInfo], offset: Int=0, limit: Int=100) async -> [GenericRow]? {
@@ -192,11 +206,13 @@ public final class AEBLEDBManager {
                 arguments: StatementArguments(values + [Date(), self.config.userId]) ?? StatementArguments()
             )
         }
+        
+        self.batch.increment(for: tableName)
     }
     
-    internal static func activeDynamicTables(dbQueue: DatabaseQueue) async -> Result<[String], Error> {
+    internal func activeDynamicTables() async -> Result<[String], Error> {
         do {
-            let dts = try await dbQueue.read { db -> [String] in
+            let dts = try await self.dbQueue.read { db -> [String] in
                 let dts = try DynamicTable
                     .filter(Column(DynamicTable.CodingKeys.active.stringValue) == true)
                     .fetchAll(db)

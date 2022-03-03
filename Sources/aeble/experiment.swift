@@ -11,10 +11,10 @@ import GRDB
 
 
 public class AEBLEExperiment {
-    private let dbQueue: DatabaseQueue
+    private let db: AEBLEDBManager
     
-    internal init(dbQueue: DatabaseQueue) {
-        self.dbQueue = dbQueue
+    internal init(db: AEBLEDBManager) {
+        self.db = db
     }
     
     public func startExperiment(name: String,
@@ -22,15 +22,15 @@ public class AEBLEExperiment {
                            start: Date=Date.now) async -> Result<Experiment, AEBLEError> {
         
         do {
-            let res = try await self.dbQueue.write { db -> Result<Experiment, AEBLEError> in
-                var event = Experiment(
+            let res = try await self.db.dbQueue.write { db -> Result<Experiment, AEBLEError> in
+                var exp = Experiment(
                     name: name,
                     description: description,
                     start: start,
                     end: nil
                 )
-                try event.insert(db)
-                return .success(event)
+                try exp.insert(db)
+                return .success(exp)
             }
             return res
         } catch {
@@ -40,7 +40,7 @@ public class AEBLEExperiment {
     
     public func endExperiment(id: Int64) async -> Result<Bool, Error> {
         do {
-            let exp = try await dbQueue.write { db -> Experiment? in
+            let exp = try await db.dbQueue.write { db -> Experiment? in
                 var exp = try Experiment.fetchOne(db, key: ["id": id])
                 exp?.end = Date.now
                 try exp?.update(db)
@@ -53,13 +53,13 @@ public class AEBLEExperiment {
                 return .failure(AEBLEError.dbError(msg: "No event found"))
             }
             
-            let res = await AEBLEDBManager.activeDynamicTables(dbQueue: dbQueue)
+            let res = await db.activeDynamicTables()
             guard case .success(let dtNames) = res else {
                 return .failure(AEBLEError.dbError(msg: "No active tables"))
             }
             
             for tableName in dtNames {
-                try await dbQueue.write { db in
+                try await db.dbQueue.write { db in
                     let sql = """
                         UPDATE \(tableName)
                         SET experiment_id = \(expId)
@@ -72,6 +72,9 @@ public class AEBLEExperiment {
                 }
             }
             
+            let _ = InfluxDB.writeEventStart(exp: exp)
+            let _ = InfluxDB.writeEventEnd(exp: exp)
+            
             return .success(true)
         } catch {
             return .failure(error)
@@ -80,7 +83,7 @@ public class AEBLEExperiment {
     
     public func deleteExperiment(id: Int64) async -> Result<Bool, Error> {
         do {
-            return try await dbQueue.write { db -> Result<Bool, Error> in
+            return try await db.dbQueue.write { db -> Result<Bool, Error> in
                 let exp = try Experiment.fetchOne(db, key: ["id": id])
                 try exp?.delete(db)
                 return .success(true)
@@ -92,7 +95,7 @@ public class AEBLEExperiment {
     
     public func activeEvent() async -> Result<Experiment?, AEBLEError> {
         do {
-            return try await dbQueue.read { db -> Result<Experiment?, AEBLEError> in
+            return try await db.dbQueue.read { db -> Result<Experiment?, AEBLEError> in
                 let exp = try Experiment
                     .filter(Experiment.Columns.end == nil)
                     .order(Experiment.Columns.start.desc)
@@ -108,14 +111,17 @@ public class AEBLEExperiment {
     
     public func markTime(name: String?=nil, description: String?=nil, experiment: Experiment?=nil) async -> Result<Bool, Error> {
         do {
-            try await dbQueue.write { db in
-                try Timestamp(
+            try await db.dbQueue.write { db in
+                let ts = try Timestamp(
                     name: name,
                     description: description,
                     datetime: Date.now,
                     experimentId: experiment?.id
-                ).insert(db)
+                )
+                try ts.insert(db)
+                let _ = InfluxDB.writeTimestamp(ts: ts)
             }
+                        
             return .success(true)
         } catch {
             return .failure(error)

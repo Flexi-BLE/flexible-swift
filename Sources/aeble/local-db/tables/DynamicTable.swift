@@ -47,7 +47,7 @@ extension DynamicTable: FetchableRecord, PersistableRecord {
     
     static func create(_ table: TableDefinition) {
         table.autoIncrementedPrimaryKey(CodingKeys.id.stringValue)
-        table.column(CodingKeys.name.stringValue, .text).notNull()
+        table.column(CodingKeys.name.stringValue, .text).notNull().unique(onConflict: .fail)
         table.column(CodingKeys.originalName.stringValue, .text).notNull()
         table.column(CodingKeys.metadata.stringValue, .blob).notNull()
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())

@@ -11,7 +11,7 @@ public final class AEBLE: ObservableObject {
         self.config = config
         self.db = try AEBLEDBManager(config: config)
         self.conn = AEBLEConnectionManager(db: db)
-        self.exp = AEBLEExperiment(dbQueue: db.dbQueue)
+        self.exp = AEBLEExperiment(db: db)
         
         self.startScan()
     }

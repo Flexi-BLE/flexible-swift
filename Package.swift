@@ -15,7 +15,16 @@ let package = Package(
             targets: ["aeble"]),
     ],
     dependencies: [
-        .package(name: "GRDB", url: "https://github.com/groue/GRDB.swift.git", branch: "master"),
+        .package(
+            name: "GRDB",
+            url: "https://github.com/groue/GRDB.swift.git",
+            branch: "master"
+        ),
+        .package(
+            name: "influxdb-client-swift",
+            url: "https://github.com/influxdata/influxdb-client-swift",
+            from: "1.1.0"
+        )
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
     ],
@@ -24,7 +33,10 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "aeble",
-            dependencies: ["GRDB"],
+            dependencies: [
+                .product(name: "GRDB", package: "GRDB"),
+                .product(name: "InfluxDBSwift", package: "influxdb-client-swift")
+            ],
             resources: [
                 .process("data/default_peripheral_metadata.json")
             ]

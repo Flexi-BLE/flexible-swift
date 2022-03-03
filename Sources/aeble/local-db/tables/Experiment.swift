@@ -11,6 +11,7 @@ import GRDB
 /// Representation of a time frame
 public struct Experiment: Codable {
     public var id: Int64?
+    public var uuid: String
     public var name: String
     public var description: String?
     public var start: Date
@@ -19,6 +20,7 @@ public struct Experiment: Codable {
         
     enum CodingKeys: String, CodingKey {
         case id
+        case uuid
         case name
         case description
         case createdAt = "created_at"
@@ -28,6 +30,7 @@ public struct Experiment: Codable {
     
     init(name: String, description: String?=nil, start:Date=Date.now, end:Date?=nil) {
         self.name = name
+        self.uuid = UUID().uuidString
         self.description = description
         self.createdAt = Date.now
         self.start = start
@@ -63,6 +66,7 @@ extension Experiment: FetchableRecord, MutablePersistableRecord {
     enum Columns {
         static let id = Column(CodingKeys.id)
         static let name = Column(CodingKeys.name)
+        static let uuid = Column(CodingKeys.uuid)
         static let description = Column(CodingKeys.description)
         static let createdAt = Column(CodingKeys.createdAt)
         static let start = Column(CodingKeys.start)
@@ -78,6 +82,7 @@ extension Experiment: FetchableRecord, MutablePersistableRecord {
     internal static func create(_ table: TableDefinition) {
         table.autoIncrementedPrimaryKey(CodingKeys.id.stringValue)
         table.column(CodingKeys.name.stringValue, .text).notNull()
+        table.column(CodingKeys.uuid.stringValue, .text).notNull()
         table.column(CodingKeys.description.stringValue, .text)
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
         table.column(CodingKeys.start.stringValue, .datetime)
