@@ -16,6 +16,7 @@ internal struct Timestamp: Codable {
     var experimentId: Int64?
     var createdAt: Date
     var datetime: Date
+    var uploaded: Bool = false
         
     enum CodingKeys: String, CodingKey {
         case id
@@ -24,6 +25,7 @@ internal struct Timestamp: Codable {
         case experimentId = "experiment_id"
         case createdAt = "created_at"
         case datetime
+        case uploaded
     }
     
     init(name: String?, description: String?=nil, datetime:Date=Date.now, experimentId: Int64?=nil) {
@@ -43,6 +45,7 @@ extension Timestamp: FetchableRecord, PersistableRecord {
         static let eventId = Column(CodingKeys.experimentId)
         static let createdAt = Column(CodingKeys.createdAt)
         static let datetime = Column(CodingKeys.datetime)
+        static let uploaded = Column(CodingKeys.uploaded)
     }
     
     static var databaseTableName: String = "timestamp"
@@ -56,5 +59,6 @@ extension Timestamp: FetchableRecord, PersistableRecord {
             .references(Experiment.databaseTableName, onDelete: .cascade)
         table.column(CodingKeys.createdAt.stringValue, .datetime).notNull(onConflict: .fail)
         table.column(CodingKeys.datetime.stringValue, .datetime)
+        table.column(CodingKeys.uploaded.stringValue, .boolean)
     }
 }

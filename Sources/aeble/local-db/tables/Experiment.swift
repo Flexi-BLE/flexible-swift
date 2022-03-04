@@ -16,6 +16,7 @@ public struct Experiment: Codable {
     public var description: String?
     public var start: Date
     public var end: Date?
+    internal var uploaded: Bool = false
     internal var createdAt: Date
         
     enum CodingKeys: String, CodingKey {
@@ -26,6 +27,7 @@ public struct Experiment: Codable {
         case createdAt = "created_at"
         case start
         case end
+        case uploaded
     }
     
     init(name: String, description: String?=nil, start:Date=Date.now, end:Date?=nil) {
@@ -71,6 +73,7 @@ extension Experiment: FetchableRecord, MutablePersistableRecord {
         static let createdAt = Column(CodingKeys.createdAt)
         static let start = Column(CodingKeys.start)
         static let end = Column(CodingKeys.end)
+        static let uploaded = Column(CodingKeys.uploaded)
     }
         
     mutating public func didInsert(with rowID: Int64, for column: String?) {
@@ -87,5 +90,6 @@ extension Experiment: FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
         table.column(CodingKeys.start.stringValue, .datetime)
         table.column(CodingKeys.end.stringValue, .datetime)
+        table.column(CodingKeys.uploaded.stringValue, .boolean)
     }
 }

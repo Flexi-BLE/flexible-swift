@@ -72,8 +72,19 @@ public class AEBLEExperiment {
                 }
             }
             
-            let _ = InfluxDB.writeEventStart(exp: exp)
-            let _ = InfluxDB.writeEventEnd(exp: exp)
+            let expRes = await AEBLEAPI.createExperiment(exp: exp)
+            
+            switch expRes {
+            case .success(let inserted):
+                if inserted {
+                    try await db.dbQueue.write { db in
+                        var exp = try Experiment.fetchOne(db, key: ["id": id])
+                        exp?.uploaded = true
+                        try exp?.update(db)
+                    }
+                }
+            case .failure(_): break
+            }
             
             return .success(true)
         } catch {
@@ -111,15 +122,25 @@ public class AEBLEExperiment {
     
     public func markTime(name: String?=nil, description: String?=nil, experiment: Experiment?=nil) async -> Result<Bool, Error> {
         do {
-            try await db.dbQueue.write { db in
-                let ts = try Timestamp(
-                    name: name,
-                    description: description,
-                    datetime: Date.now,
-                    experimentId: experiment?.id
-                )
+            
+            var ts = Timestamp(
+                name: name,
+                description: description,
+                datetime: Date.now,
+                experimentId: experiment?.id
+            )
+            
+            let res = await AEBLEAPI.createTimestamp(ts: ts)
+            switch res {
+            case .success(let inserted):
+                if inserted {
+                    ts.uploaded = true
+                }
+            case .failure(_): break
+            }
+            
+            try await db.dbQueue.write { [ts] db in
                 try ts.insert(db)
-                let _ = InfluxDB.writeTimestamp(ts: ts)
             }
                         
             return .success(true)
