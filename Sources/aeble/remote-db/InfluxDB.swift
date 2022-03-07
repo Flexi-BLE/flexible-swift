@@ -9,7 +9,7 @@ import Combine
 import Foundation
 import InfluxDBSwift
 
-// TODO: move hardcoded values to aeble configuration
+// TODO: REMOVE
 
 struct InfluxDB {
     static func makeClient() -> InfluxDBClient {

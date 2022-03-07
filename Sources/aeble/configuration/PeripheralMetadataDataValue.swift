@@ -13,9 +13,10 @@ internal enum PeripheralMetadataDataValueType: String, Codable {
     case string = "string"
 }
 
-internal protocol PeripheralDataValue: CustomStringConvertible { }
+internal protocol PeripheralDataValue: CustomStringConvertible, Codable {}
 extension String: PeripheralDataValue { }
 extension Float: PeripheralDataValue { }
+extension Double: PeripheralDataValue { }
 extension Int: PeripheralDataValue { }
 
 internal struct PeripheralMetadataDataValue: Codable, Equatable {

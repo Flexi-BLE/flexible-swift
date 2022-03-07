@@ -70,10 +70,9 @@ internal class DataBatch {
                 
                 guard let data = data else { return }
                 
-                let _ = InfluxDB.writeGenericRows(
-                    rows: data,
-                    name: table,
-                    metadata: metadata
+                let _ = await AEBLEAPI.batchLoad(
+                    metadata: metadata,
+                    rows: data
                 )
             }
         } catch {
