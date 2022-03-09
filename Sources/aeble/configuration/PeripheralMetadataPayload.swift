@@ -8,5 +8,6 @@
 import Foundation
 
 internal struct PeripheralMetadataPayload: Codable {
+    let id: String
     let peripherals: [PeripheralMetadata]?
 }

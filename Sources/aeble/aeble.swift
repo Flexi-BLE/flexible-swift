@@ -2,14 +2,14 @@ import CoreBluetooth
 import GRDB
 
 public final class AEBLE: ObservableObject {
-    public let config: AEBLEConfig
     public let conn: AEBLEConnectionManager
     public let db: AEBLEDBManager
     public let exp: AEBLEExperiment
+    public let settings: AEBLESettingsStore
     
-    public init(config: AEBLEConfig) throws {
-        self.config = config
-        self.db = try AEBLEDBManager(config: config)
+    public init() throws {
+        self.db = try AEBLEDBManager()
+        self.settings = AEBLESettingsStore(dbQueue: db.dbQueue)
         self.conn = AEBLEConnectionManager(db: db)
         self.exp = AEBLEExperiment(db: db)
         
@@ -17,6 +17,6 @@ public final class AEBLE: ObservableObject {
     }
     
     private func startScan() {
-        conn.scan(with: config.metadata)
+        conn.scan(with: self.settings.peripheralConfig)
     }
 }

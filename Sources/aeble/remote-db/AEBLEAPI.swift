@@ -13,11 +13,19 @@ import Foundation
 // TODO: configuration loading [url, device_id, user_id]
 
 internal struct AEBLEAPI {
-    static func createExperiment(exp: Experiment) async -> Result<Bool, Error> {
+    static func createExperiment(
+        exp: Experiment,
+        settings: Settings
+    ) async -> Result<Bool, Error> {
+        
         do {
-            var req = URLRequest(url: URL(string: "http://159.223.153.215:80/experiment")!)
+            var req = URLRequest(url: URL(string: "\(settings.apiURL)/experiment")!)
             
-            let payload = ExperimentPayload(from: exp, deviceId: "test", userId: "test")
+            let payload = ExperimentPayload(
+                from: exp,
+                deviceId: settings.deviceId,
+                userId: settings.userId
+            )
             
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -41,11 +49,19 @@ internal struct AEBLEAPI {
         }
     }
     
-    static func createTimestamp(ts: Timestamp) async -> Result<Bool, Error> {
+    static func createTimestamp(
+        ts: Timestamp,
+        settings: Settings
+    ) async -> Result<Bool, Error> {
+        
         do {
-            var req = URLRequest(url: URL(string: "http://159.223.153.215:80/timestamp")!)
+            var req = URLRequest(url: URL(string: "\(settings.apiURL)/timestamp")!)
             
-            let payload = TimestampPayload(from: ts, deviceId: "test", userId: "test")
+            let payload = TimestampPayload(
+                from: ts,
+                deviceId: settings.deviceId,
+                userId: settings.userId
+            )
             
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -70,13 +86,18 @@ internal struct AEBLEAPI {
         
     }
     
-    static func batchLoad(metadata: PeripheralCharacteristicMetadata, rows: [GenericRow]) async -> Result<Bool, Error> {
+    static func batchLoad(
+        metadata: PeripheralCharacteristicMetadata,
+        rows: [GenericRow],
+        settings: Settings
+    ) async -> Result<Bool, Error> {
+        
         do {
-            var req = URLRequest(url: URL(string: "http://159.223.153.215:80/sensorData")!)
+            var req = URLRequest(url: URL(string: "\(settings.apiURL)/sensorData")!)
             
             let payload = SensorBatchPayload(
-                deviceId: "test",
-                userId: "test",
+                deviceId: settings.deviceId,
+                userId: settings.userId,
                 metadata: metadata,
                 values: rows.map({SensorBatchValue.from(row: $0, with: metadata)})
             )

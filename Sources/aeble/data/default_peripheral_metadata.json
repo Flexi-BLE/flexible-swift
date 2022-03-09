@@ -1,4 +1,5 @@
 {
+    "id": "--local-default--",
     "peripherals": [
         {
             "name": "Feather nRF52840 Express",

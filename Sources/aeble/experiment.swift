@@ -72,7 +72,8 @@ public class AEBLEExperiment {
                 }
             }
             
-            let expRes = await AEBLEAPI.createExperiment(exp: exp)
+            let settings = try await AEBLESettingsStore.activeSetting(dbQueue: db.dbQueue)
+            let expRes = await AEBLEAPI.createExperiment(exp: exp, settings: settings)
             
             switch expRes {
             case .success(let inserted):
@@ -130,7 +131,9 @@ public class AEBLEExperiment {
                 experimentId: experiment?.id
             )
             
-            let res = await AEBLEAPI.createTimestamp(ts: ts)
+            let settings = try await AEBLESettingsStore.activeSetting(dbQueue: db.dbQueue)
+            let res = await AEBLEAPI.createTimestamp(ts: ts, settings: settings)
+            
             switch res {
             case .success(let inserted):
                 if inserted {

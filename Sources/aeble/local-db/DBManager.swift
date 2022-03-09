@@ -10,26 +10,37 @@ import GRDB
 
 /// Initializes and manages a local SQLite database for storing all data related to aeble, including:
 public final class AEBLEDBManager {
-    private let config: AEBLEConfig
-    
     internal let dbQueue: DatabaseQueue
     private let migrator = DBMigrator()
+    public let dbPath = AEBLEDBManager.documentDirPath()
     private lazy var batch: DataBatch = {
         return DataBatch(db: self)
     }()
     
+    /// Create and retrurn data directory url in application file structure
+    private static func documentDirPath(for dbName: String="aeble") -> URL {
+        let fileManager = FileManager()
+        
+        do {
+            let dirPath = try fileManager
+                .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+                    .appendingPathComponent("data", isDirectory: true)
+            
+            try fileManager.createDirectory(at: dirPath, withIntermediateDirectories: true)
+            
+            return dirPath.appendingPathComponent("\(dbName).sqlite")
+        } catch {
+            fatalError("Unable to access document directory")
+        }
+    }
+    
     /// parameter url: URL for SQLite database with `.sqlite` extension. Will create if does not exist.
-    init(config: AEBLEConfig) throws {
-                
-        self.config = config
-        
-        pLog.info("Database Path: \(self.config.dbURL)")
-        
+    init() throws {
         var configuration = Configuration()
         configuration.qos = DispatchQoS.userInitiated
                     
         self.dbQueue = try DatabaseQueue(
-            path: self.config.dbURL.path,
+            path: self.dbPath.path,
             configuration: configuration
         )
         
@@ -200,9 +211,11 @@ public final class AEBLEDBManager {
         """
         
         try? (dbQueue ?? self.dbQueue)?.write { db in
+            let settings = try AEBLESettingsStore.activeSetting(db: db)
+            
             try? db.execute(
                 sql: sql,
-                arguments: StatementArguments(values + [Date(), self.config.userId]) ?? StatementArguments()
+                arguments: StatementArguments(values + [Date(), settings.userId]) ?? StatementArguments()
             )
         }
         

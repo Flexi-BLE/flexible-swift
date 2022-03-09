@@ -14,6 +14,19 @@ internal class DBMigrator {
     
     init() {
         self.migrator.registerMigration("v1") { db in
+            
+            try? db.create(
+                table: Settings.databaseTableName,
+                ifNotExists: true,
+                body: Settings.create
+            )
+            
+            try? db.create(
+                table: PeripheralConfiguration.databaseTableName,
+                ifNotExists: true,
+                body: PeripheralConfiguration.create
+            )
+            
             try? db.create(
                 table: DynamicTable.databaseTableName,
                 ifNotExists: true,

@@ -72,9 +72,12 @@ internal class DataBatch {
                 
                 let start = Date.now
                 
+                let settings = try await AEBLESettingsStore.activeSetting(dbQueue: db.dbQueue)
+                
                 let res = await AEBLEAPI.batchLoad(
                     metadata: metadata,
-                    rows: data
+                    rows: data,
+                    settings: settings
                 )
                 
                 switch res {
