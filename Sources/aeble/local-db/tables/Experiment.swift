@@ -38,22 +38,6 @@ public struct Experiment: Codable {
         self.start = start
         self.end = end
     }
-    
-    public static func dummyActive() -> Experiment {
-        var exp = Experiment(
-            name: "dummy exp", description: "--",
-            start: Date.now.addingTimeInterval(-3600),
-            end: nil
-        )
-        exp.id = 1000
-        return exp
-    }
-    
-    public static func dummyEnded() -> Experiment {
-        var exp = Experiment.dummyActive()
-        exp.end = Date.now.addingTimeInterval(-10)
-        return exp
-    }
 }
 
 extension  Experiment: TableRecord {
@@ -80,7 +64,7 @@ extension Experiment: FetchableRecord, MutablePersistableRecord {
         id = rowID
     }
     
-    public static var databaseTableName: String = "event"
+    public static var databaseTableName: String = "experiment"
     
     internal static func create(_ table: TableDefinition) {
         table.autoIncrementedPrimaryKey(CodingKeys.id.stringValue)
@@ -91,5 +75,23 @@ extension Experiment: FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.start.stringValue, .datetime)
         table.column(CodingKeys.end.stringValue, .datetime)
         table.column(CodingKeys.uploaded.stringValue, .boolean)
+    }
+}
+
+extension Experiment {
+    public static func dummyActive() -> Experiment {
+        var exp = Experiment(
+            name: "dummy exp", description: "--",
+            start: Date.now.addingTimeInterval(-3600),
+            end: nil
+        )
+        exp.id = 1000
+        return exp
+    }
+    
+    public static func dummyEnded() -> Experiment {
+        var exp = Experiment.dummyActive()
+        exp.end = Date.now.addingTimeInterval(-10)
+        return exp
     }
 }

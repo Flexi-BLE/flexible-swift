@@ -16,7 +16,7 @@ internal extension Data {
     /// Shared
     static var sharedJSONDecoder: JSONDecoder {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .formatted(Data.sharedISODateFormatter)
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         
         return decoder
@@ -24,15 +24,15 @@ internal extension Data {
     
     static var sharedJSONEncoder: JSONEncoder {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        encoder.dateEncodingStrategy = .formatted(Data.sharedISODateFormatter)
         encoder.keyEncodingStrategy = .convertToSnakeCase
         
         return encoder
     }
     
-    static var sharedISODateDecoder: DateFormatter {
+    static var sharedISODateFormatter: DateFormatter {
         let df = DateFormatter()
-        df.dateFormat = "yyyy-MM-dd HH:mm:ss.S Z"
+        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
         return df
     }
 }

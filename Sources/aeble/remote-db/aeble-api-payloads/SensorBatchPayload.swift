@@ -39,8 +39,10 @@ struct SensorBatchValue: Encodable {
             let rowName = row.metadata[i].name
             if rowName == "created_at" {
                 var dstring = row.columns[i].value as! String
-                dstring += " UTC"
-                time = Data.sharedISODateDecoder.date(from: dstring)!
+                // TODO: helper for SQLite -> ISO8601 w/ millseconds
+                dstring = dstring.replacingOccurrences(of: " ", with: "T")
+                dstring += "Z"
+                time = Data.sharedISODateFormatter.date(from: dstring)!
             }
             
             if let dv = dynamicDataValues[rowName] {

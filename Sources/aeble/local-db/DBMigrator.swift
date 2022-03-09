@@ -31,6 +31,11 @@ internal class DBMigrator {
                 ifNotExists: true,
                 body: Timestamp.create
             )
+            
+            try? db.create(
+                table: DataUpload.databaseTableName,
+                ifNotExists: true,
+                body: DataUpload.create)
         }
         
         #if DEBUG

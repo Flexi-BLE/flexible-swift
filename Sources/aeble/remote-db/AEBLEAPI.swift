@@ -88,15 +88,15 @@ internal struct AEBLEAPI {
             req.httpBody = try Data.sharedJSONEncoder.encode(payload)
             
             let (_, res) = try await URLSession.shared.data(for: req)
-            guard (res as? HTTPURLResponse)?.statusCode == 200 else {
+            let urlRes = res as? HTTPURLResponse
+            guard urlRes?.statusCode == 200 else {
                 return .failure(
                     AEBLEError.aebleAPIHTTPError(
-                        code: (res as! HTTPURLResponse).statusCode,
-                        msg: "failure to create experiment"
+                        code: urlRes?.statusCode ?? 0,
+                        msg: urlRes?.description ?? ""
                     )
                 )
             }
-            
             return .success(true)
         } catch {
             return .failure(error)

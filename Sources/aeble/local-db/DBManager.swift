@@ -174,7 +174,6 @@ public final class AEBLEDBManager {
                     case .int: t.column(dv.name, .integer)
                     case .string: t.column(dv.name, .text)
                     }
-    
                 }
             }
     

@@ -9,7 +9,7 @@ import Foundation
 import GRDB
 
 internal class DataBatch {
-    private var limit = 100
+    private var limit = 1000
     private var counter: Int = 0
     private var cursor: Date = Date.now
     private var tables = [String]()
@@ -70,13 +70,69 @@ internal class DataBatch {
                 
                 guard let data = data else { return }
                 
-                let _ = await AEBLEAPI.batchLoad(
+                let start = Date.now
+                
+                let res = await AEBLEAPI.batchLoad(
                     metadata: metadata,
                     rows: data
                 )
+                
+                switch res {
+                case .success(_):
+                    try await db.dbQueue.write { db in
+                        let sql = """
+                            UPDATE \(table)
+                            SET uploaded = 1
+                            WHERE created_at > ?
+                        """
+                        
+                        try db.execute(
+                            sql: sql,
+                            arguments: StatementArguments([cursor])
+                        )
+                        
+                        
+                        let du = DataUpload(
+                            id: nil,
+                            status: .success,
+                            createdAt: Date.now,
+                            duration: Date.now.timeIntervalSince(start),
+                            numberOfRecords: data.count,
+                            measurement: metadata.name,
+                            errorMessage: nil
+                        )
+                        
+                        try du.insert(db) }
+                case .failure(let error):
+                    try await db.dbQueue.write { db in
+                        let du = DataUpload(
+                            id: nil,
+                            status: .fail,
+                            createdAt: Date.now,
+                            duration: 0,
+                            numberOfRecords: 0,
+                            measurement: metadata.name,
+                            errorMessage: error.localizedDescription
+                        )
+                        
+                        try du.insert(db)
+                    }
+                }
             }
         } catch {
-            print("TODO HANDLE, unable read records")
+            try? await db.dbQueue.write { db in
+                let du = DataUpload(
+                    id: nil,
+                    status: .fail,
+                    createdAt: Date.now,
+                    duration: 0,
+                    numberOfRecords: 0,
+                    measurement: nil,
+                    errorMessage: error.localizedDescription
+                )
+                
+                try? du.insert(db)
+            }
         }
     }
 }

@@ -99,7 +99,7 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
     }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        bleLog.info("did update value for characteristic \(characteristic.uuid)")
+//        bleLog.info("did update value for characteristic \(characteristic.uuid)")
         guard let service = characteristic.service,
               let serviceMetadata = metadata.serviceMetadata(by: service.uuid),
               let characteristicMetadata = serviceMetadata.characteristicMatadata(by: characteristic.uuid),
@@ -114,7 +114,7 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
             case .float:
                 var rawValue: Int = 0
                 for byte in bytes.reversed() {
-                    bleLog.info("\(byte)")
+//                    bleLog.info("\(byte)")
                     rawValue = rawValue << 8
                     rawValue = rawValue | Int(byte)
                 }
@@ -124,11 +124,11 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
                     value = Float(rawValue) * mult
                 }
                 values.append(value)
-                bleLog.debug("float value: \(value)")
+//                bleLog.debug("float value: \(value)")
             case .int:
                 var value: Int = 0
                 for byte in bytes.reversed() {
-                    bleLog.info("\(byte)")
+//                    bleLog.info("\(byte)")
                     value = value << 8
                     value = value | Int(byte)
                 }
@@ -137,11 +137,11 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
                     value = Int(value) * Int(mult)
                 }
                 values.append(value)
-                bleLog.debug("interger value: \(value)")
+//                bleLog.debug("interger value: \(value)")
             case .string:
                 let value = String(bytes: bytes, encoding: .utf8) ?? ""
                 values.append(value)
-                bleLog.debug("string value: \(value)")
+//                bleLog.debug("string value: \(value)")
             }
         }
         self.db.arbInsert(

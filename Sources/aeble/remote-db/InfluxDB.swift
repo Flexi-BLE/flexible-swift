@@ -106,7 +106,7 @@ struct InfluxDB {
                 if rowName == "created_at" {
                     var dstring = row.columns[i].value as! String
                     dstring += " UTC"
-                    let d = Data.sharedISODateDecoder.date(from: dstring)!
+                    let d = Data.sharedISODateFormatter.date(from: dstring)!
                     p.time(time: .date(d))
                 }
                 

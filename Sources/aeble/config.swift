@@ -11,9 +11,10 @@ import Foundation
 public class AEBLEConfig {
     
     internal var metadata: PeripheralMetadataPayload
-    public let dbURL: URL
+    public var dbURL: URL
     
-    let deviceId: String
+    var deviceId: String
+//    var batchUploadNumOfRecords: Int = 1000
     
     public var userId: String
     
