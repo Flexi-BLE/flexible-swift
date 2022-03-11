@@ -19,7 +19,7 @@ internal struct AEBLEAPI {
     ) async -> Result<Bool, Error> {
         
         do {
-            var req = URLRequest(url: URL(string: "\(settings.apiURL)/experiment")!)
+            var req = URLRequest(url: URL(string: "\(settings.apiURL)/experiments")!)
             
             let payload = ExperimentPayload(
                 from: exp,
@@ -55,7 +55,7 @@ internal struct AEBLEAPI {
     ) async -> Result<Bool, Error> {
         
         do {
-            var req = URLRequest(url: URL(string: "\(settings.apiURL)/timestamp")!)
+            var req = URLRequest(url: URL(string: "\(settings.apiURL)/timestamps")!)
             
             let payload = TimestampPayload(
                 from: ts,
@@ -93,7 +93,7 @@ internal struct AEBLEAPI {
     ) async -> Result<Bool, Error> {
         
         do {
-            var req = URLRequest(url: URL(string: "\(settings.apiURL)/sensorData")!)
+            var req = URLRequest(url: URL(string: "\(settings.apiURL)/sensor_data")!)
             
             let payload = SensorBatchPayload(
                 deviceId: settings.deviceId,
@@ -119,6 +119,50 @@ internal struct AEBLEAPI {
                 )
             }
             return .success(true)
+        } catch {
+            return .failure(error)
+        }
+    }
+    
+    static func getConfig(settings: Settings) async -> Result<PeripheralMetadataPayload?, Error> {
+        do {
+            var req = URLRequest(url: URL(string: "\(settings.apiURL)/device_configurations?id=\(settings.peripheralConfigurationId)")!)
+            req.httpMethod = "GET"
+            
+            let (data, res) = try await URLSession.shared.data(for: req)
+            let urlRes = res as? HTTPURLResponse
+            guard urlRes?.statusCode == 200 else {
+                return .failure(
+                    AEBLEError.aebleAPIHTTPError(
+                        code: urlRes?.statusCode ?? 0,
+                        msg: urlRes?.description ?? ""
+                    )
+                )
+            }
+            let config = try Data.sharedJSONDecoder.decode(PeripheralMetadataPayload.self, from: data)
+            return .success(config)
+        } catch {
+            return .failure(error)
+        }
+    }
+    
+    static func getAvaiableConfigs(settings: Settings) async -> Result<[String], Error> {
+        do {
+            var req = URLRequest(url: URL(string: "\(settings.apiURL)/device_configurations/available")!)
+            req.httpMethod = "GET"
+            
+            let (data, res) = try await URLSession.shared.data(for: req)
+            let urlRes = res as? HTTPURLResponse
+            guard urlRes?.statusCode == 200 else {
+                return .failure(
+                    AEBLEError.aebleAPIHTTPError(
+                        code: urlRes?.statusCode ?? 0,
+                        msg: urlRes?.description ?? ""
+                    )
+                )
+            }
+            let responsePayload = try Data.sharedJSONDecoder.decode(AvailableConfigurationsPayload.self, from: data)
+            return .success(responsePayload.data)
         } catch {
             return .failure(error)
         }

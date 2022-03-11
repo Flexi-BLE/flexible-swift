@@ -10,17 +10,8 @@ import GRDB
 import Combine
 
 
-final public class AEBLESettingsStore: ObservableObject {
+final public class  AEBLESettingsStore: ObservableObject {
     internal let dbQueue: DatabaseQueue
-    
-    internal lazy var peripheralConfig: PeripheralMetadataPayload = {
-        if settings.peripheralConfigurationId == "local default" {
-            return AEBLESettingsStore.loadLocalPeripheralMetadata()
-        } else {
-            // TODO: Local from DB or Server
-            fatalError("remote load of config not supported")
-        }
-    }()
     
     internal lazy var settings: Settings = {
         do {
@@ -63,6 +54,56 @@ final public class AEBLESettingsStore: ObservableObject {
     
     internal init(dbQueue: DatabaseQueue) {
         self.dbQueue = dbQueue
+    }
+    
+    internal func peripheralConfig() async -> PeripheralMetadataPayload {
+        if settings.peripheralConfigurationId == "local default" {
+            return AEBLESettingsStore.loadLocalPeripheralMetadata()
+        } else {
+            do {
+                if let existing = try await dbQueue.write({ db -> PeripheralMetadataPayload? in
+                    if let config = try PeripheralConfiguration
+                        .filter(PeripheralConfiguration.Columns.externalId == self.settings.peripheralConfigurationId)
+                        .fetchOne(db) {
+                        return try Data.sharedJSONDecoder.decode(PeripheralMetadataPayload.self, from: config.data)
+                    }
+                    return nil
+                }) {
+                    return existing
+                }
+                
+                let res = await AEBLEAPI.getConfig(settings: self.settings)
+                switch res {
+                case .success(let remote):
+                    if let remote = remote {
+                        try await dbQueue.write { db in
+                            var c = PeripheralConfiguration(
+                                externalId: self.settings.peripheralConfigurationId,
+                                data: try Data.sharedJSONEncoder.encode(remote),
+                                createdAt: remote.createdAt,
+                                updatedAt: remote.updatedAt
+                            )
+                            try c.insert(db)
+                        }
+                        return remote
+                    }
+                    else { throw AEBLEError.configError(msg: "no remote configuration found for id \(self.settings.peripheralConfigurationId)") }
+                case .failure(let error):
+                    throw error
+                }
+            } catch {
+                settings.peripheralConfigurationId = "local default"
+                return AEBLESettingsStore.loadLocalPeripheralMetadata()
+            }
+        }
+    }
+    
+    public func avaiablePeripheralConfiguration() async -> [String] {
+        let res = await AEBLEAPI.getAvaiableConfigs(settings: self.settings)
+        switch res {
+        case .success(let names): return names
+        case .failure(_): return []
+        }
     }
     
     public func update() async -> Result<Bool, Error> {
@@ -126,7 +167,10 @@ final public class AEBLESettingsStore: ObservableObject {
     public var peripheralConfigurationType: PeripheralConfigType {
         set {
             settings.peripheralConfigurationId = newValue.id
-            Task(priority: .background) { await update() }
+            Task(priority: .background) {
+                let _ = await peripheralConfig()
+                let _ = await update()
+            }
         }
         get {
             return PeripheralConfigType.fromId(settings.peripheralConfigurationId)

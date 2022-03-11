@@ -17,6 +17,9 @@ public final class AEBLE: ObservableObject {
     }
     
     private func startScan() {
-        conn.scan(with: self.settings.peripheralConfig)
+        Task {
+            let config = await self.settings.peripheralConfig()
+            conn.scan(with: config)
+        }
     }
 }
