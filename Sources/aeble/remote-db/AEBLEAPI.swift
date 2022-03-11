@@ -98,6 +98,7 @@ internal struct AEBLEAPI {
             let payload = SensorBatchPayload(
                 deviceId: settings.deviceId,
                 userId: settings.userId,
+                bucket: settings.sensorDataBucketName,
                 metadata: metadata,
                 values: rows.map({SensorBatchValue.from(row: $0, with: metadata)})
             )
@@ -161,7 +162,29 @@ internal struct AEBLEAPI {
                     )
                 )
             }
-            let responsePayload = try Data.sharedJSONDecoder.decode(AvailableConfigurationsPayload.self, from: data)
+            let responsePayload = try Data.sharedJSONDecoder.decode(StringDataPayload.self, from: data)
+            return .success(responsePayload.data)
+        } catch {
+            return .failure(error)
+        }
+    }
+    
+    static func getBuckets(settings: Settings) async -> Result<[String], Error> {
+        do {
+            var req = URLRequest(url: URL(string: "\(settings.apiURL)/timeseries/buckets")!)
+            req.httpMethod = "GET"
+            
+            let (data, res) = try await URLSession.shared.data(for: req)
+            let urlRes = res as? HTTPURLResponse
+            guard urlRes?.statusCode == 200 else {
+                return .failure(
+                    AEBLEError.aebleAPIHTTPError(
+                        code: urlRes?.statusCode ?? 0,
+                        msg: urlRes?.description ?? ""
+                    )
+                )
+            }
+            let responsePayload = try Data.sharedJSONDecoder.decode(StringDataPayload.self, from: data)
             return .success(responsePayload.data)
         } catch {
             return .failure(error)

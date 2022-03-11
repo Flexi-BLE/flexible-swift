@@ -19,6 +19,7 @@ internal struct DataUpload: Codable {
     var createdAt: Date
     var duration: TimeInterval
     var numberOfRecords: Int
+    var bucket: String?
     var measurement: String?
     var errorMessage: String?
     
@@ -28,6 +29,7 @@ internal struct DataUpload: Codable {
         case createdAt = "created_at"
         case duration
         case numberOfRecords = "number_of_records"
+        case bucket
         case measurement
         case errorMessage = "error_message"
     }
@@ -40,6 +42,7 @@ extension DataUpload: FetchableRecord, PersistableRecord {
         static let createdAt = Column(CodingKeys.createdAt)
         static let duration = Column(CodingKeys.duration)
         static let numberOfRecords = Column(CodingKeys.numberOfRecords)
+        static let bucket = Column(CodingKeys.bucket)
         static let measurement = Column(CodingKeys.measurement)
         static let errorMessage = Column(CodingKeys.errorMessage)
     }
@@ -52,6 +55,7 @@ extension DataUpload: FetchableRecord, PersistableRecord {
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
         table.column(CodingKeys.duration.stringValue, .integer)
         table.column(CodingKeys.numberOfRecords.stringValue, .integer)
+        table.column(CodingKeys.bucket.stringValue, .text)
         table.column(CodingKeys.measurement.stringValue, .text)
         table.column(CodingKeys.errorMessage.stringValue, .text)
     }

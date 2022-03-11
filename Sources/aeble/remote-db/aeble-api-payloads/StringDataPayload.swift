@@ -7,6 +7,6 @@
 
 import Foundation
 
-internal struct AvailableConfigurationsPayload: Codable {
+internal struct StringDataPayload: Codable {
     let data: [String]
 }

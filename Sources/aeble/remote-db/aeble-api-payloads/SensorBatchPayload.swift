@@ -11,6 +11,7 @@ import Foundation
 struct SensorBatchPayload: Encodable {
     let deviceId: String
     let userId: String
+    let bucket: String
     let metadata: PeripheralCharacteristicMetadata
     let values: [SensorBatchValue]
 }

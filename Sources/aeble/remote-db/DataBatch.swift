@@ -101,6 +101,7 @@ internal class DataBatch {
                             createdAt: Date.now,
                             duration: Date.now.timeIntervalSince(start),
                             numberOfRecords: data.count,
+                            bucket: settings.sensorDataBucketName,
                             measurement: metadata.name,
                             errorMessage: nil
                         )
@@ -114,6 +115,7 @@ internal class DataBatch {
                             createdAt: Date.now,
                             duration: 0,
                             numberOfRecords: 0,
+                            bucket: nil,
                             measurement: metadata.name,
                             errorMessage: error.localizedDescription
                         )

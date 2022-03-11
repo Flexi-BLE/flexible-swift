@@ -16,6 +16,7 @@ internal struct Settings: Codable {
     var uploadBatch: Int
     var peripheralConfigurationId: String
     var useRemoteServer: Bool
+    var sensorDataBucketName: String
     var isActive: Bool
     var createdAt: Date
     var updatedAt: Date?
@@ -28,6 +29,7 @@ internal struct Settings: Codable {
         case uploadBatch = "upload_batch"
         case peripheralConfigurationId = "peripheral_configuration_id"
         case useRemoteServer = "use_remote_server"
+        case sensorDataBucketName = "sensor_data_bucket_name"
         case isActive = "is_active"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
@@ -42,6 +44,7 @@ internal struct Settings: Codable {
             uploadBatch: 1000,
             peripheralConfigurationId: "local default",
             useRemoteServer: true,
+            sensorDataBucketName: "dump",
             isActive: true,
             createdAt: Date.now,
             updatedAt: nil
@@ -58,6 +61,7 @@ extension Settings: FetchableRecord, MutablePersistableRecord {
         static let uploadBatch = Column(CodingKeys.uploadBatch)
         static let peripheralconfigurationId = Column(CodingKeys.peripheralConfigurationId)
         static let useRemoteServer = Column(CodingKeys.useRemoteServer)
+        static let sensorDataBucketName = Column(CodingKeys.sensorDataBucketName)
         static let isActive = Column(CodingKeys.isActive)
         static let createdAt = Column(CodingKeys.createdAt)
         static let updatedAt = Column(CodingKeys.updatedAt)
@@ -77,6 +81,7 @@ extension Settings: FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.uploadBatch.stringValue, .integer)
         table.column(CodingKeys.peripheralConfigurationId.stringValue, .text)
         table.column(CodingKeys.useRemoteServer.stringValue, .boolean)
+        table.column(CodingKeys.sensorDataBucketName.stringValue, .text)
         table.column(CodingKeys.isActive.stringValue, .boolean)
         table.column(CodingKeys.createdAt.stringValue, .datetime)
         table.column(CodingKeys.updatedAt.stringValue, .datetime)

@@ -10,7 +10,7 @@ import GRDB
 import Combine
 
 
-final public class  AEBLESettingsStore: ObservableObject {
+final public class AEBLESettingsStore: ObservableObject {
     internal let dbQueue: DatabaseQueue
     
     internal lazy var settings: Settings = {
@@ -106,6 +106,14 @@ final public class  AEBLESettingsStore: ObservableObject {
         }
     }
     
+    public func buckets() async -> [String] {
+        let res = await AEBLEAPI.getBuckets(settings: self.settings)
+        switch res {
+        case .success(let names): return names
+        case .failure(_): return []
+        }
+    }
+    
     public func update() async -> Result<Bool, Error> {
         do {
             return try await dbQueue.write { db -> Result<Bool, Error> in
@@ -162,6 +170,14 @@ final public class  AEBLESettingsStore: ObservableObject {
             Task(priority: .background) { await update() }
         }
         get { settings.useRemoteServer }
+    }
+    
+    public var sensorDataBucketName: String {
+        set {
+            settings.sensorDataBucketName = newValue
+            Task(priority: .background) { await update() }
+        }
+        get { settings.sensorDataBucketName }
     }
     
     public var peripheralConfigurationType: PeripheralConfigType {
