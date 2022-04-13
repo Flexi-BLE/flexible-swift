@@ -100,6 +100,11 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
 //        bleLog.info("did update value for characteristic \(characteristic.uuid)")
+        
+        if let error = error {
+            bleLog.error("BLE Update Error: \(error.localizedDescription)")
+        }
+        
         guard let service = characteristic.service,
               let serviceMetadata = metadata.serviceMetadata(by: service.uuid),
               let characteristicMetadata = serviceMetadata.characteristicMatadata(by: characteristic.uuid),
