@@ -7,7 +7,7 @@
 
 import Foundation
 
-internal struct PeripheralServiceMetadata: Codable, Equatable {
-    let uuid: String
-    let characteristics: [PeripheralCharacteristicMetadata]?
-}
+//internal struct PeripheralServiceMetadata: Codable, Equatable {
+//    let uuid: String
+//    let characteristics: [PeripheralCharacteristicMetadata]?
+//}

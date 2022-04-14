@@ -87,7 +87,7 @@ internal struct AEBLEAPI {
     }
     
     static func batchLoad(
-        metadata: PeripheralCharacteristicMetadata,
+        metadata: AEDataStream,
         rows: [GenericRow],
         settings: Settings
     ) async -> Result<Bool, Error> {
@@ -125,7 +125,7 @@ internal struct AEBLEAPI {
         }
     }
     
-    static func getConfig(settings: Settings) async -> Result<PeripheralMetadataPayload?, Error> {
+    static func getConfig(settings: Settings) async -> Result<AEDeviceConfig?, Error> {
         do {
             var req = URLRequest(url: URL(string: "\(settings.apiURL)/device_configurations?id=\(settings.peripheralConfigurationId)")!)
             req.httpMethod = "GET"
@@ -140,7 +140,7 @@ internal struct AEBLEAPI {
                     )
                 )
             }
-            let config = try Data.sharedJSONDecoder.decode(PeripheralMetadataPayload.self, from: data)
+            let config = try Data.sharedJSONDecoder.decode(AEDeviceConfig.self, from: data)
             return .success(config)
         } catch {
             return .failure(error)

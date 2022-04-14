@@ -50,7 +50,7 @@ internal class DataBatch {
                 }
                 
                 let metadata = try Data.sharedJSONDecoder.decode(
-                    PeripheralCharacteristicMetadata.self,
+                    AEDataStream.self,
                     from: md
                 )
             

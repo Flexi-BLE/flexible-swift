@@ -12,7 +12,7 @@ struct SensorBatchPayload: Encodable {
     let deviceId: String
     let userId: String
     let bucket: String
-    let metadata: PeripheralCharacteristicMetadata
+    let metadata: AEDataStream
     let values: [SensorBatchValue]
 }
 
@@ -23,18 +23,18 @@ struct SensorBatchValue: Encodable {
     let values: [String]
 
     
-    static func from(row: GenericRow, with metadata: PeripheralCharacteristicMetadata) -> SensorBatchValue {
+    static func from(row: GenericRow, with metadata: AEDataStream) -> SensorBatchValue {
         
         var time: Date = Date.now
         var fieldNames: [String] = []
         var dataTypes: [PeripheralMetadataDataValueType] = []
         var values: [String] = []
         
-        let dynamicDataValues: [String:PeripheralMetadataDataValue] = metadata.dataValues?.reduce(Dictionary<String, PeripheralMetadataDataValue>(), { dict, dv in
+        let dynamicDataValues: [String:AEDataValue] = metadata.dataValues.reduce(Dictionary<String, AEDataValue>(), { dict, dv in
             var dict = dict
             dict[dv.name] = dv
             return dict
-        }) ?? [:]
+        })
         
         for i in 0..<row.columns.count {
             let rowName = row.metadata[i].name
@@ -47,16 +47,16 @@ struct SensorBatchValue: Encodable {
             }
             
             if let dv = dynamicDataValues[rowName] {
-                dataTypes.append(dv.type)
-                fieldNames.append(dv.name)
-                switch dv.type {
-                case .float:
+                if dv.precision > 0 {
+                    dataTypes.append(.float)
                     values.append("\(row.columns[i].value as! Double)")
-                case .int:
+                } else {
+                    dataTypes.append(.int)
                     values.append("\(row.columns[i].value as! Int)")
-                case .string:
-                    values.append("\(row.columns[i].value as! Double)")
                 }
+                // TODO: no string support
+                
+                fieldNames.append(dv.name)
             }
         }
         

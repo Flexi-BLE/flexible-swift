@@ -19,13 +19,13 @@ extension Float: PeripheralDataValue { }
 extension Double: PeripheralDataValue { }
 extension Int: PeripheralDataValue { }
 
-internal struct PeripheralMetadataDataValue: Codable, Equatable {
-    let name: String
-    let type: PeripheralMetadataDataValueType
-    let byteStart: Int
-    let byteEnd: Int
-    let unit: String?
-    let description: String?
-    let multiplier: Float?
-    let index: Bool?
-}
+//internal struct PeripheralMetadataDataValue: Codable, Equatable {
+//    let name: String
+//    let type: PeripheralMetadataDataValueType
+//    let byteStart: Int
+//    let byteEnd: Int
+//    let unit: String?
+//    let description: String?
+//    let multiplier: Float?
+//    let index: Bool?
+//}

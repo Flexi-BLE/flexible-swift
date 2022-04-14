@@ -8,36 +8,30 @@
 import Foundation
 import CoreBluetooth
 
-internal extension PeripheralMetadata {
+internal extension AEThing {
     var serviceIds: [CBUUID] {
-        return self.services?.map({ sm -> CBUUID in
-            return sm.cbuuid
-        }) ?? []
+        return [CBUUID(string: "0x962a"), CBUUID(string: "0xcf3d"), CBUUID(string: "0x38ae")]
     }
     
-    func serviceMetadata(by uuid: CBUUID) -> PeripheralServiceMetadata? {
-        return self.services?.first(where: { $0.cbuuid == uuid })
+    func serviceMetadata(by uuid: CBUUID) -> AEDataStream? {
+        return self.dataStreams.first(where: { $0.cbuuid == uuid })
     }
 }
 
-internal extension PeripheralCharacteristicMetadata {
+internal extension AEDataStream {
     var cbuuid: CBUUID {
-        return CBUUID(string: self.uuid)
+        return CBUUID(string: self.id)
     }
 }
 
-internal extension PeripheralServiceMetadata {
-    var cbuuid: CBUUID {
-        return CBUUID(string: self.uuid)
-    }
-    
+internal extension AEThing {
     var characteristicIds: [CBUUID] {
-        return self.characteristics?.map({ cm -> CBUUID in
-            return cm.cbuuid
-        }) ?? []
+        return self.dataStreams.map({ ds -> CBUUID in
+            return ds.cbuuid
+        })
     }
     
-    func characteristicMatadata(by uuid: CBUUID) -> PeripheralCharacteristicMetadata? {
-        return self.characteristics?.first(where: ({ $0.cbuuid == uuid }))
+    func characteristicMatadata(by uuid: CBUUID) -> AEDataStream? {
+        return self.dataStreams.first(where: ({ $0.cbuuid == uuid }))
     }
 }

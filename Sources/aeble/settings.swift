@@ -41,9 +41,9 @@ final public class AEBLESettingsStore: ObservableObject {
     
     internal static func loadLocalPeripheralMetadata(
         filename: String="default_peripheral_metadata.json"
-    ) -> PeripheralMetadataPayload {
+    ) -> AEDeviceConfig {
         
-        return Bundle.module.decode(PeripheralMetadataPayload.self, from: filename)
+        return Bundle.module.decode(AEDeviceConfig.self, from: filename)
     }
     
     internal static func activeSetting(dbQueue: DatabaseQueue) async throws -> Settings {
@@ -56,16 +56,16 @@ final public class AEBLESettingsStore: ObservableObject {
         self.dbQueue = dbQueue
     }
     
-    internal func peripheralConfig() async -> PeripheralMetadataPayload {
+    internal func peripheralConfig() async -> AEDeviceConfig {
         if settings.peripheralConfigurationId == "local default" {
             return AEBLESettingsStore.loadLocalPeripheralMetadata()
         } else {
             do {
-                if let existing = try await dbQueue.write({ db -> PeripheralMetadataPayload? in
+                if let existing = try await dbQueue.write({ db -> AEDeviceConfig? in
                     if let config = try PeripheralConfiguration
                         .filter(PeripheralConfiguration.Columns.externalId == self.settings.peripheralConfigurationId)
                         .fetchOne(db) {
-                        return try Data.sharedJSONDecoder.decode(PeripheralMetadataPayload.self, from: config.data)
+                        return try Data.sharedJSONDecoder.decode(AEDeviceConfig.self, from: config.data)
                     }
                     return nil
                 }) {

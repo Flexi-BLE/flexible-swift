@@ -26,8 +26,8 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
         self.centralManager = CBCentralManager(delegate: self, queue: nil)
     }
     
-    internal func scan(with payload: PeripheralMetadataPayload) {
-        for peripheralMetadata in payload.peripherals ?? [] {
+    internal func scan(with payload: AEDeviceConfig) {
+        for peripheralMetadata in payload.things ?? [] {
             let AEBLEPeripheral = AEBLEPeripheral(
                 metadata: peripheralMetadata,
                 db: self.db

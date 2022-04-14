@@ -1,186 +1,56 @@
 {
     "id": "--local-default--",
-    "schema_version": "0.0.1",
-    "created_at": "2022-03-10T22:11:39.000Z",
-    "updated_at": "2022-03-10T22:11:39.000Z",
-    "peripherals": [
+    "schema_version": "1.0",
+    "created_at": "2022-04-13T22:11:39.000Z",
+    "updated_at": "2022-04-13T22:11:39.000Z",
+    "tags": ["development"],
+    "things": [
         {
-            "name": "Feather nRF52840 Express",
-            "description": "generic ble feather board",
+            "name": "aeble-dev",
+            "description": "first iteration aeble board with test data",
             "tags": ["research"],
-            "services": [
+            "bluetooth": {
+                "info_service_id": "0x962a",
+                "config_service_id": "0xcf3d",
+                "data_service_id": "0x38ae"
+            },
+            "configurations": [],
+            "data_streams": [
                 {
-                    "uuid": "5A80",
-                    "characteristics": [
+                    "id": "",
+                    "name": "",
+                    "description": "",
+                    "batch_size": 0,
+                    "payload_size": 0,
+                    "include_offset_timestamp": false,
+                    "intended_frequency_ms": 0,
+                    "include_anchor_timestamp": false,
+                    "data_values": [
                         {
-                            "uuid": "5A81",
-                            "name": "thermistor_reading",
-                            "description": "Thermistor Temperature (C) - [timestamp, therm index, temperature]",
-                            "notify": true,
-                            "timestamp_value": "realtime",
-                            "data_values": [
-                                {
-                                    "byte_start": 0,
-                                    "byte_end": 1,
-                                    "type": "float",
-                                    "name": "temperature",
-                                    "description": "temperature value",
-                                    "unit": "celsius",
-                                    "multiplier": 0.01,
-                                    "index": false
-                                },
-                                {
-                                    "byte_start": 2,
-                                    "byte_end": 2,
-                                    "type": "float",
-                                    "name": "therm_index_",
-                                    "description": "therm index",
-                                    "unit": null,
-                                    "multiplier": null,
-                                    "index": true
-                                },
-                                {
-                                    "byte_start": 3,
-                                    "byte_end": 6,
-                                    "type": "float",
-                                    "name": "timestamp",
-                                    "description": "timestamp",
-                                    "unit": "millisecond",
-                                    "multiplier": null,
-                                    "index": false
-                                }
-                            ]
+                            "name": "",
+                            "description": "",
+                            "unit": "",
+                            "byte_start": 0,
+                            "byte_end": 2,
+                            "size": 2,
+                            "is_unsigned_negative": false,
+                            "is_signed": false,
+                            "precision": 0
                         }
-                    ]
-                },
-                {
-                    "uuid": "5A90",
-                    "characteristics": [
-                        {
-                            "uuid": "5A91",
-                            "name": "ecg",
-                            "description": "ECG data",
-                            "notify": true,
-                            "timestamp_value": "realtime",
-                            "data_values": [
-                                {
-                                    "byte_start": 0,
-                                    "byte_end": 1,
-                                    "type": "float",
-                                    "name": "ecg",
-                                    "description": "",
-                                    "unit": "",
-                                    "multiplier": 0.01,
-                                    "index": false
-                                },
-                                {
-                                    "byte_start": 2,
-                                    "byte_end": 5,
-                                    "type": "float",
-                                    "name": "timestamp",
-                                    "description": "timestamp",
-                                    "unit": "milliseconds",
-                                    "multiplier": 1,
-                                    "index": false
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "uuid": "5A20",
-                    "characteristics": [
-                        {
-                            "uuid": "5A21",
-                            "name": "ppg",
-                            "description": "optical heart rate data",
-                            "notify": true,
-                            "timestamp_value": "realtime",
-                            "data_values": [
-                                {
-                                    "byte_start": 0,
-                                    "byte_end": 1,
-                                    "type": "float",
-                                    "name": "ppg",
-                                    "description": "ppg data",
-                                    "unit": "arb",
-                                    "multiplier": 1,
-                                    "index": false
-                                },
-                                {
-                                    "byte_start": 2,
-                                    "byte_end": 5,
-                                    "type": "float",
-                                    "name": "timestamp",
-                                    "description": "timestamp",
-                                    "unit": "milliseconds",
-                                    "multiplier": 1,
-                                    "index": false
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "uuid": "5A30",
-                    "characteristics": [
-                        {
-                            "uuid": "5A31",
-                            "name": "unix_time",
-                            "description": "unix time",
-                            "notify": true,
-                            "timestamp_value": "realtime",
-                            "data_values": [
-                                {
-                                    "byte_start": 0,
-                                    "byte_end": 3,
-                                    "type": "float",
-                                    "name": "epoch_time",
-                                    "description": "epoch time",
-                                    "unit": "seconds",
-                                    "multiplier": 1,
-                                    "index": false
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "uuid": "5A40",
-                    "characteristics": [
-                        {
-                            "uuid": "5A41",
-                            "name": "battery_voltage",
-                            "description": "battery voltage",
-                            "notify": true,
-                            "timestamp_value": "realtime",
-                            "data_values": [
-                                {
-                                    "byte_start": 0,
-                                    "byte_end": 1,
-                                    "type": "float",
-                                    "name": "battery_voltage",
-                                    "description": "battery voltage",
-                                    "unit": "arb_12_bit",
-                                    "multiplier": 0.0017578125,
-                                    "index": false
-                                },
-                                {
-                                    "byte_start": 2,
-                                    "byte_end": 5,
-                                    "type": "float",
-                                    "name": "timestamp",
-                                    "description": "timestamp",
-                                    "unit": "milliseconds",
-                                    "multiplier": 1,
-                                    "index": false
-                                }
-                            ]
-                        }
-                    ]
+                    ],
+                    "time_offset_value": {
+                        "name": "",
+                        "description": "",
+                        "unit": "ms",
+                        "byte_start": 0,
+                        "byte_end": 2,
+                        "size": 2,
+                        "is_unsigned_negative": false,
+                        "is_signed": false,
+                        "precision": 0
+                    }
                 }
             ]
         }
     ]
 }
-

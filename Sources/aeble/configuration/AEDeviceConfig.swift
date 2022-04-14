@@ -7,10 +7,11 @@
 
 import Foundation
 
-internal struct PeripheralMetadataPayload: Codable {
+internal struct AEDeviceConfig: Codable {
     let id: String
     let schemaVersion: String
     let createdAt: Date
     let updatedAt: Date
-    let peripherals: [PeripheralMetadata]?
+    let tags: [String]
+    let things: [AEThing]?
 }
