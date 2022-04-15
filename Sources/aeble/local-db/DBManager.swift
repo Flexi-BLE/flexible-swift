@@ -262,14 +262,23 @@ public final class AEBLEDBManager {
         
         var tsCount = 0
         var dataCount = 0
+        var dateCursor = date
         
         let size = ds.dataValues.count
         while dataCount < dataValues.count {
+            
             for i in 0..<ds.dataValues.count {
                 arguments.append(dataValues[dataCount+i])
             }
             dataCount += ds.dataValues.count
-            arguments.append(date)
+            
+            let offset: Double = Double(tsValues[tsCount] as! Int)
+            let d = dateCursor.addingTimeInterval(TimeInterval(offset / 1000.0))
+            arguments.append(d)
+            dateCursor = d
+            
+            tsCount += 1
+            
             arguments.append("blop")
             sql += "(\(placeholders), ?, ?), "
         }

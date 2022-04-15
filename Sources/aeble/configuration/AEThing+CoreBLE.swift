@@ -17,7 +17,15 @@ internal extension AEThing {
         return self.dataStreams.first(where: { [$0.notifyCbuuid, $0.dataCbuuid, $0.timeOffsetCbuuid].contains(uuid) })
     }
     
-    var characteristicIds: [CBUUID] {
+    var timeSyncCbuuid: CBUUID {
+        return CBUUID(string: timestampSync.id)
+    }
+    
+    var infoCharacteristicIds: [CBUUID] {
+        return [timeSyncCbuuid]
+    }
+    
+    var dataStreamcharacteristicIds: [CBUUID] {
         var uuids = [CBUUID]()
         
         for ds in self.dataStreams {

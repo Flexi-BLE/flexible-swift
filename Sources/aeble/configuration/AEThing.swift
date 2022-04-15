@@ -15,6 +15,7 @@ internal struct AEThing: Codable, Equatable {
     let dataStreams: [AEDataStream]
     
     let ble: AEThingBLE
+    let timestampSync: AETimeSync
     
     static func ==(lhs: AEThing, rhs: AEThing) -> Bool {
         return lhs.name == rhs.name
