@@ -24,6 +24,9 @@ internal class AEBLEPeripheral: NSObject, ObservableObject {
     let metadata: AEThing
     private let db: AEBLEDBManager
     
+    private typealias DataStreamPacket = (dataPayload: Data?, timePayload: Data?)
+    private var dataStreamPacket: DataStreamPacket?
+    
     internal var cbp: CBPeripheral?
     
     init(metadata: AEThing, db: AEBLEDBManager) {
@@ -62,38 +65,119 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let services = peripheral.services else { return }
         
-//        for service in services {
-//            print(service)
-//            peripheral.discoverCharacteristics(metadata.characteristicIds, for: service)
-//        }
+        for service in services {
+            print(service)
+            if service.uuid == CBUUID(string: "0x38ae") {
+                let charIds = metadata.characteristicIds
+                peripheral.discoverCharacteristics(charIds, for: service)
+            }
+        }
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         bleLog.info("did discover characteristics for \(service.uuid)")
-//        guard let characteristics = service.characteristics,
-//              let serviceMetadata = metadata.serviceMetadata(by: service.uuid) else { return }
-//
-//        for characteristic in characteristics {
-//            bleLog.info("characteristic: \(characteristic.uuid): \(characteristic.properties.rawValue)")
-//
-//            guard let charMetadata = serviceMetadata.characteristicMatadata(by: characteristic.uuid) else { return }
-//
-//            if charMetadata.notify {
-//                peripheral.setNotifyValue(true, for: characteristic)
-//            }
-//
-//            db.createTable(from: charMetadata, forceNew: false)
-//
-//            peripheral.readValue(for: characteristic)
-//        }
+        
+        guard let characteristics = service.characteristics else {
+            bleLog.error("no characteristics found for \(service.uuid)")
+            return
+        }
+        
+        bleLog.info("found \(characteristics.count) characteristics for service \(service.uuid)")
+
+        if service.uuid == CBUUID(string: metadata.ble.dataServiceId) {
+            setupCharsDataService(
+                peripheral: peripheral,
+                characteristics: characteristics
+            )
+        }
+        
+        if service.uuid == CBUUID(string: metadata.ble.infoServiceId) {
+            // TODO:
+        }
+        
+        if service.uuid == CBUUID(string: metadata.ble.configServiceId) {
+            // TODO:
+        }
+    }
+    
+    private func setupCharsDataService(peripheral: CBPeripheral, characteristics: [CBCharacteristic]) {
+        for chr in characteristics {
+            bleLog.info("characteristic: \(chr.uuid): \(chr.properties.rawValue)")
+            
+            if let md = metadata.charMetadata(by: chr.uuid) {
+                if chr.uuid == CBUUID(string: md.ble.notifyId) {
+                    peripheral.setNotifyValue(true, for: chr)
+                }
+                db.createTable(from: md, forceNew: false)
+                peripheral.readValue(for: chr)
+            }
+        }
     }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-//        bleLog.info("did update value for characteristic \(characteristic.uuid)")
+        bleLog.info("did update value for characteristic \(characteristic.uuid)")
         
-//        if let error = error {
-//            bleLog.error("BLE Update Error: \(error.localizedDescription)")
-//        }
+        if let error = error {
+            bleLog.error("BLE Update Error: \(error.localizedDescription)")
+            return
+        }
+        
+        guard let md = metadata.charMetadata(by: characteristic.uuid),
+              let data = characteristic.value else {
+            
+            return
+        }
+        
+        if characteristic.uuid == md.notifyCbuuid {
+            let notifyVal: UInt8 = data[0]
+            bleLog.info("data stream notify value \(notifyVal)")
+            dataStreamPacket = DataStreamPacket(nil, nil)
+            if notifyVal > 0 {
+                if let dataChr = characteristic
+                    .service?
+                    .characteristics?
+                    .first(where: { $0.uuid == md.dataCbuuid }) {
+                    
+                    peripheral.readValue(for: dataChr)
+                }
+                if md.includeOffsetTimestamp {
+                    if let toChr = characteristic
+                        .service?
+                        .characteristics?
+                        .first(where: { $0.uuid == md.timeOffsetCbuuid }) {
+                        
+                        peripheral.readValue(for: toChr)
+                    }
+                }
+            }
+        }
+        
+        if characteristic.uuid == md.dataCbuuid {
+            bleLog.info("recieved data of size \(data.count)")
+            if data.count > 0 {
+                dataStreamPacket?.dataPayload = data
+            }
+        }
+        
+        if characteristic.uuid == md.timeOffsetCbuuid {
+            bleLog.info("recieved time offset data of size \(data.count)")
+            if data.count > 0 {
+                dataStreamPacket?.timePayload = data
+            }
+        }
+        
+        if let dsp = dataStreamPacket,
+            let _ = dsp.dataPayload,
+            !md.includeOffsetTimestamp {
+            
+            Task { await parseDataStream(db: db, packet: dsp, md: md) }
+        } else if let dsp = dataStreamPacket,
+            let _ = dsp.dataPayload,
+            let _ = dsp.timePayload {
+            
+            Task { await parseDataStream(db: db, packet: dsp, md: md) }
+        }
+        
 //
 //        guard let service = characteristic.service,
 //              let serviceMetadata = metadata.serviceMetadata(by: service.uuid),
@@ -154,5 +238,85 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
 //        }
 //        try? InfluxDB.writePoints([point])
         
+    }
+    
+    private func parseDataStream(db: AEBLEDBManager, packet: DataStreamPacket, md: AEDataStream) async {
+        var dataValues: [PeripheralDataValue] = []
+        var tsValues: [PeripheralDataValue] = []
+        
+        if let data = packet.dataPayload {
+            bleLog.debug("parsing data values")
+            dataValues = AEBLEPeripheral.parseData(data: data, dataValues: md.dataValues)
+        }
+        if let data = packet.timePayload {
+            bleLog.debug("parsing time offsets")
+            tsValues = AEBLEPeripheral.parseData(data: data, dataValues: [md.timeOffsetValue])
+        }
+        
+        await db.arbInsert(for: md, dataValues: dataValues, tsValues: tsValues, date: Date())
+    }
+    
+    private static func parseData(data: Data, dataValues: [AEDataValue]) -> [PeripheralDataValue] {
+        // FIXME: assumes no time offsets
+        
+        var cursor = 0
+        
+//        if md.includeAnchorTimestamp {
+//            let bytes: [UInt8] = Array(data[cursor..<(cursor+8)])
+//            var epoch: UInt64 = 0
+//            for byte in bytes.reversed() {
+//                epoch = epoch << 8
+//                epoch = epoch | UInt64(byte)
+//            }
+//            bleLog.debug("timestamp: \(epoch)")
+//            cursor += 8
+//        }
+//        if md.intendedFrequencyMs > 0 {
+//            let bytes: [UInt8] = Array(data[cursor..<(cursor+4)])
+//            var expectedFreq: UInt32 = 0
+//            for byte in bytes.reversed() {
+//                expectedFreq = expectedFreq << 8
+//                expectedFreq = expectedFreq | UInt32(byte)
+//            }
+//            bleLog.debug("expected frequency: \(expectedFreq)")
+//            cursor += 4
+//        }
+        
+        let readingSize = dataValues.reduce(0, { $0 + $1.size })
+        
+        var values: [PeripheralDataValue] = []
+        
+        for _ in 0..<(data.count / readingSize) {
+            // must copy (new array) or we run into memory issues
+            let payload: [UInt8] = Array(data[cursor..<(cursor+readingSize)])
+            
+            for dv in dataValues {
+                let bytes = payload[dv.byteStart..<dv.byteEnd]
+                var rawValue: Int = 0
+                for byte in bytes {
+                    rawValue = rawValue << 8
+                    rawValue = rawValue | Int(byte)
+                }
+                
+                if dv.isSigned {
+                    // TODO: handle signed
+                }
+                
+                if dv.isUnsignedNegative {
+                    // TODO: handle sign flipping
+                }
+                
+                if dv.precision > 0 {
+                    // TODO: handle precision (double)
+                }
+                
+                bleLog.debug("  - raw value extracted: \(rawValue)")
+                values.append(rawValue)
+            }
+            
+            cursor += readingSize
+        }
+        
+        return values
     }
 }

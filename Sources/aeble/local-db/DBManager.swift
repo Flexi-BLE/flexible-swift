@@ -177,6 +177,14 @@ public final class AEBLEDBManager {
                     .references(Experiment.databaseTableName)
                 t.column("is_current_schema", .boolean).defaults(to: true)
                 t.column("user_id", .text).notNull(onConflict: .fail)
+                
+                for dv in metadata.dataValues {
+                    if dv.precision > 0 {
+                        t.column(dv.name, .double)
+                    } else {
+                        t.column(dv.name, .integer)
+                    }
+                }
             }
             
             let metadataData = try? Data.sharedJSONEncoder.encode(metadata)
@@ -236,7 +244,63 @@ public final class AEBLEDBManager {
     
     internal func arbInsert(
         for ds: AEDataStream,
-        values: [AEDataValue],
+        dataValues: [PeripheralDataValue],
+        tsValues: [PeripheralDataValue],
+        date: Date
+    ) async {
+        let tableName = tableName(from: ds.name)
+    
+        let cols = "\(ds.dataValues.map({ $0.name }).joined(separator: ", "))"
+        let placeholders = "\(ds.dataValues.map({ _ in "?" }).joined(separator: ", "))"
+        
+        var sql = """
+            INSERT INTO \(tableName)
+            (\(cols), created_at, user_id) VALUES
+        """
+        
+        var arguments: [Any] = []
+        
+        var tsCount = 0
+        var dataCount = 0
+        
+        let size = ds.dataValues.count
+        while dataCount < dataValues.count {
+            for i in 0..<ds.dataValues.count {
+                arguments.append(dataValues[dataCount+i])
+            }
+            dataCount += ds.dataValues.count
+            arguments.append(date)
+            arguments.append("blop")
+            sql += "(\(placeholders), ?, ?), "
+        }
+//        for i in 0..<tsValues.count {
+//
+//            for j in (i*size)..<((i*size)+size) {
+//                 arguments.append(dataValues[j])
+//            }
+//            arguments.append(date)
+//            arguments.append("blop")
+//
+//            sql += "(\(placeholders), ?, ?), "
+//        }
+        
+        sql.removeLast(2)
+        sql += ";"
+        
+        try? await self.dbQueue.write { [sql, arguments] db in
+//            let settings = try AEBLESettingsStore.activeSetting(db: db)
+            
+            try? db.execute(
+                sql: sql,
+                arguments: StatementArguments(arguments) ?? StatementArguments()
+            )
+        }
+        
+    }
+    
+    internal func arbInsert(
+        for ds: AEDataStream,
+        values: [PeripheralDataValue],
         with dbQueue: DatabaseQueue?=nil) async {
         
             let tableName = tableName(from: ds.name)

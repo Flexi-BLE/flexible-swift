@@ -6,10 +6,10 @@
     "tags": ["development"],
     "things": [
         {
-            "name": "aeble-dev",
+            "name": "aeble dev",
             "description": "first iteration aeble board with test data",
             "tags": ["research"],
-            "bluetooth": {
+            "ble": {
                 "info_service_id": "0x962a",
                 "config_service_id": "0xcf3d",
                 "data_service_id": "0x38ae"
@@ -17,22 +17,22 @@
             "configurations": [],
             "data_streams": [
                 {
-                    "id": "",
-                    "name": "",
-                    "description": "",
-                    "batch_size": 0,
-                    "payload_size": 0,
-                    "include_offset_timestamp": false,
-                    "intended_frequency_ms": 0,
+                    "id": "0xa95a",
+                    "name": "test1",
+                    "description": "a test data stream",
+                    "batch_size": 10,
+                    "payload_size": 10,
+                    "include_offset_timestamp": true,
+                    "intended_frequency_ms": 1000,
                     "include_anchor_timestamp": false,
                     "data_values": [
                         {
-                            "name": "",
+                            "name": "test1_1",
                             "description": "",
-                            "unit": "",
+                            "unit": "arb",
                             "byte_start": 0,
-                            "byte_end": 2,
-                            "size": 2,
+                            "byte_end": 1,
+                            "size": 1,
                             "is_unsigned_negative": false,
                             "is_signed": false,
                             "precision": 0
@@ -43,11 +43,66 @@
                         "description": "",
                         "unit": "ms",
                         "byte_start": 0,
-                        "byte_end": 2,
-                        "size": 2,
+                        "byte_end": 1,
+                        "size": 1,
                         "is_unsigned_negative": false,
                         "is_signed": false,
                         "precision": 0
+                    },
+                    "ble": {
+                        "notify_id": "0xa95a",
+                        "data_id": "0xa95b",
+                        "time_offset_id": "0xa95c"
+                    }
+                },
+                {
+                    "id": "0xb92c",
+                    "name": "test2",
+                    "description": "a test data stream",
+                    "batch_size": 25,
+                    "payload_size": 112,
+                    "include_offset_timestamp": true,
+                    "intended_frequency_ms": 1000,
+                    "include_anchor_timestamp": false,
+                    "data_values": [
+                        {
+                            "name": "test2_1",
+                            "description": "",
+                            "unit": "arb",
+                            "byte_start": 0,
+                            "byte_end": 1,
+                            "size": 1,
+                            "is_unsigned_negative": false,
+                            "is_signed": false,
+                            "precision": 0
+                        },
+                        {
+                            "name": "test2_2",
+                            "description": "",
+                            "unit": "arb",
+                            "byte_start": 1,
+                            "byte_end": 2,
+                            "size": 1,
+                            "is_unsigned_negative": false,
+                            "is_signed": false,
+                            "precision": 0
+                        }
+                    ],
+                    "time_offset_value": {
+                        "name": "",
+                        "description": "",
+                        "unit": "ms",
+                        "byte_start": 0,
+                        "byte_end": 1,
+                        "size": 1,
+                        "is_unsigned_negative": false,
+                        "is_signed": false,
+                        "precision": 0
+                    },
+                    "ble": {
+                        "notify_id": "0xb92c",
+                        "data_id": "0xb92d",
+                        "time_offset_id": "0xb92e"
                     }
                 }
             ]

@@ -20,6 +20,8 @@ internal struct AEDataStream: Codable, Equatable {
     let dataValues: [AEDataValue]
     let timeOffsetValue: AEDataValue
     
+    let ble: AEDataStreamBLE
+    
     static func ==(lhs: AEDataStream, rhs: AEDataStream) -> Bool {
         return lhs.id == rhs.id
     }

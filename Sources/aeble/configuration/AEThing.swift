@@ -14,6 +14,8 @@ internal struct AEThing: Codable, Equatable {
     let configurations: [String]
     let dataStreams: [AEDataStream]
     
+    let ble: AEThingBLE
+    
     static func ==(lhs: AEThing, rhs: AEThing) -> Bool {
         return lhs.name == rhs.name
     }
