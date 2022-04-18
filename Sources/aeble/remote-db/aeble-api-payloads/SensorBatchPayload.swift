@@ -52,7 +52,7 @@ struct SensorBatchValue: Encodable {
                     values.append("\(row.columns[i].value as! Double)")
                 } else {
                     dataTypes.append(.int)
-                    values.append("\(row.columns[i].value as! Int)")
+                    values.append("\(row.columns[i].value as! Int64)")
                 }
                 // TODO: no string support
                 

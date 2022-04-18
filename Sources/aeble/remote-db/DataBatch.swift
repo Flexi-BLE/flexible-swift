@@ -9,7 +9,7 @@ import Foundation
 import GRDB
 
 internal class DataBatch {
-    private var limit = 1000
+    private var limit = 2500
     private var counter: Int = 0
     private var cursor: Date = Date.now
     private var tables = [String]()
@@ -21,17 +21,17 @@ internal class DataBatch {
     }
     
     
-    internal func increment(for name: String) {
-        self.counter += 1
+    internal func increment(for name: String, by inc: Int = 1, with date: Date = Date()) {
+        self.counter += inc
         if !tables.contains(name) { tables.append(name) }
-        if counter == limit {
+        if counter >= limit {
             let c = self.cursor
             let t = self.tables
             Task(priority: .background) {
                 await insert(cursor: c, tables: t)
             }
             self.counter = 0
-            self.cursor = Date.now
+            self.cursor = date
             self.tables = []
         }
     }

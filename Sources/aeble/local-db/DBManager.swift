@@ -305,6 +305,8 @@ public final class AEBLEDBManager {
             )
         }
         
+        self.batch.increment(for: tableName, by: tsValues.count)
+        
     }
     
     internal func arbInsert(
