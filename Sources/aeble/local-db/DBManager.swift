@@ -47,6 +47,24 @@ public final class AEBLEDBManager {
         self.migrator.migrate(self.dbQueue)
     }
     
+    public func purgeUpdatedDynamicRecords() async {
+        let tableNames = await activeDynamicTables()
+        let statements = tableNames.map{ "DELETE FROM \($0) WHERE updated = true" }
+        let sql = statements.joined(separator: "; ")
+        try? await dbQueue.write({ db in
+            try? db.execute(sql: sql)
+        })
+    }
+    
+    public func purgeAllDynamicRecords() async {
+        let tableNames = await activeDynamicTables()
+        let statements = tableNames.map{ "DELETE FROM \($0)" }
+        let sql = statements.joined(separator: "; ")
+        try? await dbQueue.write({ db in
+            try? db.execute(sql: sql)
+        })
+    }
+    
     // MARK: - Not Public
     
     /// replace space with underscores for dynamically naming tables in SQL
@@ -63,6 +81,7 @@ public final class AEBLEDBManager {
                 active = 0
             WHERE id = \(existingTable.id!)
         """
+        
         try? db.execute(sql: "ALTER TABLE `\(tableName)` RENAME TO `\(newName)`")
         try? db.execute(sql: tableUpdateSQL)
         
@@ -194,54 +213,6 @@ public final class AEBLEDBManager {
         }
     }
     
-//    internal func createTable(from metadata: PeripheralCharacteristicMetadata, forceNew: Bool=false) {
-//        guard let dataValues = metadata.dataValues else { return }
-//        let tableName = tableName(from: metadata.name)
-//
-//        try? self.dbQueue.write { db in
-//            let tables = try? DynamicTable.fetchAll(db)
-//
-//            if let table = tables?.first(where: { $0.name == metadata.name }),
-//               let data = table.metadata {
-//
-//                let existingMetdata = try? Data.sharedJSONDecoder.decode(PeripheralCharacteristicMetadata.self, from: data)
-//                if existingMetdata != metadata || forceNew {
-//                    replaceDynamicTable(
-//                        db: db,
-//                        existingTable: table,
-//                        tableName: tableName,
-//                        nextNum: tables!.count
-//                    )
-//                } else { return }
-//            }
-//
-//            try? db.drop(table: tableName)
-//            try? db.create(table: tableName) { t in
-//                t.autoIncrementedPrimaryKey("id")
-//                t.column("created_at", .datetime).defaults(to: Date())
-//                t.column("uploaded", .boolean).defaults(to: false)
-//                t.column("experiment_id", .integer)
-//                    .indexed()
-//                    .references(Experiment.databaseTableName)
-//                t.column("is_current_schema", .boolean).defaults(to: true)
-//                t.column("user_id", .text).notNull(onConflict: .fail)
-//
-//                for dv in dataValues {
-//                    switch dv.type {
-//                    case .float: t.column(dv.name, .double)
-//                    case .int: t.column(dv.name, .integer)
-//                    case .string: t.column(dv.name, .text)
-//                    }
-//                }
-//            }
-//
-//            let metadataData = try? Data.sharedJSONEncoder.encode(metadata)
-//            let dynamicTable = DynamicTable(name: tableName, metadata: metadataData)
-//            try? dynamicTable.insert(db)
-//            pLog.info("Dynamic Table Created \(tableName)")
-//        }
-//    }
-    
     internal func arbInsert(
         for ds: AEDataStream,
         dataValues: [PeripheralDataValue],
@@ -309,74 +280,17 @@ public final class AEBLEDBManager {
         
     }
     
-    internal func arbInsert(
-        for ds: AEDataStream,
-        values: [PeripheralDataValue],
-        with dbQueue: DatabaseQueue?=nil) async {
-        
-            let tableName = tableName(from: ds.name)
-        
-            let cols = "\(ds.dataValues.map({ $0.name }).joined(separator: ", "))"
-            let placeholders = "\(ds.dataValues.map({ _ in "?" }).joined(separator: ", "))"
-            
-            let sql = """
-                INSERT INTO \(tableName)
-                (\(cols), created_at, user_id) VALUES
-                (\(placeholders), ?, ?)
-            """
-            
-            try? await (dbQueue ?? self.dbQueue)?.write { db in
-                let settings = try AEBLESettingsStore.activeSetting(db: db)
-                
-                try? db.execute(
-                    sql: sql,
-                    arguments: StatementArguments(values + [Date(), settings.userId]) ?? StatementArguments()
-                )
-            }
-            
-            self.batch.increment(for: tableName)
-    }
-    
-//    // TODO: make async response
-//    internal func arbInsert(for cm: PeripheralCharacteristicMetadata, values: [PeripheralDataValue], with dbQueue: DatabaseQueue?=nil) {
-//        guard let dataValues = cm.dataValues else { return }
-//
-//        let tableName = tableName(from: cm.name)
-//
-//        let cols = "\(dataValues.map({ $0.name }).joined(separator: ", "))"
-//        let placeholders = "\(dataValues.map({ _ in "?" }).joined(separator: ", "))"
-//
-//        let sql = """
-//            INSERT INTO \(tableName)
-//            (\(cols), created_at, user_id) VALUES
-//            (\(placeholders), ?, ?)
-//        """
-//
-//        try? (dbQueue ?? self.dbQueue)?.write { db in
-//            let settings = try AEBLESettingsStore.activeSetting(db: db)
-//
-//            try? db.execute(
-//                sql: sql,
-//                arguments: StatementArguments(values + [Date(), settings.userId]) ?? StatementArguments()
-//            )
-//        }
-//
-//        self.batch.increment(for: tableName)
-//    }
-    
-    internal func activeDynamicTables() async -> Result<[String], Error> {
+    internal func activeDynamicTables() async -> [String] {
         do {
-            let dts = try await self.dbQueue.read { db -> [String] in
+            return try await self.dbQueue.read { db -> [String] in
                 let dts = try DynamicTable
                     .filter(Column(DynamicTable.CodingKeys.active.stringValue) == true)
                     .fetchAll(db)
                 
                 return dts.map({ $0.name })
             }
-            
-            return .success(dts)
         } catch {
-            return .failure(error)
+            return []
         }
     }
 }

@@ -53,10 +53,7 @@ public class AEBLEExperiment {
                 return .failure(AEBLEError.dbError(msg: "No event found"))
             }
             
-            let res = await db.activeDynamicTables()
-            guard case .success(let dtNames) = res else {
-                return .failure(AEBLEError.dbError(msg: "No active tables"))
-            }
+            let dtNames = await db.activeDynamicTables()
             
             for tableName in dtNames {
                 try await db.dbQueue.write { db in

@@ -9,7 +9,7 @@ import Foundation
 import GRDB
 
 internal class DataBatch {
-    private var limit = 2500
+    private var limit = 400
     private var counter: Int = 0
     private var cursor: Date = Date.now
     private var tables = [String]()
