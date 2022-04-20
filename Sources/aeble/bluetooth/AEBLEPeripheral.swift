@@ -24,6 +24,8 @@ internal class AEBLEPeripheral: NSObject, ObservableObject {
     
     typealias PeriperalRecord = (metadata: AEDataStream, values: [PeripheralDataValue])
     
+    var dataCount: Int = 0
+    
     /// AE Representation of Peripheral
     let metadata: AEThing
     
@@ -244,6 +246,9 @@ extension AEBLEPeripheral {
         // handle data reads
         if characteristic.uuid == md.dataCbuuid {
             bleLog.info("recieved data of size \(data.count)")
+            dataCount += data.count
+            bleLog.info("[UPLOAD] \(self.dataCount)")
+            if dataCount > 2500 { dataCount = 0 }
             if data.count > 0 {
                 dataStreamPackets[md.notifyCbuuid]?.dataPayload = data
                 if dspSatisfied(md: md) {
@@ -304,7 +309,7 @@ extension AEBLEPeripheral {
         
         resetDataStreamNotify(peripheral: peripheral, service: service, uuid: md.notifyCbuuid)
         // async task to extract values and insert into local database
-        Task { [date] in await insertDataStream(db: db, packet: dsp, md: md, date: date) }
+        Task(priority: .high) { [date] in await insertDataStream(db: db, packet: dsp, md: md, date: date) }
     }
     
     // reset count of data stream notification value when read
@@ -374,7 +379,7 @@ extension AEBLEPeripheral {
                     // TODO: handle precision (double)
                 }
                 
-                bleLog.debug("  - raw value extracted: \(rawValue)")
+//                bleLog.debug("  - raw value extracted: \(rawValue)")
                 values.append(rawValue)
             }
             

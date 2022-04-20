@@ -9,7 +9,7 @@ import Foundation
 import GRDB
 
 internal class DataBatch {
-    private var limit = 400
+    private var limit = 2500
     private var counter: Int = 0
     private var cursor: Date = Date.now
     private var tables = [String]()
@@ -27,7 +27,7 @@ internal class DataBatch {
         if counter >= limit {
             let c = self.cursor
             let t = self.tables
-            Task(priority: .background) {
+            Task {
                 await insert(cursor: c, tables: t)
             }
             self.counter = 0
@@ -57,18 +57,19 @@ internal class DataBatch {
                 let sql = """
                 SELECT \(tblInfo.map({$0.name}).joined(separator: ", "))
                 FROM \(table)
-                WHERE created_at > ?
+                WHERE uploaded = 0
                 ORDER BY created_at DESC
                 """
                     
                 let data: [GenericRow]? = try await db.dbQueue.read { db in
-                    let result = try Row.fetchAll(db, sql: sql, arguments: StatementArguments([cursor]))
+                    let result = try Row.fetchAll(db, sql: sql)
                     return result.map({ row in
                         GenericRow(metadata: tblInfo, row: row)
                     })
                 }
                 
                 guard let data = data else { return }
+                bleLog.info("[UPLOAD] \(data.count) records")
                 
                 let start = Date.now
                 
@@ -86,12 +87,10 @@ internal class DataBatch {
                         let sql = """
                             UPDATE \(table)
                             SET uploaded = 1
-                            WHERE created_at > ?
                         """
                         
                         try db.execute(
-                            sql: sql,
-                            arguments: StatementArguments([cursor])
+                            sql: sql
                         )
                         
                         

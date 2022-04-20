@@ -93,7 +93,7 @@ internal struct AEBLEAPI {
     ) async -> Result<Bool, Error> {
         
         do {
-            var req = URLRequest(url: URL(string: "\(settings.apiURL)/sensor_data")!)
+            var req = URLRequest(url: URL(string: "\(settings.apiURL)/sensor_data/async")!)
             
             let payload = SensorBatchPayload(
                 deviceId: settings.deviceId,

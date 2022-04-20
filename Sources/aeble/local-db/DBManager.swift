@@ -235,7 +235,6 @@ public final class AEBLEDBManager {
         var dataCount = 0
         var dateCursor = date
         
-        let size = ds.dataValues.count
         while dataCount < dataValues.count {
             
             for i in 0..<ds.dataValues.count {
@@ -267,13 +266,18 @@ public final class AEBLEDBManager {
         sql.removeLast(2)
         sql += ";"
         
-        try? await self.dbQueue.write { [sql, arguments] db in
-//            let settings = try AEBLESettingsStore.activeSetting(db: db)
-            
-            try? db.execute(
-                sql: sql,
-                arguments: StatementArguments(arguments) ?? StatementArguments()
-            )
+        do {
+            try await self.dbQueue.write { [sql, arguments] db in
+    //            let settings = try AEBLESettingsStore.activeSetting(db: db)
+                
+                try db.execute(
+                    sql: sql,
+                    arguments: StatementArguments(arguments) ?? StatementArguments()
+                )
+            }
+        } catch {
+            bleLog.error("ERROR INSERT BLE RECORDS: \(error.localizedDescription)")
+        
         }
         
         self.batch.increment(for: tableName, by: tsValues.count)

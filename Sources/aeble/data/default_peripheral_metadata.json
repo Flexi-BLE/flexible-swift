@@ -26,7 +26,7 @@
                     "batch_size": 200,
                     "payload_size": 400,
                     "include_offset_timestamp": true,
-                    "intended_frequency_ms": 100,
+                    "intended_frequency_ms": 2,
                     "include_anchor_timestamp": true,
                     "data_values": [
                         {
