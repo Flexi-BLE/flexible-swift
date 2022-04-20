@@ -40,7 +40,7 @@ internal struct Settings: Codable {
             id: nil,
             deviceId: "--test--",
             userId: "--test--",
-            apiURL: URL(string: "http://157.230.5.139")!,
+            apiURL: URL(string: "https://aeble.xyz")!,
             uploadBatch: 10000,
             peripheralConfigurationId: "local default",
             useRemoteServer: true,

@@ -94,6 +94,8 @@ internal struct AEBLEAPI {
         
         do {
             var req = URLRequest(url: URL(string: "\(settings.apiURL)/sensor_data/async")!)
+            let config = URLSessionConfiguration.background(withIdentifier: "com.")
+            let session = URLSession(configuration: config, delegate: nil, delegateQueue: nil)
             
             let payload = SensorBatchPayload(
                 deviceId: settings.deviceId,
@@ -107,19 +109,27 @@ internal struct AEBLEAPI {
             req.setValue("application/json", forHTTPHeaderField: "Accept")
             req.httpMethod = "POST"
             
-            req.httpBody = try Data.sharedJSONEncoder.encode(payload)
+            let data = try Data.sharedJSONEncoder.encode(payload)
             
-            let (_, res) = try await URLSession.shared.data(for: req)
-            let urlRes = res as? HTTPURLResponse
-            guard urlRes?.statusCode == 200 else {
-                return .failure(
-                    AEBLEError.aebleAPIHTTPError(
-                        code: urlRes?.statusCode ?? 0,
-                        msg: urlRes?.description ?? ""
-                    )
-                )
-            }
+            let tempDir = FileManager.default.temporaryDirectory
+            let localURL = tempDir.appendingPathComponent("throwaway")
+            try data.write(to: localURL)
+            
+            let task = session.uploadTask(with: req, fromFile: localURL)
+            task.resume()
+            
             return .success(true)
+
+//            let urlRes = res as? HTTPURLResponse
+//            guard urlRes?.statusCode == 200 else {
+//                return .failure(
+//                    AEBLEError.aebleAPIHTTPError(
+//                        code: urlRes?.statusCode ?? 0,
+//                        msg: urlRes?.description ?? ""
+//                    )
+//                )
+//            }
+//            return .success(true)
         } catch {
             return .failure(error)
         }
