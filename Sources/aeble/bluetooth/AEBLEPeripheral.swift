@@ -10,7 +10,7 @@ import CoreBluetooth
 import Combine
 import GRDB
 
-internal enum AEBLEPeripheralState: String {
+public enum AEBLEPeripheralState: String {
     case notFound = "not found"
     case connected = "connected"
     case disconnected = "disconnected"
@@ -19,10 +19,8 @@ internal enum AEBLEPeripheralState: String {
 /// AEBLE Bluetooth Enabled CoreBluetooth Delegate
 ///
 /// - Author: Blaine Rothrock
-internal class AEBLEPeripheral: NSObject, ObservableObject {
-    @Published private(set) var state: AEBLEPeripheralState = .disconnected
-    
-    typealias PeriperalRecord = (metadata: AEDataStream, values: [PeripheralDataValue])
+public class AEBLEPeripheral: NSObject, ObservableObject {
+    @Published public private(set) var state: AEBLEPeripheralState = .disconnected
     
     var dataCount: Int = 0
     
@@ -80,7 +78,7 @@ internal class AEBLEPeripheral: NSObject, ObservableObject {
 
 // MARK: - Core Bluetooth Peripheral Delegate
 extension AEBLEPeripheral: CBPeripheralDelegate {
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let services = peripheral.services else { return }
         
         for service in services {
@@ -96,7 +94,7 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
         }
     }
     
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         bleLog.info("did discover characteristics for \(service.uuid)")
         
         guard let characteristics = service.characteristics else {
@@ -122,7 +120,7 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
         }
     }
     
-    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         bleLog.info("did update value for characteristic \(characteristic.uuid)")
         
         if let error = error {
@@ -325,8 +323,8 @@ extension AEBLEPeripheral {
     }
     
     private func insertDataStream(db: AEBLEDBManager, packet: DataStreamPacket, md: AEDataStream, date: Date) async {
-        var dataValues: [PeripheralDataValue] = []
-        var tsValues: [PeripheralDataValue] = []
+        var dataValues: [AEDataValue] = []
+        var tsValues: [AEDataValue] = []
         
         if let data = packet.dataPayload {
             bleLog.debug("parsing data values")
@@ -346,14 +344,14 @@ extension AEBLEPeripheral {
     }
     
     // extract and process reach record according to metadata specifications
-    private static func parseData(data: Data, dataValues: [AEDataValue]) -> [PeripheralDataValue] {
+    private static func parseData(data: Data, dataValues: [AEDataValueDefinition]) -> [AEDataValue] {
         // FIXME: assumes no time offsets
         
         var cursor = 0
         
         let readingSize = dataValues.reduce(0, { $0 + $1.size })
         
-        var values: [PeripheralDataValue] = []
+        var values: [AEDataValue] = []
         
         for _ in 0..<(data.count / readingSize) {
             // must copy (new array) or we run into memory issues

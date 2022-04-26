@@ -7,22 +7,22 @@
 
 import Foundation
 
-internal struct AEDataStream: Codable, Equatable {
-    let id: String
-    let name: String
-    let description: String?
-    let batchSize: Int
-    let payloadSize: Int
-    let includeOffsetTimestamp: Bool
-    let intendedFrequencyMs: Int
-    let includeAnchorTimestamp: Bool
+public struct AEDataStream: Codable, Equatable {
+    public let id: String
+    public let name: String
+    public let description: String?
+    internal let batchSize: Int
+    internal let payloadSize: Int
+    internal let includeOffsetTimestamp: Bool
+    internal let intendedFrequencyMs: Int
+    internal let includeAnchorTimestamp: Bool
     
-    let dataValues: [AEDataValue]
-    let timeOffsetValue: AEDataValue
+    public let dataValues: [AEDataValueDefinition]
+    internal let timeOffsetValue: AEDataValueDefinition
     
-    let ble: AEDataStreamBLE
+    internal let ble: AEDataStreamBLE
     
-    static func ==(lhs: AEDataStream, rhs: AEDataStream) -> Bool {
+    public static func ==(lhs: AEDataStream, rhs: AEDataStream) -> Bool {
         return lhs.id == rhs.id
     }
 }

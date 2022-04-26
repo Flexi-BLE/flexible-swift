@@ -19,7 +19,7 @@ struct SensorBatchPayload: Encodable {
 struct SensorBatchValue: Encodable {
     let time: Date
     let fieldNames: [String]
-    let dataTypes: [PeripheralMetadataDataValueType]
+    let dataTypes: [AEDataValueType]
     let values: [String]
 
     
@@ -27,10 +27,10 @@ struct SensorBatchValue: Encodable {
         
         var time: Date = Date.now
         var fieldNames: [String] = []
-        var dataTypes: [PeripheralMetadataDataValueType] = []
+        var dataTypes: [AEDataValueType] = []
         var values: [String] = []
         
-        let dynamicDataValues: [String:AEDataValue] = metadata.dataValues.reduce(Dictionary<String, AEDataValue>(), { dict, dv in
+        let dynamicDataValues: [String:AEDataValueDefinition] = metadata.dataValues.reduce(Dictionary<String, AEDataValueDefinition>(), { dict, dv in
             var dict = dict
             dict[dv.name] = dv
             return dict

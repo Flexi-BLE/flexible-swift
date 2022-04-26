@@ -215,8 +215,8 @@ public final class AEBLEDBManager {
     
     internal func arbInsert(
         for ds: AEDataStream,
-        dataValues: [PeripheralDataValue],
-        tsValues: [PeripheralDataValue],
+        dataValues: [AEDataValue],
+        tsValues: [AEDataValue],
         date: Date
     ) async {
         let tableName = tableName(from: ds.name)

@@ -7,17 +7,18 @@
 
 import Foundation
 
-internal struct AEThing: Codable, Equatable {
-    let name: String
-    let description: String
-    let tags: [String]
-    let configurations: [String]
-    let dataStreams: [AEDataStream]
+public struct AEThing: Codable, Equatable {
+    public let name: String
+    public let description: String
+    public let tags: [String]
+    // TODO: config data structure
+    public let configurations: [String]
+    public let dataStreams: [AEDataStream]
     
-    let ble: AEThingBLE
-    let timestampSync: AETimeSync
+    internal let ble: AEThingBLE
+    internal let timestampSync: AETimeSync
     
-    static func ==(lhs: AEThing, rhs: AEThing) -> Bool {
+    public static func ==(lhs: AEThing, rhs: AEThing) -> Bool {
         return lhs.name == rhs.name
     }
 }

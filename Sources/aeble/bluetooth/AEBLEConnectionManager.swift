@@ -12,10 +12,10 @@ import Combine
 public class AEBLEConnectionManager: NSObject, ObservableObject {
     var centralManager: CBCentralManager!
     
-    @Published var centralState: CBManagerState = .unknown
-    @Published var isScanning: Bool = false
+    @Published public private(set) var centralState: CBManagerState = .unknown
+    @Published public private(set) var isScanning: Bool = false
         
-    @Published private(set) var peripherals: [AEBLEPeripheral] = []
+    @Published public private(set) var peripherals: [AEBLEPeripheral] = []
     
     private var scanOnPoweredOn: Bool = true
     private let db: AEBLEDBManager
@@ -24,6 +24,10 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
         self.db = db
         super.init()
         self.centralManager = CBCentralManager(delegate: self, queue: nil)
+    }
+    
+    public func peripheral(for name: String) -> AEBLEPeripheral? {
+        return peripherals.first(where: { $0.metadata.name == name })
     }
     
     internal func scan(with payload: AEDeviceConfig) {
