@@ -57,6 +57,45 @@
                         "data_id": "0xb92d",
                         "time_offset_id": "0xb92e"
                     }
+                },
+                {
+                    "id": "0xb92c",
+                    "name": "ekg2",
+                    "description": "a test data stream",
+                    "batch_size": 200,
+                    "payload_size": 400,
+                    "include_offset_timestamp": true,
+                    "intended_frequency_ms": 2,
+                    "include_anchor_timestamp": true,
+                    "data_values": [
+                        {
+                            "name": "ekg",
+                            "description": "",
+                            "unit": "",
+                            "byte_start": 0,
+                            "byte_end": 2,
+                            "size": 2,
+                            "is_unsigned_negative": false,
+                            "is_signed": false,
+                            "precision": 0
+                        }
+                    ],
+                    "time_offset_value": {
+                        "name": "",
+                        "description": "",
+                        "unit": "ms",
+                        "byte_start": 0,
+                        "byte_end": 1,
+                        "size": 1,
+                        "is_unsigned_negative": false,
+                        "is_signed": false,
+                        "precision": 0
+                    },
+                    "ble": {
+                        "notify_id": "0xb92c",
+                        "data_id": "0xb92d",
+                        "time_offset_id": "0xb92e"
+                    }
                 }
             ]
         }
