@@ -27,6 +27,8 @@ public class AEBLEPeripheral: NSObject, ObservableObject {
     /// AE Representation of Peripheral
     let metadata: AEThing
     
+    private var uploaders: [AEStreamDataUploader] = []
+    
     /// Reference to database
     /// - Remark:
     ///  Holding reference to the database is not ideal, this should be reworked to require database dependency.
@@ -137,10 +139,9 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
         }
         
         if characteristic.uuid == metadata.timeSyncCbuuid {
-            handleTypeSync(peripheral: peripheral, characteristic: characteristic)
+            handleTimeSync(peripheral: peripheral, characteristic: characteristic)
         }
     }
-    
 }
 
 // MARK: - Core Bluetooth Delegate Helpers
@@ -172,7 +173,7 @@ extension AEBLEPeripheral {
     }
     
     /// write current epoch time (milliseconds) AE device time sync info characteristics
-    private func handleTypeSync(
+    private func handleTimeSync(
         peripheral: CBPeripheral,
         characteristic: CBCharacteristic
     ) {
@@ -330,6 +331,7 @@ extension AEBLEPeripheral {
             bleLog.debug("parsing data values")
             dataValues = AEBLEPeripheral.parseData(data: data, dataValues: md.dataValues)
         }
+        
         if let data = packet.timePayload {
             bleLog.debug("parsing time offsets")
             tsValues = AEBLEPeripheral.parseData(data: data, dataValues: [md.timeOffsetValue])
@@ -341,6 +343,20 @@ extension AEBLEPeripheral {
             tsValues: tsValues,
             date: date
         )
+        
+        if let uploader = uploaders.first(where: { $0.dataStream.name == md.name }) {
+            await uploader.check()
+        } else {
+            let uploader = AEStreamDataUploader(
+                db: db,
+                dataStream: md,
+                timeLimit: 120,
+                recordLimit: 2500,
+                purgeAfter: 60 * 60
+            )
+            uploaders.append(uploader)
+            await uploader.check()
+        }
     }
     
     // extract and process reach record according to metadata specifications

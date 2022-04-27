@@ -13,9 +13,6 @@ public final class AEBLEDBManager {
     internal let dbQueue: DatabaseQueue
     private let migrator = DBMigrator()
     public let dbPath = AEBLEDBManager.documentDirPath()
-    private lazy var batch: DataBatch = {
-        return DataBatch(db: self)
-    }()
     
     /// Create and retrurn data directory url in application file structure
     private static func documentDirPath(for dbName: String="aeble") -> URL {
@@ -63,6 +60,33 @@ public final class AEBLEDBManager {
         try? await dbQueue.write({ db in
             try? db.execute(sql: sql)
         })
+    }
+    
+    public func lastDataStreamDate(for stream: AEDataStream) async -> Date? {
+        do {
+            return try await dbQueue.read({ (db) -> Date? in
+                let q = """
+                    SELECT created_at
+                    FROM \(stream.name)
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                """
+                let date = try Date.fetchOne(db, sql: q)
+                return date
+            })
+        } catch {
+            return nil
+        }
+    }
+    
+    public func lastDataStreamDate(for thing: AEThing) async -> Date? {
+        var dates: [Date] = []
+        for ds in thing.dataStreams {
+            if let date = await lastDataStreamDate(for: ds) {
+                dates.append(date)
+            }
+        }
+        return dates.max()
     }
     
     // MARK: - Not Public
@@ -134,14 +158,13 @@ public final class AEBLEDBManager {
         return metadata
     }
     
-    internal func dynamicTable(for table: String) async -> Result<DynamicTable?, Error> {
+    internal func dynamicTable(for table: String) async -> DynamicTable? {
         do {
-            let t = try await dbQueue.read { db in
+            return try await dbQueue.read { db in
                 return try DynamicTable.fetchOne(db, key: ["name": table])
             }
-            return .success(t)
         } catch {
-            return .failure(error)
+            return nil
         }
     }
     
@@ -252,24 +275,12 @@ public final class AEBLEDBManager {
             arguments.append("blop")
             sql += "(\(placeholders), ?, ?), "
         }
-//        for i in 0..<tsValues.count {
-//
-//            for j in (i*size)..<((i*size)+size) {
-//                 arguments.append(dataValues[j])
-//            }
-//            arguments.append(date)
-//            arguments.append("blop")
-//
-//            sql += "(\(placeholders), ?, ?), "
-//        }
         
         sql.removeLast(2)
         sql += ";"
         
         do {
             try await self.dbQueue.write { [sql, arguments] db in
-    //            let settings = try AEBLESettingsStore.activeSetting(db: db)
-                
                 try db.execute(
                     sql: sql,
                     arguments: StatementArguments(arguments) ?? StatementArguments()
@@ -279,9 +290,6 @@ public final class AEBLEDBManager {
             bleLog.error("ERROR INSERT BLE RECORDS: \(error.localizedDescription)")
         
         }
-        
-        self.batch.increment(for: tableName, by: tsValues.count)
-        
     }
     
     internal func activeDynamicTables() async -> [String] {
