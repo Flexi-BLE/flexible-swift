@@ -59,17 +59,17 @@
                     }
                 },
                 {
-                    "id": "0xb92c",
-                    "name": "ekg2",
-                    "description": "a test data stream",
-                    "batch_size": 200,
-                    "payload_size": 400,
+                    "id": "0xc85a",
+                    "name": "ppg",
+                    "description": "PPG Signal at 20Hz",
+                    "batch_size": 100,
+                    "payload_size": 200,
                     "include_offset_timestamp": true,
-                    "intended_frequency_ms": 2,
+                    "intended_frequency_ms": 50,
                     "include_anchor_timestamp": true,
                     "data_values": [
                         {
-                            "name": "ekg",
+                            "name": "ppg",
                             "description": "",
                             "unit": "",
                             "byte_start": 0,
@@ -92,9 +92,9 @@
                         "precision": 0
                     },
                     "ble": {
-                        "notify_id": "0xb92c",
-                        "data_id": "0xb92d",
-                        "time_offset_id": "0xb92e"
+                        "notify_id": "0xc85a",
+                        "data_id": "0xc85b",
+                        "time_offset_id": "0xc85c"
                     }
                 }
             ]

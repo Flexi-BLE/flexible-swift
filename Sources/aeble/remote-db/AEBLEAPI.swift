@@ -94,7 +94,7 @@ internal struct AEBLEAPI {
         
         do {
             var req = URLRequest(url: URL(string: "\(settings.apiURL)/sensor_data/async")!)
-            let config = URLSessionConfiguration.background(withIdentifier: "com.")
+            let config = URLSessionConfiguration.background(withIdentifier: "com.\(metadata.name)")
             let session = URLSession(configuration: config, delegate: nil, delegateQueue: nil)
             
             let payload = SensorBatchPayload(
