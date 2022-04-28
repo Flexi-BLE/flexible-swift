@@ -89,6 +89,133 @@ public final class AEBLEDBManager {
         return dates.max()
     }
     
+    public func actualRecordCount(for dataStream: AEDataStream) async -> Int {
+        do {
+            return try await dbQueue.read({ db in
+                let q = """
+                    SELECT COUNT(id) FROM \(dataStream.name)
+                """
+                return try Int.fetchOne(db, sql: q) ?? 0
+            })
+        } catch { return 0 }
+    }
+    
+    public func actualRecordCount(for thing: AEThing) async -> Int {
+        var count = 0
+        for ds in thing.dataStreams {
+            count += await actualRecordCount(for: ds)
+        }
+        return count
+    }
+    
+    public func recordCountByIndex(for dataStream: AEDataStream) async -> Int {
+        do {
+            return try await dbQueue.read({ db in
+                let q = """
+                    SELECT MAX(id) FROM \(dataStream.name)
+                """
+                return try Int.fetchOne(db, sql: q) ?? 0
+            })
+        } catch { return 0 }
+    }
+    
+    public func recordCountByIndex(for thing: AEThing) async -> Int {
+        var count = 0
+        for ds in thing.dataStreams {
+            count += await recordCountByIndex(for: ds)
+        }
+        return count
+    }
+    
+    public func unUploadedCount(for dataStream: AEDataStream) async -> Int {
+        do {
+            return try await dbQueue.read({ db in
+                let q = """
+                    SELECT COUNT(id)
+                    FROM \(dataStream.name)
+                    WHERE uploaded = 0
+                """
+                return try Int.fetchOne(db, sql: q) ?? 0
+            })
+        } catch { return 0 }
+    }
+    
+    public func unUploadedCount(for thing: AEThing) async -> Int {
+        var count = 0
+        for ds in thing.dataStreams {
+            count += await unUploadedCount(for: ds)
+        }
+        return count
+    }
+    
+    public func meanFrequency(for dataSteam: AEDataStream, last: Int=1000) async -> Float {
+        do {
+            let dates: [Date] = try await dbQueue.read({ db in
+                let q = """
+                    SELECT created_at
+                    FROM \(dataSteam.name)
+                    ORDER BY created_at DESC
+                    LIMIT \(last)
+                """
+                return try Date.fetchAll(db, sql: q)
+            })
+            var diffs: [Int] = []
+            for i in 0..<dates.count-1 {
+                let first = Int64(dates[i].timeIntervalSince1970 * 1000.0)
+                let second = Int64(dates[i+1].timeIntervalSince1970 * 1000.0)
+                diffs.append(Int(first - second))
+            }
+            
+            return 1000.0 / Float(diffs.reduce(0, +) / diffs.count)
+        } catch { return 0 }
+    }
+    
+    public typealias UploadAggregate = (totalRecords: Int, success: Int, failures: Int)
+    public func uploadAgg(for dataStream: AEDataStream) async -> UploadAggregate {
+        do {
+            return try await dbQueue.read({ db in
+                let qRecs = """
+                    SELECT SUM(number_of_records)
+                    FROM data_upload
+                    WHERE status = 'success'
+                        AND measurement = '\(dataStream.name)';
+                """
+                let numRecords = try Int.fetchOne(db, sql: qRecs)
+                
+                let qSuccess = """
+                    SELECT COUNT(id)
+                    FROM data_upload
+                    WHERE status = 'success'
+                        AND measurement = '\(dataStream.name)';
+                """
+                let successes = try Int.fetchOne(db, sql: qSuccess)
+                
+                let qFailures = """
+                    SELECT COUNT(id)
+                    FROM data_upload
+                    WHERE status = 'failure'
+                        AND measurement = '\(dataStream.name)';
+                """
+                let failures = try Int.fetchOne(db, sql: qFailures)
+                return UploadAggregate(numRecords ?? 0, successes ?? 0, failures ?? 0)
+            })
+        } catch { return UploadAggregate(0, 0, 0) }
+    }
+    
+    public func uploadAgg(for thing: AEThing) async -> UploadAggregate {
+        var totalRecord: Int = 0
+        var successes: Int = 0
+        var failures: Int = 0
+        for ds in thing.dataStreams {
+           let ua = await uploadAgg(for: ds)
+            totalRecord += ua.totalRecords
+            successes += ua.success
+            failures += ua.failures
+        }
+        
+        return UploadAggregate(totalRecord, successes, failures)
+    }
+    
     // MARK: - Not Public
     
     /// replace space with underscores for dynamically naming tables in SQL
@@ -166,6 +293,27 @@ public final class AEBLEDBManager {
         } catch {
             return nil
         }
+    }
+    
+    public func dataValues<T: AEDataValue & DatabaseValueConvertible>(
+        for name: String,
+        measurement: String,
+        offset: Int = 0,
+        limit: Int=100
+    ) async -> [T] {
+        do {
+            return try await dbQueue.read({ db in
+                let q = """
+                    SELECT \(measurement)
+                    FROM \(name)
+                    ORDER BY created_at DESC
+                    LIMIT \(limit)
+                    OFFSET \(offset)
+                """
+                
+                return try T.fetchAll(db, sql: q)
+            })
+        } catch { return [] }
     }
     
     public func data(for tableName: String, metadata: [TableInfo], offset: Int=0, limit: Int=100) async -> [GenericRow]? {

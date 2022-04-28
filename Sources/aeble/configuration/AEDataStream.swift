@@ -11,10 +11,10 @@ public struct AEDataStream: Codable, Equatable {
     public let id: String
     public let name: String
     public let description: String?
-    internal let batchSize: Int
+    public let batchSize: Int
     internal let payloadSize: Int
     internal let includeOffsetTimestamp: Bool
-    internal let intendedFrequencyMs: Int
+    public let intendedFrequencyMs: Int
     internal let includeAnchorTimestamp: Bool
     
     public let dataValues: [AEDataValueDefinition]

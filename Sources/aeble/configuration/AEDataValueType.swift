@@ -9,13 +9,13 @@ import Foundation
 
 import Foundation
 
-internal enum AEDataValueType: String, Codable {
+public enum AEDataValueType: String, Codable {
     case int = "int"
     case float = "float"
     case string = "string"
 }
 
-internal protocol AEDataValue: CustomStringConvertible, Codable {}
+public protocol AEDataValue: CustomStringConvertible, Codable {}
 extension String: AEDataValue { }
 extension Float: AEDataValue { }
 extension Double: AEDataValue { }
