@@ -7,7 +7,7 @@
     "things": [
         {
             "name": "aeble dev",
-            "description": "first iteration aeble board with test data",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
             "tags": ["research"],
             "ble": {
                 "info_service_id": "0x962a",
@@ -22,11 +22,12 @@
                 {
                     "id": "0xb92c",
                     "name": "ekg",
-                    "description": "a test data stream",
+                    "description": "Electrocardiogram singal at 125Hz",
                     "batch_size": 200,
                     "payload_size": 400,
+                    "upload_batch_size": 2500,
                     "include_offset_timestamp": true,
-                    "intended_frequency_ms": 2,
+                    "intended_frequency_ms": 8,
                     "include_anchor_timestamp": true,
                     "data_values": [
                         {
@@ -61,11 +62,12 @@
                 {
                     "id": "0xc85a",
                     "name": "ppg",
-                    "description": "PPG Signal at 20Hz",
-                    "batch_size": 100,
-                    "payload_size": 200,
+                    "description": "Photoplethysmogram Signal at 20.83Hz",
+                    "batch_size": 25,
+                    "payload_size": 50,
+                    "upload_batch_size": 500,
                     "include_offset_timestamp": true,
-                    "intended_frequency_ms": 50,
+                    "intended_frequency_ms": 48,
                     "include_anchor_timestamp": true,
                     "data_values": [
                         {

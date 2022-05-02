@@ -22,7 +22,7 @@ public enum AEBLEPeripheralState: String {
 public class AEBLEPeripheral: NSObject, ObservableObject {
     @Published public private(set) var state: AEBLEPeripheralState = .disconnected
     
-    var dataCount: Int = 0
+    var isEnabled: Bool = true
     
     /// AE Representation of Peripheral
     let metadata: AEThing
@@ -245,9 +245,6 @@ extension AEBLEPeripheral {
         // handle data reads
         if characteristic.uuid == md.dataCbuuid {
             bleLog.info("recieved data of size \(data.count)")
-            dataCount += data.count
-            bleLog.info("[UPLOAD] \(self.dataCount)")
-            if dataCount > 2500 { dataCount = 0 }
             if data.count > 0 {
                 dataStreamPackets[md.notifyCbuuid]?.dataPayload = data
                 if dspSatisfied(md: md) {
@@ -351,8 +348,8 @@ extension AEBLEPeripheral {
                 db: db,
                 dataStream: md,
                 timeLimit: 120,
-                recordLimit: 2500,
-                purgeAfter: 60 * 60
+                recordLimit: md.uploadBatchSize,
+                purgeAfter: 500
             )
             uploaders.append(uploader)
             await uploader.check()

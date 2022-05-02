@@ -12,6 +12,7 @@ public struct AEDataStream: Codable, Equatable {
     public let name: String
     public let description: String?
     public let batchSize: Int
+    public let uploadBatchSize: Int
     internal let payloadSize: Int
     internal let includeOffsetTimestamp: Bool
     public let intendedFrequencyMs: Int

@@ -13,7 +13,7 @@ public struct AEDeviceConfig: Codable {
     public let createdAt: Date
     public let updatedAt: Date
     public let tags: [String]
-    public let things: [AEThing]?
+    public let things: [AEThing]
 }
 
 extension AEDeviceConfig {

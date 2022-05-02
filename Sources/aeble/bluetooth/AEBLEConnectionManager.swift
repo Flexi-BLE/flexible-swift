@@ -30,8 +30,38 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
         return peripherals.first(where: { $0.metadata.name == name })
     }
     
+    public func disable(thing: AEThing) {
+        guard let p = self.peripherals.first(where: { $0.metadata.name == thing.name }) else {
+            return
+        }
+        
+        if !p.isEnabled { return }
+        
+        switch p.state {
+        case .connected:
+            p.isEnabled = false
+            if let cbPeripheral = p.cbp {
+                centralManager.cancelPeripheralConnection(cbPeripheral)
+            }
+        default:
+            p.isEnabled = false
+            if isScanning { startScan() }
+        }
+    }
+    
+    public func enable(thing: AEThing) {
+        guard let p = self.peripherals.first(where: { $0.metadata.name == thing.name }) else {
+            return
+        }
+        
+        if p.isEnabled && p.state == .connected { return }
+        
+        p.isEnabled = true
+        if isScanning { startScan() }
+    }
+    
     internal func scan(with payload: AEDeviceConfig) {
-        for peripheralMetadata in payload.things ?? [] {
+        for peripheralMetadata in payload.things {
             let AEBLEPeripheral = AEBLEPeripheral(
                 metadata: peripheralMetadata,
                 db: self.db
@@ -53,7 +83,13 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
         
         var services: [CBUUID] = []
         for p in self.peripherals {
-            services.append(contentsOf: p.metadata.serviceIds)
+            if p.isEnabled {
+                services.append(contentsOf: p.metadata.serviceIds)
+            }
+        }
+        guard services.count > 0 else {
+            bleLog.info("scanning enabled, but no services, not starting scan.")
+            return
         }
         
         bleLog.info("starting scan for services: \(services)")
@@ -94,7 +130,8 @@ extension AEBLEConnectionManager: CBCentralManagerDelegate {
     }
     
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        guard let peri = peripherals.first(where: { $0.metadata.name == peripheral.name }) else { return }
+        guard let peri = peripherals.first(where: { $0.metadata.name == peripheral.name }),
+                peri.isEnabled else { return }
         
         peri.set(peripheral: peripheral)
         bleLog.info("Peripheral Found \(peri.metadata.name)")
@@ -112,7 +149,6 @@ extension AEBLEConnectionManager: CBCentralManagerDelegate {
         guard let peri = peripherals.first(where: { $0.metadata.name == peripheral.name }) else { return }
         bleLog.info("connceted to: \(peri.metadata.name)")
         peri.didUpdateState()
-        stopScan()
     }
     
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
@@ -120,7 +156,7 @@ extension AEBLEConnectionManager: CBCentralManagerDelegate {
         bleLog.info("\(peri.metadata.name) disconnected")
         peri.didUpdateState()
         
-        startScan()
+        if (isScanning) { startScan() }
     }
 }
 
