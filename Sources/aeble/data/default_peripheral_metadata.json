@@ -17,7 +17,32 @@
             "timestamp_sync": {
                 "id": "0x045a"
             },
-            "configurations": [],
+            "variables": [
+                {
+                    "id": "0x123b",
+                    "name": "Main Loop Millisecond Delay",
+                    "unit": "ms",
+                    "description": "will set the main loop delay in milliseconds",
+                    "data_type": "int",
+                    "default_value": 5
+                },
+                {
+                    "id": "0x123c",
+                    "name": "EKG Toggle",
+                    "unit": "",
+                    "description": "Turn EKG Sensing on/off",
+                    "data_type": "bool",
+                    "default_value": true
+                },
+                {
+                    "id": "0x123d",
+                    "name": "EKG Frequency",
+                    "unit": "Hz",
+                    "description": "Frequency to Collect EKG (note, must be a multiple of Main Loop Milisecond Delay)",
+                    "data_type": "bool",
+                    "default_value": 50
+                }
+            ],
             "data_streams": [
                 {
                     "id": "0xb92c",
