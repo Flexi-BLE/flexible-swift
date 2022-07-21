@@ -80,6 +80,7 @@ public class AEBLEPeripheral: NSObject, ObservableObject {
 
 // MARK: - Core Bluetooth Peripheral Delegate
 extension AEBLEPeripheral: CBPeripheralDelegate {
+    
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let services = peripheral.services else { return }
         
@@ -140,6 +141,7 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
         
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.didWrite(uuid: characteristic.uuid)
+            peripheral.readValue(for: characteristic)
         }
     }
     

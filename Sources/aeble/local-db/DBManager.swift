@@ -556,79 +556,23 @@ public final class AEBLEDBManager {
         
         let sql = """
             INSERT INTO \(tableName)
-            (\(cols))
-            VALUES (\(placeholders));
+            (\(cols), created_at)
+            VALUES (\(placeholders), ?);
         """
         
-        let args = StatementArguments(values)
+        let args = StatementArguments(values + [Date()])
         
         do {
             try await self.dbQueue.write { [sql, args] db in
                 try db.execute(
                     sql: sql,
-                    arguments: args
+                    arguments: args ?? StatementArguments()
                 )
             }
         } catch {
             bleLog.error("error inserting ble config record: \(error.localizedDescription)")
         }
     }
-    
-//    internal func arbInsert(
-//        for ds: AEDataStream,
-//        dataValues: [AEDataValue],
-//        tsValues: [AEDataValue],
-//        date: Date
-//    ) async {
-//        let tableName = tableName(from: ds.name)
-//
-//        let cols = "\(ds.dataValues.map({ $0.name }).joined(separator: ", "))"
-//        let placeholders = "\(ds.dataValues.map({ _ in "?" }).joined(separator: ", "))"
-//
-//        var sql = """
-//            INSERT INTO \(tableName)
-//            (\(cols), created_at, user_id) VALUES
-//        """
-//
-//        var arguments: [Any] = []
-//
-//        var tsCount = 0
-//        var dataCount = 0
-//        var dateCursor = date
-//
-//        while dataCount < dataValues.count {
-//
-//            for i in 0..<ds.dataValues.count {
-//                arguments.append(dataValues[dataCount+i])
-//            }
-//            dataCount += ds.dataValues.count
-//
-//            let offset: Double = Double(tsValues[tsCount] as! Int)
-//            let d = dateCursor.addingTimeInterval(TimeInterval(offset / 1000.0))
-//            arguments.append(d)
-//            dateCursor = d
-//
-//            tsCount += 1
-//
-//            arguments.append("blop")
-//            sql += "(\(placeholders), ?, ?), "
-//        }
-//
-//        sql.removeLast(2)
-//        sql += ";"
-//
-//        do {
-//            try await self.dbQueue.write { [sql, arguments] db in
-//                try db.execute(
-//                    sql: sql,
-//                    arguments: StatementArguments(arguments) ?? StatementArguments()
-//                )
-//            }
-//        } catch {
-//            bleLog.error("ERROR INSERT BLE RECORDS: \(error.localizedDescription)")
-//
-//        }
-//    }
     
     internal func activeDynamicTables() async -> [String] {
         do {

@@ -45,7 +45,7 @@ class AEBLEDataStreamHandler {
     }
     
     func didWrite(uuid: CBUUID) {
-        // TODO: implement
+        bleLog.debug("did write value for \(self.def.name)")
     }
     
     private func didUpdateData(data: Data) async {
@@ -56,6 +56,7 @@ class AEBLEDataStreamHandler {
         
         
         let anchorDate = Date()
+        
         if def.includeAnchorTimestamp {
             // TODO: handle anchor timestamp
             bleLog.debug("TODO: handle anchor timestamp")
@@ -73,8 +74,10 @@ class AEBLEDataStreamHandler {
             
             for dv in def.dataValues {
                 let v = packet[i+dv.byteStart..<i+dv.byteEnd]
+        
                 values.append(dv.unpack(data: v))
             }
+            
             allValues.append(values)
             
             if let offsetDef = def.offsetDataValue {
@@ -128,8 +131,6 @@ class AEBLEDataStreamHandler {
 
 extension AEDataStreamConfig {
     func unpack(data: Data) -> AEDataValue {
-        guard data.count >= self.byteEnd else { return 0 }
-        
         var _data = data
         
         if _data.count > self.size {
@@ -241,8 +242,6 @@ extension AEDataStreamConfig {
 
 extension AEDataValueDefinition {
     func unpack(data: Data) -> AEDataValue {
-        guard data.count >= self.byteEnd else { return 0 }
-        
         var _data = data
         
         if _data.count > self.size {
@@ -253,11 +252,12 @@ extension AEDataValueDefinition {
         case .float: return Int(0)
         case .int:
             var val : Int = 0
+            
             for byte in _data {
                 val = val << 8
                 val = val | Int(byte)
             }
-
+            
             return val
         case .unsignedInt:
             var val : UInt = 0
@@ -273,8 +273,6 @@ extension AEDataValueDefinition {
     }
     
     func offset(from data: Data) -> Int {
-        guard data.count >= self.byteEnd else { return 0 }
-        
         var _data = data
         
         if _data.count > self.size {

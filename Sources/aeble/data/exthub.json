@@ -64,9 +64,9 @@
                             "options": null,
                             "default_value":  "50",
                             "range": {
-                                "start": 1,
-                                "end": 255,
-                                "step": 5
+                                "start": 0,
+                                "end": 300,
+                                "step": 10
                             }
                         },
                         {
@@ -76,7 +76,7 @@
                             "byte_end": 3,
                             "size": 1,
                             "type": "uint",
-                            "unit": null,
+                            "unit": "bytes",
                             "options": null,
                             "default_value":  "105",
                             "range": {
