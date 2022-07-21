@@ -11,4 +11,5 @@ import CoreBluetooth
 internal struct AEThingBLE: Codable {
     let bleRegisteredServices: [BLERegisteredService]
     let infoServiceUuid: String
+    let epochCharUuid: String
 }
