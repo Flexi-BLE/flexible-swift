@@ -17,7 +17,7 @@
             "timestamp_sync": {
                 "id": "0x045a"
             },
-            "variables": [
+            "configurations": [
                 {
                     "id": "0x123b",
                     "name": "Main Loop Millisecond Delay",
@@ -125,6 +125,21 @@
                     }
                 }
             ]
+        },
+        {
+            "name": "exthub-alpha",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+            "tags": ["research"],
+            "ble": {
+                "info_service_id": "0x962a",
+                "config_service_id": "0xcf3d",
+                "data_service_id": "0x38ae"
+            },
+            "timestamp_sync": {
+                "id": "0x045a"
+            },
+            "configurations": [],
+            "data_streams": []
         }
     ]
 }

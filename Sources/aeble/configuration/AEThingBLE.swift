@@ -6,9 +6,9 @@
 //
 
 import Foundation
+import CoreBluetooth
 
 internal struct AEThingBLE: Codable {
-    let infoServiceId: String
-    let configServiceId: String
-    let dataServiceId: String
+    let bleRegisteredServices: [BLERegisteredService]
+    let infoServiceUuid: String
 }

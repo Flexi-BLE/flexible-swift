@@ -38,7 +38,8 @@ let package = Package(
                 .product(name: "InfluxDBSwift", package: "influxdb-client-swift")
             ],
             resources: [
-                .process("data/default_peripheral_metadata.json")
+                .process("data/default_peripheral_metadata.json"),
+                .process("data/exthub.json")
             ]
         ),
         .testTarget(

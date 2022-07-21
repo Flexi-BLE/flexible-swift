@@ -1,0 +1,155 @@
+{
+    "id": "--local-default--",
+    "schema_version": "1.0",
+    "created_at": "2022-04-13T22:11:39.000Z",
+    "updated_at": "2022-04-13T22:11:39.000Z",
+    "tags": ["development"],
+    "things": [
+        {
+            "name": "exthub-alpha",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+            "tags": ["research"],
+            "ble": {
+                "ble_registered_services": ["battery", "current-time"],
+                "info_service_uuid": "1a220001-c2ed-4d11-ad1e-fc06d8a02d37"
+            },
+            "configurations": [],
+            "data_streams": [
+                {
+                    "id": "0xb92c",
+                    "name": "accelerometry",
+                    "description": "Accelerometry data",
+                    "include_anchor_timestamp": true,
+                    "offset_data_value": {
+                        "name": "ms_offset",
+                        "description": "relative time since the previous reading",
+                        "unit": "ms",
+                        "byte_start": 6,
+                        "byte_end": 7,
+                        "size": 1,
+                        "type": "uint"
+                    },
+                    "config_values": [
+                        {
+                            "name": "sensor_state",
+                            "description": "state of the accelerometer sensor",
+                            "byte_start": 0,
+                            "byte_end": 1,
+                            "size": 1,
+                            "unit": null,
+                            "type": "uint",
+                            "default_value": "0",
+                            "options": [
+                                {
+                                    "name": "disabled",
+                                    "description": "the sensor will not stream data",
+                                    "value": "0"
+                                },
+                                {
+                                    "name": "streaming",
+                                    "description": "the sensor will stream data",
+                                    "value": "1"
+                                }
+                            ],
+                            "range": null
+                        },
+                        {
+                            "name": "desired_frequency",
+                            "description": "the desired frequency of the sensor",
+                            "byte_start": 1,
+                            "byte_end": 2,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "Hz",
+                            "options": null,
+                            "default_value":  "50",
+                            "range": {
+                                "start": 1,
+                                "end": 255,
+                                "step": 5
+                            }
+                        },
+                        {
+                            "name": "batch_size",
+                            "description": "the maximun size of payload",
+                            "byte_start": 2,
+                            "byte_end": 3,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": null,
+                            "options": null,
+                            "default_value":  "105",
+                            "range": {
+                                "start": 7,
+                                "end": 245,
+                                "step": 7
+                            }
+                        }
+                        
+                    ],
+                    "data_values": [
+                        {
+                            "name": "accel_x_whole",
+                            "description": "The whole (number before the decimal) of the x-axis",
+                            "unit": "",
+                            "byte_start": 0,
+                            "byte_end": 1,
+                            "size": 1,
+                            "type": "int"
+                        },
+                        {
+                            "name": "accel_x_integral",
+                            "description": "The integral (number after the decimal) of the x-axis",
+                            "unit": "",
+                            "byte_start": 1,
+                            "byte_end": 2,
+                            "size": 1,
+                            "type": "int"
+                        },
+                        {
+                            "name": "accel_y_whole",
+                            "description": "The whole (number before the decimal) of the y-axis",
+                            "unit": "",
+                            "byte_start": 2,
+                            "byte_end": 3,
+                            "size": 1,
+                            "type": "int"
+                        },
+                        {
+                            "name": "accel_y_integral",
+                            "description": "The integral (number after the decimal) of the y-axis",
+                            "unit": "",
+                            "byte_start": 3,
+                            "byte_end": 4,
+                            "size": 1,
+                            "type": "int"
+                        },
+                        {
+                            "name": "accel_z_whole",
+                            "description": "The whole (number before the decimal) of the z-axis",
+                            "unit": "",
+                            "byte_start": 4,
+                            "byte_end": 5,
+                            "size": 1,
+                            "type": "int"
+                        },
+                        {
+                            "name": "accel_z_integral",
+                            "description": "The integral (number after the decimal) of the z-axis",
+                            "unit": "",
+                            "byte_start": 5,
+                            "byte_end": 6,
+                            "size": 1,
+                            "type": "int"
+                        }
+                    ],
+                    "ble": {
+                        "service_uuid": "1a220003-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "data_char_uuid": "1a220005-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "config_char_uuid": "1a220004-c2ed-4d11-ad1e-fc06d8a02d37"
+                    }
+                }
+            ]
+        }
+    ]
+}

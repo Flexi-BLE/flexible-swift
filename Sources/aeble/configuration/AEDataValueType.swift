@@ -13,6 +13,7 @@ public enum AEDataValueType: String, Codable {
     case int = "int"
     case float = "float"
     case string = "string"
+    case unsignedInt = "uint"
 }
 
 public protocol AEDataValue: CustomStringConvertible, Codable {}

@@ -18,6 +18,6 @@ public struct AEDeviceConfig: Codable {
 
 extension AEDeviceConfig {
     public static var mock: AEDeviceConfig {
-        return Bundle.module.decode(AEDeviceConfig.self, from: "default_peripheral_metadata.json")
+        return Bundle.module.decode(AEDeviceConfig.self, from: "exthub.json")
     }
 }

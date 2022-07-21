@@ -14,7 +14,8 @@ public struct AEDataValueDefinition: Codable {
     internal let byteStart: Int
     internal let byteEnd: Int
     internal let size: Int
-    internal let isUnsignedNegative: Bool
-    internal let isSigned: Bool
-    internal let precision: Int
+    internal let type: AEDataValueType
+//    internal let isUnsignedNegative: Bool
+//    internal let isSigned: Bool
+//    internal let precision: Int
 }

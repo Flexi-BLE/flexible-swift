@@ -40,7 +40,7 @@ final public class AEBLESettingsStore: ObservableObject {
     }
     
     internal static func loadLocalPeripheralMetadata(
-        filename: String="default_peripheral_metadata.json"
+        filename: String="exthub.json"
     ) -> AEDeviceConfig {
         
         return Bundle.module.decode(AEDeviceConfig.self, from: filename)
@@ -87,7 +87,11 @@ final public class AEBLESettingsStore: ObservableObject {
                         }
                         return remote
                     }
-                    else { throw AEBLEError.configError(msg: "no remote configuration found for id \(self.settings.peripheralConfigurationId)") }
+                    else {
+                        throw AEBLEError.configError(
+                            msg: "no remote configuration found for id \(self.settings.peripheralConfigurationId)"
+                        )
+                    }
                 case .failure(let error):
                     throw error
                 }

@@ -60,6 +60,22 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
         if isScanning { startScan() }
     }
     
+    public func updateConfig(
+        thingName: String,
+        dataSteam: AEDataStream,
+        data: Data
+    ) {
+        
+        if let p = peripherals.first(where: { $0.metadata.name == thingName }) {
+            if let dsh = p.serviceHandlers.first(where: { $0.def.name == dataSteam.name }),
+               let cbp = p.cbp {
+                
+                dsh.writeConfig(peripheral: cbp, data: data)
+            }
+        }
+        
+    }
+    
     internal func scan(with payload: AEDeviceConfig) {
         for peripheralMetadata in payload.things {
             let AEBLEPeripheral = AEBLEPeripheral(
@@ -87,15 +103,16 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
                 services.append(contentsOf: p.metadata.serviceIds)
             }
         }
+
         guard services.count > 0 else {
             bleLog.info("scanning enabled, but no services, not starting scan.")
             return
         }
-        
+
         bleLog.info("starting scan for services: \(services)")
         
         centralManager.scanForPeripherals(
-            withServices:services,
+            withServices:nil,
             options: nil
         )
         isScanning = centralManager.isScanning
@@ -137,11 +154,11 @@ extension AEBLEConnectionManager: CBCentralManagerDelegate {
         bleLog.info("Peripheral Found \(peri.metadata.name)")
         
         centralManager.connect(
-            peripheral,
-            options: [
-                CBConnectPeripheralOptionNotifyOnConnectionKey: true,
-                CBConnectPeripheralOptionNotifyOnDisconnectionKey: true
-            ]
+            peripheral
+//            options: [
+//                CBConnectPeripheralOptionNotifyOnConnectionKey: true,
+//                CBConnectPeripheralOptionNotifyOnDisconnectionKey: true
+//            ]
         )
     }
     
