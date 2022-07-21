@@ -47,14 +47,9 @@ struct SensorBatchValue: Encodable {
             }
             
             if let dv = dynamicDataValues[rowName] {
-                if dv.precision > 0 {
-                    dataTypes.append(.float)
-                    values.append("\(row.columns[i].value as! Double)")
-                } else {
-                    dataTypes.append(.int)
-                    values.append("\(row.columns[i].value as! Int64)")
-                }
-                // TODO: no string support
+                dataTypes.append(.int)
+                values.append("\(row.columns[i].value as! Int64)")
+                // TODO: add alternative data type support
                 
                 fieldNames.append(dv.name)
             }

@@ -8,7 +8,10 @@
 import Foundation
 
 internal struct AEDataStreamBLE: Codable {
-    let notifyId: String
-    let dataId: String
-    let timeOffsetId: String
+//    let notifyId: String
+//    let dataId: String
+//    let timeOffsetId: String
+    let serviceUuid: String
+    let dataCharUuid: String
+    let configCharUuid: String
 }

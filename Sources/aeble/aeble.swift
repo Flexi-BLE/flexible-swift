@@ -8,7 +8,7 @@ public final class AEBLE: ObservableObject {
     public let settings: AEBLESettingsStore
     
     public init() throws {
-        self.db = try AEBLEDBManager()
+        self.db = AEBLEDBManager.shared
         self.settings = AEBLESettingsStore(dbQueue: db.dbQueue)
         self.conn = AEBLEConnectionManager(db: db)
         self.exp = AEBLEExperiment(db: db)
@@ -23,3 +23,4 @@ public final class AEBLE: ObservableObject {
         }
     }
 }
+        
