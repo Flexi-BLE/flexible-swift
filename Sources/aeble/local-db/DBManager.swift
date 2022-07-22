@@ -454,13 +454,7 @@ public final class AEBLEDBManager {
                     t.column(dv.name, .integer)
                 }
                 
-                if metadata.includeAnchorTimestamp {
-                    t.column("anchor_date", .datetime)
-                }
-                
-                if let offsetDef = metadata.offsetDataValue {
-                    t.column(offsetDef.name, .integer)
-                }
+                t.column("ts", .date)
                 
             }
             
@@ -490,7 +484,7 @@ public final class AEBLEDBManager {
         for ds: AEDataStream,
         anchorDate: Date,
         allValues: [[AEDataValue]],
-        offsets: [AEDataValue]
+        offsets: [Int]
     ) async {
         let tableName = "\(tableName(from: ds.name))_data"
         
@@ -501,14 +495,7 @@ public final class AEBLEDBManager {
             INSERT INTO \(tableName)
         """
         
-        var colsSql = "(\(cols), created_at"
-        if ds.includeAnchorTimestamp {
-            colsSql += ", anchor_date"
-        }
-        if let offsetDef = ds.offsetDataValue {
-            colsSql += ", \(offsetDef.name)"
-        }
-        colsSql += ") VALUES"
+        let colsSql = "(\(cols), created_at, ts) VALUES"
         
         sql += colsSql
         
@@ -517,16 +504,13 @@ public final class AEBLEDBManager {
         for (i, values) in allValues.enumerated() {
             args.append(contentsOf: values)
             args.append(Date())
-            sql += "(\(placeholders), ?"
-            if ds.includeAnchorTimestamp {
-                args.append(anchorDate)
-                sql += ", ?"
+            sql += "(\(placeholders), ?, ?), "
+            
+            if ds.includeAnchorTimestamp && ds.offsetDataValue != nil {
+                args.append(anchorDate.addingTimeInterval(TimeInterval(Double(offsets[i]) / 1000.0)))
+            } else {
+                args.append(Date())
             }
-            if ds.offsetDataValue != nil {
-                args.append(offsets[i])
-                sql += ", ?"
-            }
-            sql += "), "
         }
         
         sql.removeLast(2)

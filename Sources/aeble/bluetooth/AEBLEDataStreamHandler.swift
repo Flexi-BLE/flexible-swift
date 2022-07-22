@@ -68,7 +68,7 @@ class AEBLEDataStreamHandler {
         }
         
         var allValues: [[AEDataValue]] = []
-        var offsets: [AEDataValue] = []
+        var offsets: [Int] = []
         
         var lastOffset: Int = 0
         
