@@ -28,7 +28,8 @@
                         "byte_start": 6,
                         "byte_end": 7,
                         "size": 1,
-                        "type": "uint"
+                        "type": "uint",
+                        "multiplier": null
                     },
                     "config_values": [
                         {
@@ -90,58 +91,34 @@
                     ],
                     "data_values": [
                         {
-                            "name": "accel_x_whole",
-                            "description": "The whole (number before the decimal) of the x-axis",
+                            "name": "accel_x",
+                            "description": "x-axis value",
                             "unit": "",
                             "byte_start": 0,
-                            "byte_end": 1,
-                            "size": 1,
-                            "type": "int"
-                        },
-                        {
-                            "name": "accel_x_fraction",
-                            "description": "The integral (number after the decimal) of the x-axis",
-                            "unit": "",
-                            "byte_start": 1,
-                            "byte_end": 2,
-                            "size": 1,
-                            "type": "int"
-                        },
-                        {
-                            "name": "accel_y_whole",
-                            "description": "The whole (number before the decimal) of the y-axis",
-                            "unit": "",
-                            "byte_start": 2,
-                            "byte_end": 3,
-                            "size": 1,
-                            "type": "int"
-                        },
-                        {
-                            "name": "accel_y_fraction",
-                            "description": "The integral (number after the decimal) of the y-axis",
-                            "unit": "",
-                            "byte_start": 3,
                             "byte_end": 4,
-                            "size": 1,
-                            "type": "int"
+                            "size": 4,
+                            "type": "int",
+                            "multiplier": 0.000001
                         },
                         {
-                            "name": "accel_z_whole",
-                            "description": "The whole (number before the decimal) of the z-axis",
+                            "name": "accel_y",
+                            "description": "y-axis value",
                             "unit": "",
                             "byte_start": 4,
-                            "byte_end": 5,
-                            "size": 1,
-                            "type": "int"
+                            "byte_end": 8,
+                            "size": 4,
+                            "type": "int",
+                            "multiplier": 0.000001
                         },
                         {
-                            "name": "accel_z_fraction",
-                            "description": "The integral (number after the decimal) of the z-axis",
+                            "name": "accel_z",
+                            "description": "z-axis value",
                             "unit": "",
-                            "byte_start": 5,
-                            "byte_end": 6,
-                            "size": 1,
-                            "type": "int"
+                            "byte_start": 8,
+                            "byte_end": 12,
+                            "size": 4,
+                            "type": "int",
+                            "multiplier": 0.000001
                         }
                     ],
                     "ble": {

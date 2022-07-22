@@ -451,7 +451,7 @@ public final class AEBLEDBManager {
 //                t.column("user_id", .text).notNull(onConflict: .fail)
                 
                 for dv in metadata.dataValues {
-                    t.column(dv.name, .integer)
+                    t.column(dv.name, .double)
                 }
                 
                 t.column("ts", .date)

@@ -79,7 +79,7 @@ class AEBLEDataStreamHandler {
             
             for dv in def.dataValues {
                 let v = packet[i+dv.byteStart..<i+dv.byteEnd]
-        
+                
                 values.append(dv.unpack(data: v))
             }
             
@@ -258,22 +258,44 @@ extension AEDataValueDefinition {
         switch self.type {
         case .float: return Int(0)
         case .int:
-            var val : Int = 0
+            var val: Int = 0
             
-            for byte in _data {
-                val = val << 8
-                val = val | Int(byte)
+            _data = Data(_data.reversed())
+            switch self.size {
+            case 1:
+                val = Int(_data.withUnsafeBytes({ $0.load(as: Int8.self) }))
+            case 2:
+                val = Int(_data.withUnsafeBytes({ $0.load(as: Int16.self) }))
+            case 4:
+                val = Int(_data.withUnsafeBytes({ $0.load(as: Int32.self) }))
+            case 8:
+                val = Int(_data.withUnsafeBytes({ $0.load(as: Int64.self) }))
+            default: return Int(0)
             }
             
+            if let m = self.multiplier {
+                return round((Double(val) * m) * 1000000) / 1000000.0
+            }
             return val
         case .unsignedInt:
-            var val : UInt = 0
-            for byte in _data {
-                val = val << 8
-                val = val | UInt(byte)
+            var val: Int = 0
+            
+            switch self.size {
+            case 1:
+                val = Int(_data.withUnsafeBytes({ $0.load(as: UInt8.self) }))
+            case 2:
+                val = Int(_data.withUnsafeBytes({ $0.load(as: UInt16.self) }))
+            case 4:
+                val = Int(_data.withUnsafeBytes({ $0.load(as: UInt32.self) }))
+            case 8:
+                val = Int(_data.withUnsafeBytes({ $0.load(as: UInt64.self) }))
+            default: return Int(0)
             }
             
-            return Int(val)
+            if let m = self.multiplier {
+                return round((Double(val) * m) * 1000000) / 1000000.0
+            }
+            return val
         case .string:
             return String(data: _data, encoding: .ascii) ?? ""
         }
