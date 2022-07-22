@@ -58,23 +58,23 @@
                             "name": "desired_frequency",
                             "description": "the desired frequency of the sensor",
                             "byte_start": 1,
-                            "byte_end": 2,
-                            "size": 1,
+                            "byte_end": 3,
+                            "size": 2,
                             "type": "uint",
                             "unit": "Hz",
                             "options": null,
                             "default_value":  "50",
                             "range": {
                                 "start": 0,
-                                "end": 300,
-                                "step": 10
+                                "end": 1000,
+                                "step": 20
                             }
                         },
                         {
                             "name": "batch_size",
                             "description": "the maximun size of payload",
-                            "byte_start": 2,
-                            "byte_end": 3,
+                            "byte_start": 3,
+                            "byte_end": 4,
                             "size": 1,
                             "type": "uint",
                             "unit": "bytes",
@@ -99,7 +99,7 @@
                             "type": "int"
                         },
                         {
-                            "name": "accel_x_integral",
+                            "name": "accel_x_fraction",
                             "description": "The integral (number after the decimal) of the x-axis",
                             "unit": "",
                             "byte_start": 1,
@@ -117,7 +117,7 @@
                             "type": "int"
                         },
                         {
-                            "name": "accel_y_integral",
+                            "name": "accel_y_fraction",
                             "description": "The integral (number after the decimal) of the y-axis",
                             "unit": "",
                             "byte_start": 3,
@@ -135,7 +135,7 @@
                             "type": "int"
                         },
                         {
-                            "name": "accel_z_integral",
+                            "name": "accel_z_fraction",
                             "description": "The integral (number after the decimal) of the z-axis",
                             "unit": "",
                             "byte_start": 5,

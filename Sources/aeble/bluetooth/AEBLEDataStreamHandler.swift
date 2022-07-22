@@ -175,17 +175,17 @@ extension AEDataStreamConfig {
             case 2:
                 var val = Float16(value) ?? Float16(defaultValue) ?? Float16(0)
                 withUnsafePointer(to: &val) {
-                    data.append(UnsafeBufferPointer(start: $0, count: self.size))
+                    data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
             case 4:
                 var val = Float32(value) ?? Float32(defaultValue) ?? Float32(0)
                 withUnsafePointer(to: &val) {
-                    data.append(UnsafeBufferPointer(start: $0, count: self.size))
+                    data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
             case 8:
                 var val = Float64(value) ?? Float64(defaultValue) ?? Float64(0)
                 withUnsafePointer(to: &val) {
-                    data.append(UnsafeBufferPointer(start: $0, count: self.size))
+                    data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
             default: break
             }
@@ -194,22 +194,22 @@ extension AEDataStreamConfig {
             case 1:
                 var val = Int8(value) ?? Int8(defaultValue) ?? Int8(0)
                 withUnsafePointer(to: &val) {
-                    data.append(UnsafeBufferPointer(start: $0, count: self.size))
+                    data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
             case 2:
                 var val = Int16(value) ?? Int16(defaultValue) ?? Int16(0)
                 withUnsafePointer(to: &val) {
-                    data.append(UnsafeBufferPointer(start: $0, count: self.size))
+                    data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
             case 4:
                 var val = Int32(value) ?? Int32(defaultValue) ?? Int32(0)
                 withUnsafePointer(to: &val) {
-                    data.append(UnsafeBufferPointer(start: $0, count: self.size))
+                    data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
             case 8:
                 var val = Int64(value) ?? Int64(defaultValue) ?? Int64(0)
                 withUnsafePointer(to: &val) {
-                    data.append(UnsafeBufferPointer(start: $0, count: self.size))
+                    data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
             default: break
             }
@@ -218,28 +218,30 @@ extension AEDataStreamConfig {
             case 1:
                 var val = UInt8(value) ?? UInt8(defaultValue) ?? UInt8(0)
                 withUnsafePointer(to: &val) {
-                    data.append(UnsafeBufferPointer(start: $0, count: self.size))
+                    data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
             case 2:
                 var val = UInt16(value) ?? UInt16(defaultValue) ?? UInt16(0)
                 withUnsafePointer(to: &val) {
-                    data.append(UnsafeBufferPointer(start: $0, count: self.size))
+                    data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
             case 4:
                 var val = UInt32(value) ?? UInt32(defaultValue) ?? UInt32(0)
                 withUnsafePointer(to: &val) {
-                    data.append(UnsafeBufferPointer(start: $0, count: self.size))
+                    data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
             case 8:
                 var val = UInt64(value) ?? UInt64(defaultValue) ?? UInt64(0)
                 withUnsafePointer(to: &val) {
-                    data.append(UnsafeBufferPointer(start: $0, count: self.size))
+                    data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
             default: break
             }
         case .string:
             data.append(value.data(using: .ascii) ?? defaultValue.data(using: .ascii) ?? Data(repeating: 0, count: self.size))
         }
+        
+        data = Data(data.reversed()) // little endian
         
         return data
     }
