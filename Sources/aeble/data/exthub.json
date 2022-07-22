@@ -11,7 +11,8 @@
             "tags": ["research"],
             "ble": {
                 "ble_registered_services": ["battery", "current-time"],
-                "info_service_uuid": "1a220001-c2ed-4d11-ad1e-fc06d8a02d37"
+                "info_service_uuid": "1a220001-c2ed-4d11-ad1e-fc06d8a02d37",
+                "epoch_char_uuid": "1a220002-c2ed-4d11-ad1e-fc06d8a02d37"
             },
             "configurations": [],
             "data_streams": [

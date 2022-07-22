@@ -34,11 +34,11 @@ class AEBLEDataStreamHandler {
         }
     }
     
-    func didUpdate(uuid: CBUUID, data: Data?) {
+    func didUpdate(uuid: CBUUID, data: Data?, referenceDate: Date?=nil) {
         guard let data = data else { return }
         
         switch uuid {
-        case def.dataCbuuid: Task { await didUpdateData(data: data) }
+        case def.dataCbuuid: Task { await didUpdateData(data: data, referenceDate: referenceDate ?? Date()) }
         case def.configCbuuid: Task { await didUpdateConfig(data: data) }
         default: bleLog.error("did update unknown characteristic: \(uuid)")
         }
@@ -48,18 +48,23 @@ class AEBLEDataStreamHandler {
         bleLog.debug("did write value for \(self.def.name)")
     }
     
-    private func didUpdateData(data: Data) async {
+    private func didUpdateData(data: Data, referenceDate: Date) async {
         var packetSize = def.dataValues.reduce(0) { $0 + $1.size }
+        
         if let offsetDef = def.offsetDataValue {
             packetSize += offsetDef.size
         }
         
         
-        let anchorDate = Date()
+        var anchorDate = referenceDate
+        var dataStartByte = 0
         
         if def.includeAnchorTimestamp {
-            // TODO: handle anchor timestamp
-            bleLog.debug("TODO: handle anchor timestamp")
+            let ms = data[0..<4].withUnsafeBytes({ $0.load(as: UInt32.self) })
+            bleLog.debug("anchor ms: \(ms), seconds: \(Double(ms) / 1000.0)")
+            
+            anchorDate = anchorDate.addingTimeInterval(TimeInterval( Double(ms) / 1000.0 ))
+            dataStartByte = 4
         }
         
         var allValues: [[AEDataValue]] = []
@@ -67,8 +72,8 @@ class AEBLEDataStreamHandler {
         
         var lastOffset: Int = 0
         
-        for step in 0..<Int(data.count / packetSize) {
-            let i = step * packetSize
+        for step in 0..<(Int(data.count / packetSize) - dataStartByte) {
+            let i = (step * packetSize) + dataStartByte
             let packet = data[i..<i+packetSize]
             var values: [AEDataValue] = []
             

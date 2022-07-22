@@ -34,6 +34,10 @@ internal extension AEThing {
         return CBUUID(string: ble.infoServiceUuid)
     }
     
+    var epochTimeUuid: CBUUID {
+        return CBUUID(string: ble.epochCharUuid)
+    }
+    
     func dataStreams(from uuid: CBUUID) -> [AEDataStream] {
         return self.dataStreams
             .filter({ $0.serviceCbuuid == uuid })

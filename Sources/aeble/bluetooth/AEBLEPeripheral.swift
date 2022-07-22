@@ -31,6 +31,7 @@ public class AEBLEPeripheral: NSObject, ObservableObject {
     @Published public var rssi: Int = 0
     
     internal var serviceHandlers: [AEBLEDataStreamHandler] = []
+    internal let infoServiceHandler: AEInfoServiceHandler
     private var uploaders: [AEStreamDataUploader] = []
     
     /// Reference to database
@@ -44,6 +45,10 @@ public class AEBLEPeripheral: NSObject, ObservableObject {
     internal init(metadata: AEThing, db: AEBLEDBManager) {
         self.metadata = metadata
         self.db = db
+        self.infoServiceHandler = AEInfoServiceHandler(
+            serviceId: metadata.infoServiceUuid,
+            def: metadata
+        )
     }
     
     internal func set(peripheral: CBPeripheral) {
@@ -107,7 +112,11 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
             handleRegisteredServiceDiscovery(peripheral: peripheral, service: service)
         } else if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.setup(peripheral: peripheral, service: service)
-        } else {
+        } else if service.uuid == metadata.infoServiceUuid {
+            infoServiceHandler.setup(peripheral: peripheral, service: service)
+        }
+        
+        else {
             bleLog.info("found unknown characteristics for service \(service.uuid)")
         }
 
@@ -125,7 +134,13 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
         guard let service = characteristic.service else { return }
         
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
-            handler.didUpdate(uuid: characteristic.uuid, data: characteristic.value)
+            handler.didUpdate(
+                uuid: characteristic.uuid,
+                data: characteristic.value,
+                referenceDate: infoServiceHandler.referenceDate ?? Date()
+            )
+        } else if service.uuid == metadata.infoServiceUuid {
+            infoServiceHandler.didUpdate(uuid: characteristic.uuid, data: characteristic.value)
         }
     }
     
@@ -141,8 +156,11 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
         
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.didWrite(uuid: characteristic.uuid)
-            peripheral.readValue(for: characteristic)
+        } else if service.uuid == metadata.infoServiceUuid {
+            infoServiceHandler.didWrite(uuid: characteristic.uuid)
         }
+        
+        peripheral.readValue(for: characteristic)
     }
     
     public func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
