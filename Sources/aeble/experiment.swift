@@ -70,19 +70,19 @@ public class AEBLEExperiment {
             }
             
             let settings = try await AEBLESettingsStore.activeSetting(dbQueue: db.dbQueue)
-            let expRes = await AEBLEAPI.createExperiment(exp: exp, settings: settings)
-            
-            switch expRes {
-            case .success(let inserted):
-                if inserted {
-                    try await db.dbQueue.write { db in
-                        var exp = try Experiment.fetchOne(db, key: ["id": id])
-                        exp?.uploaded = true
-                        try exp?.update(db)
-                    }
-                }
-            case .failure(_): break
-            }
+//            let expRes = await AEBLEAPI.createExperiment(exp: exp, settings: settings)
+//
+//            switch expRes {
+//            case .success(let inserted):
+//                if inserted {
+//                    try await db.dbQueue.write { db in
+//                        var exp = try Experiment.fetchOne(db, key: ["id": id])
+//                        exp?.uploaded = true
+//                        try exp?.update(db)
+//                    }
+//                }
+//            case .failure(_): break
+//            }
             
             return .success(true)
         } catch {
@@ -129,15 +129,15 @@ public class AEBLEExperiment {
             )
             
             let settings = try await AEBLESettingsStore.activeSetting(dbQueue: db.dbQueue)
-            let res = await AEBLEAPI.createTimestamp(ts: ts, settings: settings)
-            
-            switch res {
-            case .success(let inserted):
-                if inserted {
-                    ts.uploaded = true
-                }
-            case .failure(_): break
-            }
+//            let res = await AEBLEAPI.createTimestamp(ts: ts, settings: settings)
+//
+//            switch res {
+//            case .success(let inserted):
+//                if inserted {
+//                    ts.uploaded = true
+//                }
+//            case .failure(_): break
+//            }
             
             try await db.dbQueue.write { [ts] db in
                 try ts.insert(db)

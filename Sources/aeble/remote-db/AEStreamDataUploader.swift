@@ -62,7 +62,7 @@ internal class AEStreamDataUploader {
         guard let limit = recordLimit else { return }
         counter += num
         if counter >= limit {
-            Task { await upload() }
+//            Task { await upload() }
         }
     }
     
@@ -76,91 +76,91 @@ internal class AEStreamDataUploader {
         }
         
         if cnt ?? 0 >= limit {
-            await upload()
+//            await upload()
         }
     }
     
     internal func check(with date: Date = Date.now) {
         guard let limit = timeLimit else { return }
         if lastUpload.distance(to: date) > limit {
-            Task { await upload() }
+//            Task { await upload() }
         }
     }
     
-    private func upload() async {
-        if tableMetadata == nil {
-            tableMetadata = dbMgr.tableInfo(for: self.dataStream.name)
-        }
-        
-        guard let tableMetadata = self.tableMetadata else { return }
-
-        let start = Date.now
-        let dataValueFields: [String] = dataStream.dataValues.map({ $0.name })
-        let fields = ["created_at", "uploaded", "user_id"] + dataValueFields
-        
-        let query = """
-            SELECT \(fields.joined(separator: ", "))
-            FROM \(self.dataStream.name)
-            WHERE uploaded = 0
-            ORDER BY created_at DESC
-        """
-        
-        do {
-            let data: [GenericRow]? = try await dbMgr.dbQueue.read { db in
-                let res = try Row.fetchAll(db, sql: query)
-                return res.map({ GenericRow(metadata: tableMetadata, row: $0) })
-            }
-            
-            guard let data = data else { return }
-            bleLog.info("[UPLOAD] \(data.count) records")
-            
-            let settings = try await AEBLESettingsStore.activeSetting(dbQueue: dbMgr.dbQueue)
-            
-            let res = await AEBLEAPI.batchLoad(
-                metadata: dataStream,
-                rows: data,
-                settings: settings
-            )
-            
-            switch res {
-            case .success(_):
-                bleLog.info("[UPLOAD] success")
-                await purge()
-                await setUploaded(before: Date.now)
-                
-                let upload = DataUpload(
-                    id: nil,
-                    status: .success,
-                    createdAt: Date.now,
-                    duration: Date.now.timeIntervalSince(start),
-                    numberOfRecords: data.count,
-                    bucket: settings.sensorDataBucketName,
-                    measurement: dataStream.name,
-                    errorMessage: nil
-                )
-                await record(upload: upload)
-                
-            case .failure(let error):
-                bleLog.info("[UPLOAD] failure: \(error.localizedDescription)")
-                
-                let upload = DataUpload(
-                    id: nil,
-                    status: .fail,
-                    createdAt: Date.now,
-                    duration: 0,
-                    numberOfRecords: 0,
-                    bucket: nil,
-                    measurement: dataStream.name,
-                    errorMessage: error.localizedDescription
-                )
-                await record(upload: upload)
-            }
-            
-        } catch {
-            bleLog.info("[UPLOAD] unable to upload records: \(error.localizedDescription)")
-        }
-        
-    }
+//    private func upload() async {
+//        if tableMetadata == nil {
+//            tableMetadata = dbMgr.tableInfo(for: self.dataStream.name)
+//        }
+//        
+//        guard let tableMetadata = self.tableMetadata else { return }
+//
+//        let start = Date.now
+//        let dataValueFields: [String] = dataStream.dataValues.map({ $0.name })
+//        let fields = ["created_at", "uploaded", "user_id"] + dataValueFields
+//        
+//        let query = """
+//            SELECT \(fields.joined(separator: ", "))
+//            FROM \(self.dataStream.name)
+//            WHERE uploaded = 0
+//            ORDER BY created_at DESC
+//        """
+//        
+//        do {
+//            let data: [GenericRow]? = try await dbMgr.dbQueue.read { db in
+//                let res = try Row.fetchAll(db, sql: query)
+//                return res.map({ GenericRow(metadata: tableMetadata, row: $0) })
+//            }
+//            
+//            guard let data = data else { return }
+//            bleLog.info("[UPLOAD] \(data.count) records")
+//            
+//            let settings = try await AEBLESettingsStore.activeSetting(dbQueue: dbMgr.dbQueue)
+//            
+//            let res = await AEBLEAPI.batchLoad(
+//                metadata: dataStream,
+//                rows: data,
+//                settings: settings
+//            )
+//            
+//            switch res {
+//            case .success(_):
+//                bleLog.info("[UPLOAD] success")
+//                await purge()
+//                await setUploaded(before: Date.now)
+//                
+//                let upload = DataUpload(
+//                    id: nil,
+//                    status: .success,
+//                    createdAt: Date.now,
+//                    duration: Date.now.timeIntervalSince(start),
+//                    numberOfRecords: data.count,
+//                    bucket: settings.sensorDataBucketName,
+//                    measurement: dataStream.name,
+//                    errorMessage: nil
+//                )
+//                await record(upload: upload)
+//                
+//            case .failure(let error):
+//                bleLog.info("[UPLOAD] failure: \(error.localizedDescription)")
+//                
+//                let upload = DataUpload(
+//                    id: nil,
+//                    status: .fail,
+//                    createdAt: Date.now,
+//                    duration: 0,
+//                    numberOfRecords: 0,
+//                    bucket: nil,
+//                    measurement: dataStream.name,
+//                    errorMessage: error.localizedDescription
+//                )
+//                await record(upload: upload)
+//            }
+//            
+//        } catch {
+//            bleLog.info("[UPLOAD] unable to upload records: \(error.localizedDescription)")
+//        }
+//        
+//    }
     
     private func purge() async {
         let query = """

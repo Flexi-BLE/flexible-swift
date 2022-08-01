@@ -57,65 +57,68 @@ final public class AEBLESettingsStore: ObservableObject {
     }
     
     internal func peripheralConfig() async -> AEDeviceConfig {
-        if settings.peripheralConfigurationId == "local default" {
-            return AEBLESettingsStore.loadLocalPeripheralMetadata()
-        } else {
-            do {
-                if let existing = try await dbQueue.write({ db -> AEDeviceConfig? in
-                    if let config = try PeripheralConfiguration
-                        .filter(PeripheralConfiguration.Columns.externalId == self.settings.peripheralConfigurationId)
-                        .fetchOne(db) {
-                        return try Data.sharedJSONDecoder.decode(AEDeviceConfig.self, from: config.data)
-                    }
-                    return nil
-                }) {
-                    return existing
-                }
-                
-                let res = await AEBLEAPI.getConfig(settings: self.settings)
-                switch res {
-                case .success(let remote):
-                    if let remote = remote {
-                        try await dbQueue.write { db in
-                            var c = PeripheralConfiguration(
-                                externalId: self.settings.peripheralConfigurationId,
-                                data: try Data.sharedJSONEncoder.encode(remote),
-                                createdAt: remote.createdAt,
-                                updatedAt: remote.updatedAt
-                            )
-                            try c.insert(db)
-                        }
-                        return remote
-                    }
-                    else {
-                        throw AEBLEError.configError(
-                            msg: "no remote configuration found for id \(self.settings.peripheralConfigurationId)"
-                        )
-                    }
-                case .failure(let error):
-                    throw error
-                }
-            } catch {
-                settings.peripheralConfigurationId = "local default"
-                return AEBLESettingsStore.loadLocalPeripheralMetadata()
-            }
-        }
+        return AEBLESettingsStore.loadLocalPeripheralMetadata()
+//        if settings.peripheralConfigurationId == "local default" {
+//            return AEBLESettingsStore.loadLocalPeripheralMetadata()
+//        } else {
+//            do {
+//                if let existing = try await dbQueue.write({ db -> AEDeviceConfig? in
+//                    if let config = try PeripheralConfiguration
+//                        .filter(PeripheralConfiguration.Columns.externalId == self.settings.peripheralConfigurationId)
+//                        .fetchOne(db) {
+//                        return try Data.sharedJSONDecoder.decode(AEDeviceConfig.self, from: config.data)
+//                    }
+//                    return nil
+//                }) {
+//                    return existing
+//                }
+//
+//                let res = await AEBLEAPI.getConfig(settings: self.settings)
+//                switch res {
+//                case .success(let remote):
+//                    if let remote = remote {
+//                        try await dbQueue.write { db in
+//                            var c = PeripheralConfiguration(
+//                                externalId: self.settings.peripheralConfigurationId,
+//                                data: try Data.sharedJSONEncoder.encode(remote),
+//                                createdAt: remote.createdAt,
+//                                updatedAt: remote.updatedAt
+//                            )
+//                            try c.insert(db)
+//                        }
+//                        return remote
+//                    }
+//                    else {
+//                        throw AEBLEError.configError(
+//                            msg: "no remote configuration found for id \(self.settings.peripheralConfigurationId)"
+//                        )
+//                    }
+//                case .failure(let error):
+//                    throw error
+//                }
+//            } catch {
+//                settings.peripheralConfigurationId = "local default"
+//                return AEBLESettingsStore.loadLocalPeripheralMetadata()
+//            }
+//        }
     }
     
     public func avaiablePeripheralConfiguration() async -> [String] {
-        let res = await AEBLEAPI.getAvaiableConfigs(settings: self.settings)
-        switch res {
-        case .success(let names): return names
-        case .failure(_): return []
-        }
+//        let res = await AEBLEAPI.getAvaiableConfigs(settings: self.settings)
+//        switch res {
+//        case .success(let names): return names
+//        case .failure(_): return []
+//        }
+        return []
     }
     
     public func buckets() async -> [String] {
-        let res = await AEBLEAPI.getBuckets(settings: self.settings)
-        switch res {
-        case .success(let names): return names
-        case .failure(_): return []
-        }
+//        let res = await AEBLEAPI.getBuckets(settings: self.settings)
+//        switch res {
+//        case .success(let names): return names
+//        case .failure(_): return []
+//        }
+        return []
     }
     
     public func update() async -> Result<Bool, Error> {

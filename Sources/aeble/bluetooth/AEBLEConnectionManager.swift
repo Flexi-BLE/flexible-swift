@@ -23,7 +23,12 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
     required init(db: AEBLEDBManager) {
         self.db = db
         super.init()
-        self.centralManager = CBCentralManager(delegate: self, queue: nil)
+        
+        self.centralManager = CBCentralManager(
+            delegate: self,
+            queue: nil,
+            options: [CBCentralManagerOptionRestoreIdentifierKey: "AEBLE"]
+        )
     }
     
     public func peripheral(for name: String) -> AEBLEPeripheral? {
@@ -135,6 +140,14 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
 }
 
 extension AEBLEConnectionManager: CBCentralManagerDelegate {
+    public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
+        if let perfs = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
+            for perf in perfs {
+                print(perf)
+            }
+        }
+    }
+    
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
         self.centralState = central.state
         
