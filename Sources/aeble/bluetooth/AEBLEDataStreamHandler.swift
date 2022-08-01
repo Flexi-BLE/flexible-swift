@@ -280,17 +280,12 @@ extension AEDataValueDefinition {
         case .unsignedInt:
             var val: Int = 0
             
-            switch self.size {
-            case 1:
-                val = Int(_data.withUnsafeBytes({ $0.load(as: UInt8.self) }))
-            case 2:
-                val = Int(_data.withUnsafeBytes({ $0.load(as: UInt16.self) }))
-            case 4:
-                val = Int(_data.withUnsafeBytes({ $0.load(as: UInt32.self) }))
-            case 8:
-                val = Int(_data.withUnsafeBytes({ $0.load(as: UInt64.self) }))
-            default: return Int(0)
+            var uval: UInt = 0
+            for byte in data {
+                uval = uval << 8
+                uval = uval | UInt(byte)
             }
+            val = Int(uval)
             
             if let m = self.multiplier {
                 return round((Double(val) * m) * 1000000) / 1000000.0

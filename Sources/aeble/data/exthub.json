@@ -126,6 +126,276 @@
                         "data_char_uuid": "1a220005-c2ed-4d11-ad1e-fc06d8a02d37",
                         "config_char_uuid": "1a220004-c2ed-4d11-ad1e-fc06d8a02d37"
                     }
+                },
+                {
+                    "id": "0xb93c",
+                    "name": "ppg",
+                    "description": "PPG data",
+                    "include_anchor_timestamp": true,
+                    "offset_data_value": {
+                        "name": "ms_offset",
+                        "description": "relative time since the previous reading",
+                        "unit": "ms",
+                        "byte_start": 4,
+                        "byte_end": 5,
+                        "size": 1,
+                        "type": "uint",
+                        "multiplier": null
+                    },
+                    "config_values": [
+                        {
+                            "name": "sensor_state",
+                            "description": "state of the accelerometer sensor",
+                            "byte_start": 0,
+                            "byte_end": 1,
+                            "size": 1,
+                            "unit": null,
+                            "type": "uint",
+                            "default_value": "0",
+                            "options": [
+                                {
+                                    "name": "disabled",
+                                    "description": "the sensor will not stream data",
+                                    "value": "0"
+                                },
+                                {
+                                    "name": "streaming",
+                                    "description": "the sensor will stream data",
+                                    "value": "1"
+                                }
+                            ],
+                            "range": null
+                        },
+                        {
+                            "name": "desired_frequency",
+                            "description": "the desired frequency of the sensor",
+                            "byte_start": 1,
+                            "byte_end": 3,
+                            "size": 2,
+                            "type": "uint",
+                            "unit": "Hz",
+                            "options": null,
+                            "default_value":  "50",
+                            "range": {
+                                "start": 0,
+                                "end": 500,
+                                "step": 5
+                            }
+                        },
+                        {
+                            "name": "number_of_readings",
+                            "description": "number of readings to average",
+                            "byte_start": 3,
+                            "byte_end": 4,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "reading",
+                            "options": null,
+                            "default_value":  "1",
+                            "range": {
+                                "start": 1,
+                                "end": 20,
+                                "step": 1
+                            }
+                        },
+                        {
+                            "name": "conversion_delay",
+                            "description": "time between LED on and conversion",
+                            "byte_start": 4,
+                            "byte_end": 5,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "ms",
+                            "options": null,
+                            "default_value":  "1",
+                            "range": {
+                                "start": 0,
+                                "end": 5,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "blue_460_brightness",
+                            "description": "brightness of blue (460nm) LED",
+                            "byte_start": 5,
+                            "byte_end": 6,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "yellow_green_565_brightness",
+                            "description": "brightness of yellow-green (565nm) LED",
+                            "byte_start": 6,
+                            "byte_end": 7,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "red_660_brightness",
+                            "description": "brightness of red (660nm) LED",
+                            "byte_start": 7,
+                            "byte_end": 8,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "green_a_525_brightness",
+                            "description": "brightness of green A (525nm) LED",
+                            "byte_start": 8,
+                            "byte_end": 9,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                           
+                            }
+                        },
+                        {
+                            "name": "yellow_575_brightness",
+                            "description": "brightness of yellow (575nm) LED",
+                            "byte_start": 9,
+                            "byte_end": 10,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "ir_850_brightness",
+                            "description": "brightness of IR (850nm) LED",
+                            "byte_start": 10,
+                            "byte_end": 11,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "green_b_525_brightness",
+                            "description": "brightness of green B (525nm) LED",
+                            "byte_start": 11,
+                            "byte_end": 12,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "orange_590_brightness",
+                            "description": "brightness of orange (590nm) LED",
+                            "byte_start": 12,
+                            "byte_end": 13,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "ir_940_brightness",
+                            "description": "brightness of IR (940nm) LED",
+                            "byte_start": 13,
+                            "byte_end": 14,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        }
+                    ],
+                    "data_values": [
+                        {
+                            "name": "wavelength",
+                            "description": "wavelength of LED",
+                            "unit": "nm",
+                            "byte_start": 0,
+                            "byte_end": 1,
+                            "size": 1,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "brightness",
+                            "description": "brightness of LED",
+                            "unit": "arb",
+                            "byte_start": 1,
+                            "byte_end": 2,
+                            "size": 1,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value",
+                            "description": "photodiode ADC counts",
+                            "unit": "counts",
+                            "byte_start": 2,
+                            "byte_end": 4,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        }
+                    ],
+                    "ble": {
+                        "service_uuid": "1a220010-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "data_char_uuid": "1a220012-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "config_char_uuid": "1a220011-c2ed-4d11-ad1e-fc06d8a02d37"
+                    }
                 }
             ]
         }
