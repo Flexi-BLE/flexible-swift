@@ -1,5 +1,5 @@
 //
-//  Event.swift
+//  Experiment.swift
 //  
 //
 //  Created by blaine on 2/23/22.
@@ -40,7 +40,7 @@ public struct Experiment: Codable {
     }
 }
 
-extension  Experiment: TableRecord {
+extension Experiment: TableRecord {
     static let timestampForeignKey = ForeignKey([Timestamp.CodingKeys.experimentId.rawValue])
         static var timestamps = hasMany(Timestamp.self, using: timestampForeignKey)
         var timestamps: QueryInterfaceRequest<Timestamp> {

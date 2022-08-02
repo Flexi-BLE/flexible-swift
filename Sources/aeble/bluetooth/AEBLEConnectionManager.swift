@@ -16,6 +16,7 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
     @Published public private(set) var isScanning: Bool = false
         
     @Published public private(set) var peripherals: [AEBLEPeripheral] = []
+    @Published public private(set) var registeredPeripherals: [AEBLERegisteredPeripheral] = []
     
     private var scanOnPoweredOn: Bool = true
     private let db: AEBLEDBManager
@@ -35,6 +36,10 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
         return peripherals.first(where: { $0.metadata.name == name })
     }
     
+    public func registeredPeripheral(for name: String) -> AEBLERegisteredPeripheral? {
+        return registeredPeripherals.first(where: { $0.metadata.name == name })
+    }
+    
     public func disable(thing: AEThing) {
         guard let p = self.peripherals.first(where: { $0.metadata.name == thing.name }) else {
             return
@@ -50,8 +55,28 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
             }
         default:
             p.isEnabled = false
-            if isScanning { startScan() }
         }
+        toggleScanWithConnections()
+    }
+    
+    public func disable(registeredDevice: AEBLERegisteredDevice) {
+        guard let p = self.registeredPeripherals.first(where: { $0.metadata.name == registeredDevice.name }) else {
+            return
+        }
+        
+        if !p.isEnabled { return }
+        
+        switch p.state {
+        case .connected:
+            p.isEnabled = false
+            if let cbPeripheral = p.cbp {
+                centralManager.cancelPeripheralConnection(cbPeripheral)
+            }
+        default:
+            p.isEnabled = false
+        }
+        
+        toggleScanWithConnections()
     }
     
     public func enable(thing: AEThing) {
@@ -62,7 +87,20 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
         if p.isEnabled && p.state == .connected { return }
         
         p.isEnabled = true
-        if isScanning { startScan() }
+        
+        toggleScanWithConnections()
+    }
+    
+    public func enable(registeredDevice: AEBLERegisteredDevice) {
+        guard let p = self.registeredPeripherals.first(where: { $0.metadata.name == registeredDevice.name }) else {
+            return
+        }
+        
+        if p.isEnabled && p.state == .connected { return }
+        
+        p.isEnabled = true
+        
+        toggleScanWithConnections()
     }
     
     public func updateConfig(
@@ -83,17 +121,48 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
     
     internal func scan(with payload: AEDeviceConfig) {
         for peripheralMetadata in payload.things {
-            let AEBLEPeripheral = AEBLEPeripheral(
+            let p = AEBLEPeripheral(
                 metadata: peripheralMetadata,
                 db: self.db
             )
-            self.peripherals.append(AEBLEPeripheral)
+            self.peripherals.append(p)
+        }
+        
+        for rdm in payload.bleRegisteredDevices {
+            if registeredPeripherals.first(where: { $0.metadata.name != rdm.name }) == nil {
+                let dp = AEBLERegisteredPeripheral(metadata: rdm)
+                self.registeredPeripherals.append(dp)
+            }
         }
         
         guard centralManager.state == .poweredOn else { return }
         
         if isScanning { stopScan() }
         startScan()
+    }
+    
+    private func toggleScanWithConnections() {
+        var allConnected = true
+        
+        for p in peripherals {
+            if p.isEnabled && p.state != .connected {
+                allConnected = false
+                break
+            }
+        }
+        
+        for p in registeredPeripherals {
+            if p.isEnabled && p.state != .connected {
+                allConnected = false
+                break
+            }
+        }
+        
+        if allConnected {
+            stopScan()
+        } else {
+            startScan()
+        }
     }
     
     private func startScan() {
@@ -108,13 +177,20 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
                 services.append(contentsOf: p.metadata.serviceIds)
             }
         }
+        
+        for device in self.registeredPeripherals {
+            if device.isEnabled {
+                services.append(contentsOf: device.metadata.serviceIds)
+            }
+        }
 
         guard services.count > 0 else {
             bleLog.info("scanning enabled, but no services, not starting scan.")
             return
         }
 
-        bleLog.info("starting scan for services: \(services)")
+        bleLog.info("started scan")
+        bleLog.info("scanning for devices with services: \(services)")
         
         centralManager.scanForPeripherals(
             withServices:nil,
@@ -126,6 +202,8 @@ public class AEBLEConnectionManager: NSObject, ObservableObject {
     internal func stopScan() {
         centralManager.stopScan()
         isScanning = centralManager.isScanning
+        
+        bleLog.info("stopped scan")
     }
     
     internal func disconnect(_ peripheral: AEBLEPeripheral) {
@@ -160,38 +238,54 @@ extension AEBLEConnectionManager: CBCentralManagerDelegate {
     }
     
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        guard let peri = peripherals.first(where: { $0.metadata.name == peripheral.name }),
-                peri.isEnabled else { return }
-        
-        peri.set(peripheral: peripheral)
-        bleLog.info("Peripheral Found \(peri.metadata.name)")
-        
-        centralManager.connect(
-            peripheral
-//            options: [
-//                CBConnectPeripheralOptionNotifyOnConnectionKey: true,
-//                CBConnectPeripheralOptionNotifyOnDisconnectionKey: true
-//            ]
-        )
+        if let p = peripherals.first(where: { $0.metadata.name == peripheral.name }),
+           p.isEnabled {
+            p.set(peripheral: peripheral)
+            bleLog.info("Peripheral Found \(p.metadata.name)")
+            
+            if peripheral.state == .disconnected {
+                centralManager.connect(
+                    peripheral
+                )
+            }
+            
+        } else if let p = registeredPeripherals.first(where: { $0.metadata.name == peripheral.name }),
+                  p.isEnabled {
+            
+            p.set(peripheral: peripheral)
+            
+            if peripheral.state == .disconnected {
+                bleLog.info("Registered Peripheral Found \(p.metadata.name)")
+                centralManager.connect(
+                    peripheral
+                )
+            }
+        }
     }
     
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        guard let peri = peripherals.first(where: { $0.metadata.name == peripheral.name }) else { return }
-        bleLog.info("connceted to: \(peri.metadata.name)")
-        peri.didUpdateState()
+        
+        if let p = peripherals.first(where: { $0.metadata.name == peripheral.name }) {
+            bleLog.info("connceted to: \(p.metadata.name)")
+            p.didUpdateState()
+        } else if let p = registeredPeripherals.first(where: { $0.metadata.name == peripheral.name }) {
+            bleLog.info("connceted to: \(p.metadata.name)")
+            p.didUpdateState()
+        }
+        
+        toggleScanWithConnections()
     }
     
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        guard let peri = peripherals.first(where: { $0.metadata.name == peripheral.name }) else { return }
-        bleLog.info("\(peri.metadata.name) disconnected")
-        peri.didUpdateState()
+        
+        if let p = peripherals.first(where: { $0.metadata.name == peripheral.name }) {
+            bleLog.info("\(p.metadata.name) disconnected")
+            p.didUpdateState()
+        } else if let p = registeredPeripherals.first(where: { $0.metadata.name == peripheral.name }) {
+            bleLog.info("\(p.metadata.name) disconnected")
+            p.didUpdateState()
+        }
         
         if (isScanning) { startScan() }
-    }
-}
-
-extension AEBLEConnectionManager: CBPeripheralDelegate {
-    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        bleLog.info("Services Discovered: \(peripheral.services ?? [])")
     }
 }

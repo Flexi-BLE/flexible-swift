@@ -61,21 +61,23 @@ class AEBLEDataStreamHandler {
         
         if def.includeAnchorTimestamp {
             let ms = data[0..<4].withUnsafeBytes({ $0.load(as: UInt32.self) })
-            bleLog.debug("anchor ms: \(ms), seconds: \(Double(ms) / 1000.0)")
+            bleLog.debug("anchor ms: \(ms), seconds: \(Double(ms) / 1000.0), data size \(data.count)")
             
             anchorDate = anchorDate.addingTimeInterval(TimeInterval( Double(ms) / 1000.0 ))
             dataStartByte = 4
         }
         
         var allValues: [[AEDataValue]] = []
-        var offsets: [Int] = []
+        var timestamps: [Date] = []
         
-        var lastOffset: Int = 0
+        var timestampCounter = anchorDate
         
-        for step in 0..<(Int(data.count / packetSize) - dataStartByte) {
+        for step in 0..<(Int(data.count - dataStartByte) / packetSize) {
             let i = (step * packetSize) + dataStartByte
             let packet = data[i..<i+packetSize]
             var values: [AEDataValue] = []
+            
+            bleLog.debug("step \(step) (i), packet size: \(packetSize), data size: \(packet.count)")
             
             for dv in def.dataValues {
                 let v = packet[i+dv.byteStart..<i+dv.byteEnd]
@@ -86,11 +88,11 @@ class AEBLEDataStreamHandler {
             allValues.append(values)
             
             if let offsetDef = def.offsetDataValue {
-                let v = packet[i+offsetDef.byteStart..<i+offsetDef.byteEnd]
+                let ms = Double(offsetDef.offset(from: packet[i+offsetDef.byteStart..<i+offsetDef.byteEnd]))
 
-                let offset = offsetDef.offset(from: v) + lastOffset
-                lastOffset = offset
-                offsets.append(offset)
+                timestampCounter = timestampCounter.addingTimeInterval(ms / 1000.0)
+                let timestamp = timestampCounter
+                timestamps.append(timestamp)
             }
         }
         
@@ -99,7 +101,7 @@ class AEBLEDataStreamHandler {
                 for: def,
                 anchorDate: anchorDate,
                 allValues: allValues,
-                offsets: offsets
+                timestamps: timestamps
             )
     }
     
