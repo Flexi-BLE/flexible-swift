@@ -9,13 +9,13 @@ import Foundation
 import GRDB
 
 /// Representation of a singular event in time
-internal struct Timestamp: Codable {
-    var id: Int64?
-    var name: String?
-    var description: String?
-    var experimentId: Int64?
+public struct Timestamp: Codable {
+    public var id: Int64?
+    public var name: String?
+    public var description: String?
+    public var experimentId: Int64?
     var createdAt: Date
-    var datetime: Date
+    public var datetime: Date
     var uploaded: Bool = false
         
     enum CodingKeys: String, CodingKey {
@@ -48,7 +48,7 @@ extension Timestamp: FetchableRecord, PersistableRecord {
         static let uploaded = Column(CodingKeys.uploaded)
     }
     
-    static var databaseTableName: String = "timestamp"
+    public static var databaseTableName: String = "timestamp"
     
     static func create(_ table: TableDefinition) {
         table.autoIncrementedPrimaryKey(CodingKeys.id.stringValue)

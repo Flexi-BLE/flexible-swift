@@ -18,8 +18,9 @@ public class AEBLEExperiment {
     }
     
     public func startExperiment(name: String,
-                           description: String?=nil,
-                           start: Date=Date.now) async -> Result<Experiment, AEBLEError> {
+                                description: String?=nil,
+                                start: Date=Date.now,
+                                active: Bool) async -> Result<Experiment, AEBLEError> {
         
         do {
             let res = try await self.db.dbQueue.write { db -> Result<Experiment, AEBLEError> in
@@ -27,7 +28,8 @@ public class AEBLEExperiment {
                     name: name,
                     description: description,
                     start: start,
-                    end: nil
+                    end: nil,
+                    active: active
                 )
                 try exp.insert(db)
                 return .success(exp)
@@ -37,6 +39,31 @@ public class AEBLEExperiment {
             return .failure(.dbError(msg: "unable to create event"))
         }
     }
+    
+    public func createExperiment(name: String,
+                                 description: String?=nil,
+                                 start: Date,
+                                 end: Date?=nil,
+                                 active: Bool) async -> Result<Experiment, AEBLEError> {
+        
+        do {
+            let res = try await self.db.dbQueue.write { db -> Result<Experiment, AEBLEError> in
+                var exp = Experiment(
+                    name: name,
+                    description: description,
+                    start: start,
+                    end: end,
+                    active: active
+                )
+                try exp.insert(db)
+                return .success(exp)
+            }
+            return res
+        } catch {
+            return .failure(.dbError(msg: "unable to create event"))
+        }
+    }
+    
     
     public func endExperiment(id: Int64) async -> Result<Bool, Error> {
         do {
@@ -70,19 +97,19 @@ public class AEBLEExperiment {
             }
             
             let settings = try await AEBLESettingsStore.activeSetting(dbQueue: db.dbQueue)
-//            let expRes = await AEBLEAPI.createExperiment(exp: exp, settings: settings)
-//
-//            switch expRes {
-//            case .success(let inserted):
-//                if inserted {
-//                    try await db.dbQueue.write { db in
-//                        var exp = try Experiment.fetchOne(db, key: ["id": id])
-//                        exp?.uploaded = true
-//                        try exp?.update(db)
-//                    }
-//                }
-//            case .failure(_): break
-//            }
+            //            let expRes = await AEBLEAPI.createExperiment(exp: exp, settings: settings)
+            //
+            //            switch expRes {
+            //            case .success(let inserted):
+            //                if inserted {
+            //                    try await db.dbQueue.write { db in
+            //                        var exp = try Experiment.fetchOne(db, key: ["id": id])
+            //                        exp?.uploaded = true
+            //                        try exp?.update(db)
+            //                    }
+            //                }
+            //            case .failure(_): break
+            //            }
             
             return .success(true)
         } catch {
@@ -102,16 +129,16 @@ public class AEBLEExperiment {
         }
     }
     
-    public func activeEvent() async -> Result<Experiment?, AEBLEError> {
+    public func activeEvent() async -> Result<[Experiment]?, AEBLEError> {
         do {
-            return try await db.dbQueue.read { db -> Result<Experiment?, AEBLEError> in
+            return try await db.dbQueue.read { db -> Result<[Experiment]?, AEBLEError> in
                 let exp = try Experiment
-                    .filter(Experiment.Columns.end == nil)
-                    .order(Experiment.Columns.start.desc)
-                    .fetchOne(db)
+                //                    .order(Experiment.Columns.start.desc)
+                //                    .order(Experiment.Columns.active)
+                    .fetchAll(db)
                 
                 return .success(exp)
-                    
+                
             }
         } catch {
             return .failure(.dbError(msg: error.localizedDescription))
@@ -129,20 +156,75 @@ public class AEBLEExperiment {
             )
             
             let settings = try await AEBLESettingsStore.activeSetting(dbQueue: db.dbQueue)
-//            let res = await AEBLEAPI.createTimestamp(ts: ts, settings: settings)
-//
-//            switch res {
-//            case .success(let inserted):
-//                if inserted {
-//                    ts.uploaded = true
-//                }
-//            case .failure(_): break
-//            }
+            //            let res = await AEBLEAPI.createTimestamp(ts: ts, settings: settings)
+            //
+            //            switch res {
+            //            case .success(let inserted):
+            //                if inserted {
+            //                    ts.uploaded = true
+            //                }
+            //            case .failure(_): break
+            //            }
             
             try await db.dbQueue.write { [ts] db in
                 try ts.insert(db)
             }
-                        
+            
+            return .success(true)
+        } catch {
+            return .failure(error)
+        }
+    }
+    
+    public func createTimeMarkers(name: String?=nil, description: String?=nil, experimentId: Int64?=nil) async -> Result<Timestamp, AEBLEError> {
+        do {
+            let res = try await self.db.dbQueue.write { db -> Result<Timestamp, AEBLEError> in
+                let ts = Timestamp(
+                    name: name,
+                    description: description,
+                    datetime: Date.now,
+                    experimentId: experimentId
+                )
+                try ts.insert(db)
+                return .success(ts)
+            }
+            return res
+        } catch {
+            return .failure(.dbError(msg: "unable to create event"))
+        }
+    }
+    
+    
+    public func getTimestampForExperiment(withID: Int64) async -> Result<[Timestamp]?, AEBLEError> {
+        do {
+            return try await db.dbQueue.read { db -> Result<[Timestamp]?, AEBLEError> in
+                let ts = try Timestamp
+                    .filter(Column("experiment_id") == withID)
+                    .fetchAll(db)
+                
+                return .success(ts)
+                
+            }
+        } catch {
+            return .failure(.dbError(msg: error.localizedDescription))
+        }
+    }
+    
+    public func stopExperiment(id: Int64) async -> Result<Bool, Error> {
+        do {
+            let exp = try await db.dbQueue.write { db -> Experiment? in
+                var exp = try Experiment.fetchOne(db, key: ["id": id])
+                exp?.end = Date.now
+                exp?.active = false
+                try exp?.update(db)
+                return exp
+            }
+            
+            guard let exp = exp,
+                  let _ = exp.id,
+                  let _ = exp.end else {
+                return .failure(AEBLEError.dbError(msg: "No event found"))
+            }
             return .success(true)
         } catch {
             return .failure(error)

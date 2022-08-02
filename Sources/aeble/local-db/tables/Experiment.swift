@@ -16,6 +16,7 @@ public struct Experiment: Codable {
     public var description: String?
     public var start: Date
     public var end: Date?
+    public var active: Bool = false
     internal var uploaded: Bool = false
     internal var createdAt: Date
         
@@ -28,15 +29,17 @@ public struct Experiment: Codable {
         case start
         case end
         case uploaded
+        case active
     }
     
-    init(name: String, description: String?=nil, start:Date=Date.now, end:Date?=nil) {
+    init(name: String, description: String?=nil, start:Date=Date.now, end:Date?=nil, active: Bool) {
         self.name = name
         self.uuid = UUID().uuidString
         self.description = description
         self.createdAt = Date.now
         self.start = start
         self.end = end
+        self.active = active
     }
 }
 
@@ -57,6 +60,7 @@ extension Experiment: FetchableRecord, MutablePersistableRecord {
         static let createdAt = Column(CodingKeys.createdAt)
         static let start = Column(CodingKeys.start)
         static let end = Column(CodingKeys.end)
+        static let active = Column(CodingKeys.active)
         static let uploaded = Column(CodingKeys.uploaded)
     }
         
@@ -75,6 +79,7 @@ extension Experiment: FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.start.stringValue, .datetime)
         table.column(CodingKeys.end.stringValue, .datetime)
         table.column(CodingKeys.uploaded.stringValue, .boolean)
+        table.column(CodingKeys.active.stringValue, .boolean)
     }
 }
 
@@ -83,7 +88,8 @@ extension Experiment {
         var exp = Experiment(
             name: "dummy exp", description: "--",
             start: Date.now.addingTimeInterval(-3600),
-            end: nil
+            end: nil,
+            active: true
         )
         exp.id = 1000
         return exp
