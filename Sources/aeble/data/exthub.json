@@ -4,6 +4,13 @@
     "created_at": "2022-04-13T22:11:39.000Z",
     "updated_at": "2022-04-13T22:11:39.000Z",
     "tags": ["development"],
+    "ble_registered_devices": [
+        {
+            "name": "Polar H10 821A5D29",
+            "services": ["heart-rate", "battery"],
+            "description": "a polar heart rate monitor for ground truth data collection"
+        }
+    ],
     "things": [
         {
             "name": "exthub-alpha",
@@ -14,7 +21,7 @@
                 "info_service_uuid": "1a220001-c2ed-4d11-ad1e-fc06d8a02d37",
                 "epoch_char_uuid": "1a220002-c2ed-4d11-ad1e-fc06d8a02d37"
             },
-            "configurations": [],
+            "global_config_values": [],
             "data_streams": [
                 {
                     "id": "0xb92c",

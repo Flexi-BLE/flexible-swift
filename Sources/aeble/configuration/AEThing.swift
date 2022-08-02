@@ -11,8 +11,7 @@ public struct AEThing: Codable, Equatable {
     public let name: String
     public let description: String
     public let tags: [String]
-    // TODO: config data structure
-    public let configurations: [String]
+    public let globalConfigValues: [String]
     public let dataStreams: [AEDataStream]
     
     internal let ble: AEThingBLE

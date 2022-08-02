@@ -484,7 +484,7 @@ public final class AEBLEDBManager {
         for ds: AEDataStream,
         anchorDate: Date,
         allValues: [[AEDataValue]],
-        offsets: [Int]
+        timestamps: [Date]
     ) async {
         let tableName = "\(tableName(from: ds.name))_data"
         
@@ -507,7 +507,7 @@ public final class AEBLEDBManager {
             sql += "(\(placeholders), ?, ?), "
             
             if ds.includeAnchorTimestamp && ds.offsetDataValue != nil {
-                args.append(anchorDate.addingTimeInterval(TimeInterval(Double(offsets[i]) / 1000.0)))
+                args.append(timestamps[i])
             } else {
                 args.append(Date())
             }
@@ -569,6 +569,31 @@ public final class AEBLEDBManager {
             }
         } catch {
             return []
+        }
+    }
+    
+    internal func createTable(for rs: BLERegisteredService) async {
+        switch rs {
+        case .heartRate:
+            try? await self.dbQueue.write({ db in
+                try? db.create(
+                    table: HeartRate.databaseTableName,
+                    ifNotExists: true,
+                    body: HeartRate.create
+                )
+            })
+        default: break
+        }
+    }
+    
+    internal func insert(bpm: Int, sensorLocation: String) async {
+        do {
+            try await self.dbQueue.write({ db in
+                var hr = HeartRate(bpm: bpm, sensorLocation: sensorLocation)
+                try hr.insert(db)
+            })
+        } catch {
+            bleLog.error("error inserting heart rate record: \(error.localizedDescription)")
         }
     }
 }

@@ -57,3 +57,9 @@ internal extension AEDataStream {
         return CBUUID(string: self.ble.serviceUuid)
     }
 }
+
+internal extension AEBLERegisteredDevice {
+    var serviceIds: [CBUUID] {
+        return self.services.map({ $0.uuid })
+    }
+}

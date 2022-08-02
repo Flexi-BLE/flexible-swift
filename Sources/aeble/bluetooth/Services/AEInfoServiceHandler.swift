@@ -8,10 +8,9 @@
 import Foundation
 import CoreBluetooth
 
-
-internal class AEInfoServiceHandler {
+internal class AEInfoServiceHandler: AEBLEServiceHandler {
     
-    internal let serviceUuid: CBUUID
+    internal var serviceUuid: CBUUID
     private let def: AEThing
     
     internal var referenceDate: Date?

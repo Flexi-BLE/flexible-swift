@@ -32,6 +32,7 @@ public class AEBLEPeripheral: NSObject, ObservableObject {
     
     internal var serviceHandlers: [AEBLEDataStreamHandler] = []
     internal let infoServiceHandler: AEInfoServiceHandler
+    
     private var uploaders: [AEStreamDataUploader] = []
     
     /// Reference to database
@@ -119,8 +120,6 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
         else {
             bleLog.info("found unknown characteristics for service \(service.uuid)")
         }
-
-        // TODO: Manager Service
     }
     
     public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
