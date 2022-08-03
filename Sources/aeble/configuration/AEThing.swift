@@ -8,6 +8,7 @@
 import Foundation
 
 public struct AEThing: Codable, Equatable {
+    public let id: UUID = UUID()
     public let name: String
     public let description: String
     public let tags: [String]
@@ -17,6 +18,6 @@ public struct AEThing: Codable, Equatable {
     internal let ble: AEThingBLE
     
     public static func ==(lhs: AEThing, rhs: AEThing) -> Bool {
-        return lhs.name == rhs.name
+        return lhs.id == rhs.id
     }
 }

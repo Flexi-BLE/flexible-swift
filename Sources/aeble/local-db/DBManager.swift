@@ -128,7 +128,7 @@ public final class AEBLEDBManager {
         do {
             return try await dbQueue.read({ db in
                 let q = """
-                    SELECT MAX(id) FROM \(dataStream.name)
+                    SELECT MAX(id) FROM \(dataStream.name)_data
                 """
                 return try Int.fetchOne(db, sql: q) ?? 0
             })
@@ -351,7 +351,7 @@ public final class AEBLEDBManager {
             return try await dbQueue.read({ db in
                 let q = """
                     SELECT \(measurement)
-                    FROM \(name)
+                    FROM \(name)_data
                     ORDER BY created_at DESC
                     LIMIT \(limit)
                     OFFSET \(offset)
