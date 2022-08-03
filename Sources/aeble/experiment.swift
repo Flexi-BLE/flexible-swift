@@ -217,3 +217,31 @@ public class AEBLEExperiment {
         
     }
 }
+
+extension AEBLEExperiment {
+    public func trackGPSLocation(latitude: Double,
+                                 longitude: Double,
+                                 altitude: Double,
+                                 horizontalAcc: Double,
+                                 verticalAcc: Double,
+                                 timestamp: Date) async -> Result<Bool, AEBLEError> {
+
+        do {
+            let res = try await self.db.dbQueue.write { db -> Result<Bool, AEBLEError> in
+                
+                var loc = Location(latitude: latitude,
+                                   longitude: longitude,
+                                   altitude: altitude,
+                                   horizontalAccuracy: horizontalAcc,
+                                   verticalAccuracy: verticalAcc,
+                                   timestamp: timestamp
+                )
+                try loc.insert(db)
+                return .success(true)
+            }
+            return res
+        } catch {
+            return .failure(.dbError(msg: "unable to create event"))
+        }
+    }
+}

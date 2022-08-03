@@ -40,6 +40,12 @@ internal class DBMigrator {
             )
             
             try? db.create(
+                table: Location.databaseTableName,
+                ifNotExists: true,
+                body: Location.create
+            )
+            
+            try? db.create(
                 table: Timestamp.databaseTableName,
                 ifNotExists: true,
                 body: Timestamp.create
