@@ -77,8 +77,6 @@ class AEBLEDataStreamHandler {
             let packet = data[i..<i+packetSize]
             var values: [AEDataValue] = []
             
-            bleLog.debug("step \(step) (i), packet size: \(packetSize), data size: \(packet.count)")
-            
             for dv in def.dataValues {
                 let v = packet[i+dv.byteStart..<i+dv.byteEnd]
                 
