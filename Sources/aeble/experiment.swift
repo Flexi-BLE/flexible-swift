@@ -133,8 +133,8 @@ public class AEBLEExperiment {
         do {
             return try await db.dbQueue.read { db -> Result<[Experiment]?, AEBLEError> in
                 let exp = try Experiment
-                //                    .order(Experiment.Columns.start.desc)
-                //                    .order(Experiment.Columns.active)
+                    .order(Experiment.Columns.start.desc)
+                    .order(Experiment.Columns.active)
                     .fetchAll(db)
                 
                 return .success(exp)
@@ -145,41 +145,11 @@ public class AEBLEExperiment {
         }
     }
     
-    public func markTime(name: String?=nil, description: String?=nil, experiment: Experiment?=nil) async -> Result<Bool, Error> {
-        do {
-            
-            var ts = Timestamp(
-                name: name,
-                description: description,
-                datetime: Date.now,
-                experimentId: experiment?.id
-            )
-            
-            let settings = try await AEBLESettingsStore.activeSetting(dbQueue: db.dbQueue)
-            //            let res = await AEBLEAPI.createTimestamp(ts: ts, settings: settings)
-            //
-            //            switch res {
-            //            case .success(let inserted):
-            //                if inserted {
-            //                    ts.uploaded = true
-            //                }
-            //            case .failure(_): break
-            //            }
-            
-            try await db.dbQueue.write { [ts] db in
-                try ts.insert(db)
-            }
-            
-            return .success(true)
-        } catch {
-            return .failure(error)
-        }
-    }
     
-    public func createTimeMarkers(name: String?=nil, description: String?=nil, experimentId: Int64?=nil) async -> Result<Timestamp, AEBLEError> {
+    public func createTimeMarker(name: String?=nil, description: String?=nil, experimentId: Int64?=nil) async -> Result<Timestamp, AEBLEError> {
         do {
             let res = try await self.db.dbQueue.write { db -> Result<Timestamp, AEBLEError> in
-                let ts = Timestamp(
+                var ts = Timestamp(
                     name: name,
                     description: description,
                     datetime: Date.now,
@@ -229,5 +199,21 @@ public class AEBLEExperiment {
         } catch {
             return .failure(error)
         }
+    }
+    
+    public func updateTimemarker(forID: Int64, name: String, description: String) async -> Result<Bool, Error> {
+        do {
+            _ = try await db.dbQueue.write { db -> Timestamp? in
+                var ts = try Timestamp.fetchOne(db, key: ["id": forID])
+                ts?.name = name
+                ts?.description = description
+                try ts?.update(db)
+                return ts
+            }
+            return .success(true)
+        } catch {
+            return .failure(error)
+        }
+        
     }
 }

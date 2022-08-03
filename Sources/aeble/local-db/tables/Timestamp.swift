@@ -37,7 +37,7 @@ public struct Timestamp: Codable {
     }
 }
 
-extension Timestamp: FetchableRecord, PersistableRecord {
+extension Timestamp: FetchableRecord, MutablePersistableRecord {
     enum Columns {
         static let id = Column(CodingKeys.id)
         static let name = Column(CodingKeys.name)
@@ -48,6 +48,10 @@ extension Timestamp: FetchableRecord, PersistableRecord {
         static let uploaded = Column(CodingKeys.uploaded)
     }
     
+    mutating public func didInsert(with rowID: Int64, for column: String?) {
+        id = rowID
+    }
+
     public static var databaseTableName: String = "timestamp"
     
     static func create(_ table: TableDefinition) {
