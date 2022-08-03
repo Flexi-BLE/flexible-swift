@@ -210,7 +210,7 @@ public class AEBLEExperiment {
         }
     }
     
-    public func stopExperiment(id: Int64) async -> Result<Bool, Error> {
+    public func stopExperiment(id: Int64) async -> Result<Experiment, Error> {
         do {
             let exp = try await db.dbQueue.write { db -> Experiment? in
                 var exp = try Experiment.fetchOne(db, key: ["id": id])
@@ -225,7 +225,7 @@ public class AEBLEExperiment {
                   let _ = exp.end else {
                 return .failure(AEBLEError.dbError(msg: "No event found"))
             }
-            return .success(true)
+            return .success(exp)
         } catch {
             return .failure(error)
         }
