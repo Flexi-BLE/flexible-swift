@@ -42,6 +42,10 @@ public final class AEBLEDBManager {
         #if DEBUG
         // Protect sensitive information by enabling verbose debugging in DEBUG builds only
         configuration.publicStatementArguments = true
+        
+
+        Bundle.main.copyFilesFromBundleToDocumentsFolderWith(fileName: "exthub.json", in: "data")
+
         #endif
                     
         do {

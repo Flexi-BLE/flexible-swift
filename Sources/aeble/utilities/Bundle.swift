@@ -32,6 +32,27 @@ public extension Bundle {
         #endif
     }
     
+    func copyFilesFromBundleToDocumentsFolderWith(fileName: String, in dir:String?=nil) {
+        var documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        if let dir = dir {
+            documentsURL?.appendPathComponent(dir, isDirectory: true)
+        }
+        
+        if let documentsURL = documentsURL,
+           let sourceURL = self.url(forResource: fileName, withExtension: nil) {
+            
+            let destURL = documentsURL.appendingPathComponent(fileName)
+            do {
+                try FileManager.default.copyItem(at: sourceURL, to: destURL)
+                
+            } catch {
+                pLog.debug("unable to save file \(fileName) to documents: err: \(error.localizedDescription)")
+            }
+        } else {
+            pLog.debug("unable to save file \(fileName) to documents")
+        }
+    }
+    
     func decode<T: Decodable>(_ type: T.Type, from file: String, dateDecodingStrategy: JSONDecoder.DateDecodingStrategy = .deferredToDate, keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys) -> T {
         guard let url = self.url(forResource: file, withExtension: nil) else {
             fatalError("Failed to locate \(file) in bundle.")
