@@ -35,6 +35,15 @@ public struct Timestamp: Codable {
         self.createdAt = Date.now
         self.experimentId = experimentId
     }
+    
+    public static func dummy() -> Timestamp {
+        return Timestamp(
+            name: "test",
+            description: "test123",
+            datetime: Date(),
+            experimentId: 123
+        )
+    }
 }
 
 extension Timestamp: FetchableRecord, MutablePersistableRecord {

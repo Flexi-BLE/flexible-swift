@@ -16,6 +16,7 @@ public struct Experiment: Codable {
     public var description: String?
     public var start: Date
     public var end: Date?
+    public var trackGPS: Bool = false
     public var active: Bool = false
     internal var uploaded: Bool = false
     internal var createdAt: Date
@@ -30,9 +31,17 @@ public struct Experiment: Codable {
         case end
         case uploaded
         case active
+        case trackGPS = "track_gps"
     }
     
-    init(name: String, description: String?=nil, start:Date=Date.now, end:Date?=nil, active: Bool) {
+    init(
+        name: String,
+        description: String?=nil,
+        start:Date=Date.now,
+        end:Date?=nil,
+        active: Bool,
+        trackGPS: Bool=false
+    ) {
         self.name = name
         self.uuid = UUID().uuidString
         self.description = description
@@ -40,6 +49,7 @@ public struct Experiment: Codable {
         self.start = start
         self.end = end
         self.active = active
+        self.trackGPS = trackGPS
     }
 }
 
@@ -62,6 +72,7 @@ extension Experiment: FetchableRecord, MutablePersistableRecord {
         static let end = Column(CodingKeys.end)
         static let active = Column(CodingKeys.active)
         static let uploaded = Column(CodingKeys.uploaded)
+        static let trackGPS = Column(CodingKeys.trackGPS)
     }
         
     mutating public func didInsert(with rowID: Int64, for column: String?) {
@@ -80,6 +91,7 @@ extension Experiment: FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.end.stringValue, .datetime)
         table.column(CodingKeys.uploaded.stringValue, .boolean)
         table.column(CodingKeys.active.stringValue, .boolean)
+        table.column(CodingKeys.trackGPS.stringValue, .boolean)
     }
 }
 
@@ -89,7 +101,8 @@ extension Experiment {
             name: "dummy exp", description: "--",
             start: Date.now.addingTimeInterval(-3600),
             end: nil,
-            active: true
+            active: true,
+            trackGPS: true
         )
         exp.id = 1000
         return exp

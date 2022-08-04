@@ -20,7 +20,8 @@ public class AEBLEExperiment {
     public func startExperiment(name: String,
                                 description: String?=nil,
                                 start: Date=Date.now,
-                                active: Bool) async -> Result<Experiment, AEBLEError> {
+                                active: Bool,
+                                trackGPS: Bool) async -> Result<Experiment, AEBLEError> {
         
         do {
             let res = try await self.db.dbQueue.write { db -> Result<Experiment, AEBLEError> in
@@ -29,7 +30,8 @@ public class AEBLEExperiment {
                     description: description,
                     start: start,
                     end: nil,
-                    active: active
+                    active: active,
+                    trackGPS: trackGPS
                 )
                 try exp.insert(db)
                 return .success(exp)
@@ -44,7 +46,8 @@ public class AEBLEExperiment {
                                  description: String?=nil,
                                  start: Date,
                                  end: Date?=nil,
-                                 active: Bool) async -> Result<Experiment, AEBLEError> {
+                                 active: Bool,
+                                 trackGPS: Bool) async -> Result<Experiment, AEBLEError> {
         
         do {
             let res = try await self.db.dbQueue.write { db -> Result<Experiment, AEBLEError> in
@@ -53,7 +56,8 @@ public class AEBLEExperiment {
                     description: description,
                     start: start,
                     end: end,
-                    active: active
+                    active: active,
+                    trackGPS: trackGPS
                 )
                 try exp.insert(db)
                 return .success(exp)
