@@ -13,13 +13,15 @@ import SwiftUI
 class AEBLEDataStreamHandler {
     
     let serviceUuid: CBUUID
+    let deviceName: String
     let def: AEDataStream
     
     private var lastestConfig: Data?
     
-    init(uuid: CBUUID, def: AEDataStream) {
+    init(uuid: CBUUID, deviceName: String, dataStream: AEDataStream) {
         self.serviceUuid = uuid
-        self.def = def
+        self.deviceName = deviceName
+        self.def = dataStream
     }
     
     func setup(peripheral: CBPeripheral, service: CBService) {
@@ -101,6 +103,12 @@ class AEBLEDataStreamHandler {
                 allValues: allValues,
                 timestamps: timestamps
             )
+        
+        try? await LocalQueryWrite().recordThroughput(
+            deviceName: deviceName,
+            dataStreamName: def.name,
+            byteCount: data.count
+        )
     }
     
     private func didUpdateConfig(data: Data) async {

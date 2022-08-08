@@ -9,9 +9,13 @@ import Foundation
 import CoreBluetooth
 
 internal class CurrentTimeServiceHandler: AEBLEServiceHandler {
+    var deviceName: String
+    
     internal var serviceUuid: CBUUID = BLERegisteredService.currentTime.uuid
     
-    init() { }
+    init(deviceName: String) {
+        self.deviceName = deviceName
+    }
     
     func setup(peripheral: CBPeripheral, service: CBService) {
         

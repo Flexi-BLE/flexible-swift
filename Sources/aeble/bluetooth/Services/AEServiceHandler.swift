@@ -10,6 +10,7 @@ import CoreBluetooth
 
 protocol AEBLEServiceHandler {
     var serviceUuid: CBUUID { get }
+    var deviceName: String { get }
     
     func setup(peripheral: CBPeripheral, service: CBService)
     

@@ -35,16 +35,14 @@ public final class AEBLEDBManager {
     }
     
     /// parameter url: URL for SQLite database with `.sqlite` extension. Will create if does not exist.
-    private init() {
+    private init() {        
         var configuration = Configuration()
         configuration.qos = DispatchQoS.userInitiated
         
         #if DEBUG
         // Protect sensitive information by enabling verbose debugging in DEBUG builds only
+        Bundle.module.copyFilesFromBundleToDocumentsFolderWith(fileName: "aeble.sqlite", in: "data")
         configuration.publicStatementArguments = true
-        
-
-        Bundle.main.copyFilesFromBundleToDocumentsFolderWith(fileName: "exthub.json", in: "data")
 
         #endif
                     

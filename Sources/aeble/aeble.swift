@@ -8,6 +8,7 @@ public final class AEBLE: ObservableObject {
     public let settings: AEBLESettingsStore
     
     public let read: LocalQueryReadOnly
+    public let write: LocalQueryWrite
     
     public init() throws {
         self.db = AEBLEDBManager.shared
@@ -16,6 +17,7 @@ public final class AEBLE: ObservableObject {
         self.exp = AEBLEExperiment(db: db)
         
         self.read = LocalQueryReadOnly()
+        self.write = LocalQueryWrite()
         
         self.startScan()
     }

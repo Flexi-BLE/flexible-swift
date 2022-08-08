@@ -73,7 +73,7 @@ extension AEBLERegisteredPeripheral: CBPeripheralDelegate {
                 
                 if let registeredService = BLERegisteredService.from(service.uuid) {
                     
-                    serviceHandlers.append(registeredService.handler())
+                    serviceHandlers.append(registeredService.handler(deviceName: metadata.name))
                 }
             }
             

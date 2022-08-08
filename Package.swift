@@ -34,12 +34,12 @@ let package = Package(
         .target(
             name: "aeble",
             dependencies: [
-                .product(name: "GRDB", package: "GRDB"),
-                .product(name: "InfluxDBSwift", package: "influxdb-client-swift")
+                .product(name: "GRDB", package: "GRDB")
             ],
             resources: [
                 .process("data/default_peripheral_metadata.json"),
-                .process("data/exthub.json")
+                .process("data/exthub.json"),
+                .process("data/aeble.sqlite")
             ]
         ),
         .testTarget(

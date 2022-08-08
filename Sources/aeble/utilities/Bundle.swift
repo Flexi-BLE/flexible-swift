@@ -43,7 +43,14 @@ public extension Bundle {
             
             let destURL = documentsURL.appendingPathComponent(fileName)
             do {
+                if FileManager.default.fileExists(atPath: destURL.path) {
+                    try FileManager.default.removeItem(atPath: destURL.path)
+                }
+                    
                 try FileManager.default.copyItem(at: sourceURL, to: destURL)
+//                try FileManager.default.replaceItemAt(destURL, withItemAt: sourceURL)
+                
+                pLog.info("copied database \(fileName) (\(destURL.path)")
                 
             } catch {
                 pLog.debug("unable to save file \(fileName) to documents: err: \(error.localizedDescription)")

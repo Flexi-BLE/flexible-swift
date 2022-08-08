@@ -16,9 +16,12 @@ internal class AEInfoServiceHandler: AEBLEServiceHandler {
     internal var referenceDate: Date?
     internal var referenceMs: UInt64?
     
+    var deviceName: String
+    
     init(serviceId: CBUUID, def: AEThing) {
         self.serviceUuid = serviceId
         self.def = def
+        self.deviceName = def.name
     }
     
     func setup(peripheral: CBPeripheral, service: CBService) {

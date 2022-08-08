@@ -14,8 +14,11 @@ internal class HeartRateServiceHandler: AEBLEServiceHandler {
     private var sensorLocation: String = "unknown"
     private let heartRateMeasurementUuid = CBUUID(string: "2a37")
     private let bodyLocationUuid = CBUUID(string: "2a38")
+    internal var deviceName: String
     
-    init() { }
+    init(deviceName: String) {
+        self.deviceName = deviceName
+    }
     
     func setup(peripheral: CBPeripheral, service: CBService) {
         for characteristic in service.characteristics ?? [] {
@@ -57,6 +60,12 @@ internal class HeartRateServiceHandler: AEBLEServiceHandler {
                     bpm: hr,
                     sensorLocation: sensorLocation
                 )
+                
+                try? await LocalQueryWrite().recordThroughput(
+                     deviceName: self.deviceName,
+                     dataStreamName: "heart_rate",
+                     byteCount: data.count
+                 )
             }
         case bodyLocationUuid:
             if let byte = data.first {

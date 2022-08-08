@@ -268,9 +268,21 @@ extension AEBLEConnectionManager: CBCentralManagerDelegate {
         if let p = peripherals.first(where: { $0.metadata.name == peripheral.name }) {
             bleLog.info("connceted to: \(p.metadata.name)")
             p.didUpdateState()
+            Task {
+                try? await LocalQueryWrite().recordConnection(
+                    deviceName: p.metadata.name,
+                    status: .connected
+                )
+            }
         } else if let p = registeredPeripherals.first(where: { $0.metadata.name == peripheral.name }) {
             bleLog.info("connceted to: \(p.metadata.name)")
             p.didUpdateState()
+            Task {
+                try? await LocalQueryWrite().recordConnection(
+                    deviceName: p.metadata.name,
+                    status: .connected
+                )
+            }
         }
         
         toggleScanWithConnections()
@@ -281,9 +293,21 @@ extension AEBLEConnectionManager: CBCentralManagerDelegate {
         if let p = peripherals.first(where: { $0.metadata.name == peripheral.name }) {
             bleLog.info("\(p.metadata.name) disconnected")
             p.didUpdateState()
+            Task {
+                try? await LocalQueryWrite().recordConnection(
+                    deviceName: p.metadata.name,
+                    status: .disconnected
+                )
+            }
         } else if let p = registeredPeripherals.first(where: { $0.metadata.name == peripheral.name }) {
             bleLog.info("\(p.metadata.name) disconnected")
             p.didUpdateState()
+            Task {
+                try? await LocalQueryWrite().recordConnection(
+                    deviceName: p.metadata.name,
+                    status: .disconnected
+                )
+            }
         }
         
         if (isScanning) { startScan() }

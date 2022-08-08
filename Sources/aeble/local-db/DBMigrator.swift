@@ -12,7 +12,7 @@ import GRDB
 internal class DBMigrator {
     var migrator = DatabaseMigrator()
     
-    init() {
+    init() {        
         self.migrator.registerMigration("v1") { db in
             
             try? db.create(
@@ -46,6 +46,18 @@ internal class DBMigrator {
             )
             
             try? db.create(
+                table: Throughput.databaseTableName,
+                ifNotExists: true,
+                body: Throughput.create
+            )
+            
+            try? db.create(
+                table: Connection.databaseTableName,
+                ifNotExists: true,
+                body: Connection.create
+            )
+            
+            try? db.create(
                 table: Timestamp.databaseTableName,
                 ifNotExists: true,
                 body: Timestamp.create
@@ -60,7 +72,7 @@ internal class DBMigrator {
         
         #if DEBUG
         // Speed up development by nuking the database when migrations change
-        self.migrator.eraseDatabaseOnSchemaChange = true
+//        self.migrator.eraseDatabaseOnSchemaChange = true
         #endif
     }
     

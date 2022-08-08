@@ -95,7 +95,11 @@ extension AEBLEPeripheral: CBPeripheralDelegate {
             peripheral.discoverCharacteristics(nil, for: service)
             
             if let ds = metadata.dataStreams.first(where: { $0.serviceCbuuid == service.uuid }) {
-                let handler = AEBLEDataStreamHandler(uuid: service.uuid, def: ds)
+                let handler = AEBLEDataStreamHandler(
+                    uuid: service.uuid,
+                    deviceName: metadata.name,
+                    dataStream: ds
+                )
                 serviceHandlers.append(handler)
             }
         }
