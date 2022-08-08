@@ -41,7 +41,7 @@ public final class AEBLEDBManager {
         
         #if DEBUG
         // Protect sensitive information by enabling verbose debugging in DEBUG builds only
-        Bundle.module.copyFilesFromBundleToDocumentsFolderWith(fileName: "aeble.sqlite", in: "data")
+//        Bundle.module.copyFilesFromBundleToDocumentsFolderWith(fileName: "aeble.sqlite", in: "data")
         configuration.publicStatementArguments = true
 
         #endif

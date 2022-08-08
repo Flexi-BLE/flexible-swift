@@ -72,7 +72,7 @@ internal class DBMigrator {
         
         #if DEBUG
         // Speed up development by nuking the database when migrations change
-//        self.migrator.eraseDatabaseOnSchemaChange = true
+        self.migrator.eraseDatabaseOnSchemaChange = true
         #endif
     }
     
