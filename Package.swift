@@ -39,7 +39,7 @@ let package = Package(
             resources: [
                 .process("data/default_peripheral_metadata.json"),
                 .process("data/exthub.json"),
-                .process("data/aeble.sqlite")
+                .process("data/aeble.sqlite"),
             ]
         ),
         .testTarget(

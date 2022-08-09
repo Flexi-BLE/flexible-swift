@@ -26,7 +26,7 @@
                 {
                     "id": "0xb92c",
                     "name": "accelerometry",
-                    "description": "Accelerometry data",
+                    "description": "Accelerometer sensor (x, y, z axis)",
                     "include_anchor_timestamp": true,
                     "offset_data_value": {
                         "name": "ms_offset",
@@ -137,7 +137,7 @@
                 {
                     "id": "0xb93c",
                     "name": "ppg",
-                    "description": "PPG data",
+                    "description": "photoplethysmographic (PPG) sensor with 9-LEDs of varying wavelengths",
                     "include_anchor_timestamp": true,
                     "offset_data_value": {
                         "name": "ms_offset",
@@ -402,6 +402,170 @@
                         "service_uuid": "1a220010-c2ed-4d11-ad1e-fc06d8a02d37",
                         "data_char_uuid": "1a220012-c2ed-4d11-ad1e-fc06d8a02d37",
                         "config_char_uuid": "1a220011-c2ed-4d11-ad1e-fc06d8a02d37"
+                    }
+                },
+                {
+                    "id": "0xb93d",
+                    "name": "random",
+                    "description": "just a random value to test throughput",
+                    "include_anchor_timestamp": true,
+                    "offset_data_value": {
+                        "name": "ms_offset",
+                        "description": "relative time since the previous reading",
+                        "unit": "ms",
+                        "byte_start": 20,
+                        "byte_end": 21,
+                        "size": 1,
+                        "type": "uint",
+                        "multiplier": null
+                    },
+                    "config_values": [
+                        {
+                            "name": "sensor_state",
+                            "description": "state of the random sensor",
+                            "byte_start": 0,
+                            "byte_end": 1,
+                            "size": 1,
+                            "unit": null,
+                            "type": "uint",
+                            "default_value": "0",
+                            "options": [
+                                {
+                                    "name": "disabled",
+                                    "description": "the sensor will not stream data",
+                                    "value": "0"
+                                },
+                                {
+                                    "name": "streaming",
+                                    "description": "the sensor will stream data",
+                                    "value": "1"
+                                }
+                            ],
+                            "range": null
+                        },
+                        {
+                            "name": "desired_frequency",
+                            "description": "the desired frequency of the sensor",
+                            "byte_start": 1,
+                            "byte_end": 3,
+                            "size": 2,
+                            "type": "uint",
+                            "unit": "Hz",
+                            "options": null,
+                            "default_value":  "50",
+                            "range": {
+                                "start": 0,
+                                "end": 1000,
+                                "step": 25
+                            }
+                        }
+                    ],
+                    "data_values": [
+                        {
+                            "name": "value1",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 0,
+                            "byte_end": 2,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value2",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 2,
+                            "byte_end": 4,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value3",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 4,
+                            "byte_end": 6,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value4",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 6,
+                            "byte_end": 8,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value5",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 8,
+                            "byte_end": 10,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value6",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 10,
+                            "byte_end": 12,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value7",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 12,
+                            "byte_end": 14,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        }
+                        {
+                            "name": "value8",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 14,
+                            "byte_end": 16,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        }
+                        {
+                            "name": "value9",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 16,
+                            "byte_end": 18,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        }
+                        {
+                            "name": "value10",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 18,
+                            "byte_end": 20,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        }
+                    ],
+                    "ble": {
+                        "service_uuid": "1a220020-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "data_char_uuid": "1a220022-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "config_char_uuid": "1a220021-c2ed-4d11-ad1e-fc06d8a02d37"
                     }
                 }
             ]
