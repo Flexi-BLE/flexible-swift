@@ -530,7 +530,7 @@
                             "size": 2,
                             "type": "uint",
                             "multiplier": null
-                        }
+                        },
                         {
                             "name": "value8",
                             "description": "a random value",
@@ -540,7 +540,7 @@
                             "size": 2,
                             "type": "uint",
                             "multiplier": null
-                        }
+                        },
                         {
                             "name": "value9",
                             "description": "a random value",
@@ -550,7 +550,7 @@
                             "size": 2,
                             "type": "uint",
                             "multiplier": null
-                        }
+                        },
                         {
                             "name": "value10",
                             "description": "a random value",
