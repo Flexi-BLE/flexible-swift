@@ -1,0 +1,574 @@
+{
+    "id": "--local-default--",
+    "schema_version": "1.0",
+    "created_at": "2022-04-13T22:11:39.000Z",
+    "updated_at": "2022-04-13T22:11:39.000Z",
+    "tags": ["development"],
+    "ble_registered_devices": [
+        {
+            "name": "Polar H10 821A5D29",
+            "services": ["heart-rate", "battery"],
+            "description": "a polar heart rate monitor for ground truth data collection"
+        }
+    ],
+    "things": [
+        {
+            "name": "exthub-alpha",
+            "description": "a locally stored file for exthub device config",
+            "tags": ["research"],
+            "ble": {
+                "ble_registered_services": ["battery", "current-time"],
+                "info_service_uuid": "1a220001-c2ed-4d11-ad1e-fc06d8a02d37",
+                "epoch_char_uuid": "1a220002-c2ed-4d11-ad1e-fc06d8a02d37"
+            },
+            "global_config_values": [],
+            "data_streams": [
+                {
+                    "id": "0xb92c",
+                    "name": "accelerometry",
+                    "description": "Accelerometer sensor (x, y, z axis)",
+                    "include_anchor_timestamp": true,
+                    "offset_data_value": {
+                        "name": "ms_offset",
+                        "description": "relative time since the previous reading",
+                        "unit": "ms",
+                        "byte_start": 12,
+                        "byte_end": 13,
+                        "size": 1,
+                        "type": "uint",
+                        "multiplier": null
+                    },
+                    "config_values": [
+                        {
+                            "name": "sensor_state",
+                            "description": "state of the accelerometer sensor",
+                            "byte_start": 0,
+                            "byte_end": 1,
+                            "size": 1,
+                            "unit": null,
+                            "type": "uint",
+                            "default_value": "0",
+                            "options": [
+                                {
+                                    "name": "disabled",
+                                    "description": "the sensor will not stream data",
+                                    "value": "0"
+                                },
+                                {
+                                    "name": "streaming",
+                                    "description": "the sensor will stream data",
+                                    "value": "1"
+                                }
+                            ],
+                            "range": null
+                        },
+                        {
+                            "name": "desired_frequency",
+                            "description": "the desired frequency of the sensor",
+                            "byte_start": 1,
+                            "byte_end": 3,
+                            "size": 2,
+                            "type": "uint",
+                            "unit": "Hz",
+                            "options": null,
+                            "default_value":  "50",
+                            "range": {
+                                "start": 0,
+                                "end": 1000,
+                                "step": 20
+                            }
+                        },
+                        {
+                            "name": "batch_size",
+                            "description": "the maximun size of payload",
+                            "byte_start": 3,
+                            "byte_end": 4,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "bytes",
+                            "options": null,
+                            "default_value":  "105",
+                            "range": {
+                                "start": 7,
+                                "end": 245,
+                                "step": 7
+                            }
+                        }
+                        
+                    ],
+                    "data_values": [
+                        {
+                            "name": "accel_x",
+                            "description": "x-axis value",
+                            "unit": "",
+                            "byte_start": 0,
+                            "byte_end": 4,
+                            "size": 4,
+                            "type": "int",
+                            "multiplier": 0.000001
+                        },
+                        {
+                            "name": "accel_y",
+                            "description": "y-axis value",
+                            "unit": "",
+                            "byte_start": 4,
+                            "byte_end": 8,
+                            "size": 4,
+                            "type": "int",
+                            "multiplier": 0.000001
+                        },
+                        {
+                            "name": "accel_z",
+                            "description": "z-axis value",
+                            "unit": "",
+                            "byte_start": 8,
+                            "byte_end": 12,
+                            "size": 4,
+                            "type": "int",
+                            "multiplier": 0.000001
+                        }
+                    ],
+                    "ble": {
+                        "service_uuid": "1a220003-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "data_char_uuid": "1a220005-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "config_char_uuid": "1a220004-c2ed-4d11-ad1e-fc06d8a02d37"
+                    }
+                },
+                {
+                    "id": "0xb93c",
+                    "name": "ppg",
+                    "description": "photoplethysmographic (PPG) sensor with 9-LEDs of varying wavelengths",
+                    "include_anchor_timestamp": true,
+                    "offset_data_value": {
+                        "name": "ms_offset",
+                        "description": "relative time since the previous reading",
+                        "unit": "ms",
+                        "byte_start": 4,
+                        "byte_end": 5,
+                        "size": 1,
+                        "type": "uint",
+                        "multiplier": null
+                    },
+                    "config_values": [
+                        {
+                            "name": "sensor_state",
+                            "description": "state of the accelerometer sensor",
+                            "byte_start": 0,
+                            "byte_end": 1,
+                            "size": 1,
+                            "unit": null,
+                            "type": "uint",
+                            "default_value": "0",
+                            "options": [
+                                {
+                                    "name": "disabled",
+                                    "description": "the sensor will not stream data",
+                                    "value": "0"
+                                },
+                                {
+                                    "name": "streaming",
+                                    "description": "the sensor will stream data",
+                                    "value": "1"
+                                }
+                            ],
+                            "range": null
+                        },
+                        {
+                            "name": "desired_frequency",
+                            "description": "the desired frequency of the sensor",
+                            "byte_start": 1,
+                            "byte_end": 3,
+                            "size": 2,
+                            "type": "uint",
+                            "unit": "Hz",
+                            "options": null,
+                            "default_value":  "50",
+                            "range": {
+                                "start": 0,
+                                "end": 500,
+                                "step": 5
+                            }
+                        },
+                        {
+                            "name": "number_of_readings",
+                            "description": "number of readings to average",
+                            "byte_start": 3,
+                            "byte_end": 4,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "reading",
+                            "options": null,
+                            "default_value":  "1",
+                            "range": {
+                                "start": 1,
+                                "end": 20,
+                                "step": 1
+                            }
+                        },
+                        {
+                            "name": "conversion_delay",
+                            "description": "time between LED on and conversion",
+                            "byte_start": 4,
+                            "byte_end": 5,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "ms",
+                            "options": null,
+                            "default_value":  "1",
+                            "range": {
+                                "start": 0,
+                                "end": 5,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "blue_460_brightness",
+                            "description": "brightness of blue (460nm) LED",
+                            "byte_start": 5,
+                            "byte_end": 6,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "yellow_green_565_brightness",
+                            "description": "brightness of yellow-green (565nm) LED",
+                            "byte_start": 6,
+                            "byte_end": 7,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "red_660_brightness",
+                            "description": "brightness of red (660nm) LED",
+                            "byte_start": 7,
+                            "byte_end": 8,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "green_a_525_brightness",
+                            "description": "brightness of green A (525nm) LED",
+                            "byte_start": 8,
+                            "byte_end": 9,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                           
+                            }
+                        },
+                        {
+                            "name": "yellow_575_brightness",
+                            "description": "brightness of yellow (575nm) LED",
+                            "byte_start": 9,
+                            "byte_end": 10,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "ir_850_brightness",
+                            "description": "brightness of IR (850nm) LED",
+                            "byte_start": 10,
+                            "byte_end": 11,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "green_b_525_brightness",
+                            "description": "brightness of green B (525nm) LED",
+                            "byte_start": 11,
+                            "byte_end": 12,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "orange_590_brightness",
+                            "description": "brightness of orange (590nm) LED",
+                            "byte_start": 12,
+                            "byte_end": 13,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        },
+                        {
+                            "name": "ir_940_brightness",
+                            "description": "brightness of IR (940nm) LED",
+                            "byte_start": 13,
+                            "byte_end": 14,
+                            "size": 1,
+                            "type": "uint",
+                            "unit": "arb",
+                            "options": null,
+                            "default_value":  "10",
+                            "range": {
+                                "start": 0,
+                                "end": 63,
+                                "step": 1                            
+                            }
+                        }
+                    ],
+                    "data_values": [
+                        {
+                            "name": "wavelength",
+                            "description": "wavelength of LED",
+                            "unit": "nm",
+                            "byte_start": 0,
+                            "byte_end": 1,
+                            "size": 1,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "brightness",
+                            "description": "brightness of LED",
+                            "unit": "arb",
+                            "byte_start": 1,
+                            "byte_end": 2,
+                            "size": 1,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value",
+                            "description": "photodiode ADC counts",
+                            "unit": "counts",
+                            "byte_start": 2,
+                            "byte_end": 4,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        }
+                    ],
+                    "ble": {
+                        "service_uuid": "1a220010-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "data_char_uuid": "1a220012-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "config_char_uuid": "1a220011-c2ed-4d11-ad1e-fc06d8a02d37"
+                    }
+                },
+                {
+                    "id": "0xb93d",
+                    "name": "random",
+                    "description": "just a random value to test throughput",
+                    "include_anchor_timestamp": true,
+                    "offset_data_value": {
+                        "name": "ms_offset",
+                        "description": "relative time since the previous reading",
+                        "unit": "ms",
+                        "byte_start": 20,
+                        "byte_end": 21,
+                        "size": 1,
+                        "type": "uint",
+                        "multiplier": null
+                    },
+                    "config_values": [
+                        {
+                            "name": "sensor_state",
+                            "description": "state of the random sensor",
+                            "byte_start": 0,
+                            "byte_end": 1,
+                            "size": 1,
+                            "unit": null,
+                            "type": "uint",
+                            "default_value": "0",
+                            "options": [
+                                {
+                                    "name": "disabled",
+                                    "description": "the sensor will not stream data",
+                                    "value": "0"
+                                },
+                                {
+                                    "name": "streaming",
+                                    "description": "the sensor will stream data",
+                                    "value": "1"
+                                }
+                            ],
+                            "range": null
+                        },
+                        {
+                            "name": "desired_frequency",
+                            "description": "the desired frequency of the sensor",
+                            "byte_start": 1,
+                            "byte_end": 3,
+                            "size": 2,
+                            "type": "uint",
+                            "unit": "Hz",
+                            "options": null,
+                            "default_value":  "50",
+                            "range": {
+                                "start": 0,
+                                "end": 1000,
+                                "step": 25
+                            }
+                        }
+                    ],
+                    "data_values": [
+                        {
+                            "name": "value1",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 0,
+                            "byte_end": 2,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value2",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 2,
+                            "byte_end": 4,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value3",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 4,
+                            "byte_end": 6,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value4",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 6,
+                            "byte_end": 8,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value5",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 8,
+                            "byte_end": 10,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value6",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 10,
+                            "byte_end": 12,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value7",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 12,
+                            "byte_end": 14,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value8",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 14,
+                            "byte_end": 16,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value9",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 16,
+                            "byte_end": 18,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        },
+                        {
+                            "name": "value10",
+                            "description": "a random value",
+                            "unit": "nm",
+                            "byte_start": 18,
+                            "byte_end": 20,
+                            "size": 2,
+                            "type": "uint",
+                            "multiplier": null
+                        }
+                    ],
+                    "ble": {
+                        "service_uuid": "1a220020-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "data_char_uuid": "1a220022-c2ed-4d11-ad1e-fc06d8a02d37",
+                        "config_char_uuid": "1a220021-c2ed-4d11-ad1e-fc06d8a02d37"
+                    }
+                }
+            ]
+        }
+    ]
+}
