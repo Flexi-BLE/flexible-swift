@@ -16,14 +16,11 @@ public final class FlexiBLE: ObservableObject {
         
         self.read = FXBRead()
         self.write = FXBWrite()
-        
-        self.startScan()
     }
     
-    private func startScan() {
+    public func startScan(with spec: FXBSpec) {
         Task {
-//            let config = await self.settings.peripheralConfig()
-//            conn.scan(with: config)
+            conn.scan(with: spec)
         }
     }
 }
