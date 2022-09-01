@@ -14,6 +14,7 @@ public struct FXBThroughput: Codable {
     public var dataStream: String
     public var bytes: Int
     public var createdAt: Date
+    public var specId: Int64
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -21,13 +22,15 @@ public struct FXBThroughput: Codable {
         case dataStream = "data_stream"
         case bytes
         case createdAt = "created_at"
+        case specId = "spec_id"
     }
     
-    init(device: String, dataStream: String, bytes: Int) {
+    init(device: String, dataStream: String, bytes: Int, specId: Int64) {
         self.device = device
         self.dataStream = dataStream
         self.bytes = bytes
         self.createdAt = Date()
+        self.specId = specId
     }
 }
 
@@ -39,6 +42,7 @@ extension FXBThroughput: TableRecord, FetchableRecord, MutablePersistableRecord 
         static let dataStream = Column(CodingKeys.dataStream)
         static let bytes = Column(CodingKeys.bytes)
         static let createdAt = Column(CodingKeys.createdAt)
+        static let specId = Column(CodingKeys.specId)
     }
     
     mutating public func didInsert(with rowID: Int64, for column: String?) {
@@ -53,5 +57,7 @@ extension FXBThroughput: TableRecord, FetchableRecord, MutablePersistableRecord 
         table.column(CodingKeys.dataStream.stringValue, .text)
         table.column(CodingKeys.bytes.stringValue, .integer)
         table.column(CodingKeys.createdAt.stringValue, .datetime)
+        table.column(CodingKeys.specId.stringValue, .integer)
+            .references(FXBSpecTable.databaseTableName)
     }
 }

@@ -17,6 +17,7 @@ public struct FXBLocation: Codable {
     public var verticalAccuracy: Double
     public var timestamp: Date
     public var createdAt: Date
+    internal var specId: Int64
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -27,10 +28,19 @@ public struct FXBLocation: Codable {
         case horizontalAccuracy = "horizontal_acc"
         case verticalAccuracy = "vertical_acc"
         case timestamp
+        case specId = "spec_id"
 
     }
     
-    init(latitude: Double, longitude: Double, altitude: Double, horizontalAccuracy: Double, verticalAccuracy: Double, timestamp: Date) {
+    init(
+        latitude: Double,
+        longitude: Double,
+        altitude: Double,
+        horizontalAccuracy: Double,
+        verticalAccuracy: Double,
+        timestamp: Date,
+        specId: Int64
+    ) {
         self.latitude = latitude
         self.longitude = longitude
         self.altitude = altitude
@@ -38,6 +48,7 @@ public struct FXBLocation: Codable {
         self.verticalAccuracy = verticalAccuracy
         self.timestamp = timestamp
         self.createdAt = Date.now
+        self.specId = specId
     }
 }
 
@@ -52,6 +63,7 @@ extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
         static let verticalAccuracy = Column(CodingKeys.verticalAccuracy)
         static let timestamp = Column(CodingKeys.timestamp)
         static let createdAt = Column(CodingKeys.createdAt)
+        static let specId = Column(CodingKeys.specId)
     }
     
     mutating public func didInsert(with rowID: Int64, for column: String?) {
@@ -69,5 +81,7 @@ extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.verticalAccuracy.stringValue, .double)
         table.column(CodingKeys.timestamp.stringValue, .datetime)
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
+        table.column(CodingKeys.specId.stringValue, .integer)
+            .references(FXBSpecTable.databaseTableName)
     }
 }

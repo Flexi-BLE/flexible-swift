@@ -58,13 +58,15 @@ internal class HeartRateServiceHandler: ServiceHandler {
             Task { [hr] in
                 await FXBDBManager.shared.insert(
                     bpm: hr,
-                    sensorLocation: sensorLocation
+                    sensorLocation: sensorLocation,
+                    specId: FlexiBLE.shared.specId
                 )
                 
                 try? await FXBWrite().recordThroughput(
                      deviceName: self.deviceName,
                      dataStreamName: "heart_rate",
-                     byteCount: data.count
+                     byteCount: data.count,
+                     specId: FlexiBLE.shared.specId
                  )
             }
         case bodyLocationUuid:

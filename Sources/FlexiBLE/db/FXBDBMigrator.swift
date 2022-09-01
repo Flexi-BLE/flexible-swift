@@ -16,9 +16,9 @@ internal class FXBDBMigrator {
         self.migrator.registerMigration("v1") { db in
             
             try? db.create(
-                table: FXBDeviceSpec.databaseTableName,
+                table: FXBSpecTable.databaseTableName,
                 ifNotExists: true,
-                body: FXBDeviceSpec.create
+                body: FXBSpecTable.create
             )
             
             try? db.create(

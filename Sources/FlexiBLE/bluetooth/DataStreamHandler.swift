@@ -101,13 +101,15 @@ class DataStreamHandler {
                 for: def,
                 anchorDate: anchorDate,
                 allValues: allValues,
-                timestamps: timestamps
+                timestamps: timestamps,
+                specId: FlexiBLE.shared.specId
             )
         
         try? await FXBWrite().recordThroughput(
             deviceName: deviceName,
             dataStreamName: def.name,
-            byteCount: data.count
+            byteCount: data.count,
+            specId: FlexiBLE.shared.specId
         )
     }
     
@@ -128,7 +130,8 @@ class DataStreamHandler {
         await FXBDBManager.shared
             .dynamicConfigRecordInsert(
                 for: def,
-                values: values
+                values: values,
+                specId: FlexiBLE.shared.specId
             )
     }
     

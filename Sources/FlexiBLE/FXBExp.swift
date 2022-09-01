@@ -19,7 +19,8 @@ public class FXBExp {
                                 description: String?=nil,
                                 start: Date=Date.now,
                                 active: Bool,
-                                trackGPS: Bool) async -> Result<FXBExperiment, FXBError> {
+                                trackGPS: Bool,
+                                specId: Int64) async -> Result<FXBExperiment, FXBError> {
         
         do {
             let res = try await self.db.dbQueue.write { db -> Result<FXBExperiment, FXBError> in
@@ -29,7 +30,8 @@ public class FXBExp {
                     start: start,
                     end: nil,
                     active: active,
-                    trackGPS: trackGPS
+                    trackGPS: trackGPS,
+                    specId: specId
                 )
                 try exp.insert(db)
                 return .success(exp)
@@ -45,7 +47,8 @@ public class FXBExp {
                                  start: Date,
                                  end: Date?=nil,
                                  active: Bool,
-                                 trackGPS: Bool) async -> Result<FXBExperiment, FXBError> {
+                                 trackGPS: Bool,
+                                 specId: Int64) async -> Result<FXBExperiment, FXBError> {
         
         do {
             let res = try await self.db.dbQueue.write { db -> Result<FXBExperiment, FXBError> in
@@ -55,7 +58,8 @@ public class FXBExp {
                     start: start,
                     end: end,
                     active: active,
-                    trackGPS: trackGPS
+                    trackGPS: trackGPS,
+                    specId: specId
                 )
                 try exp.insert(db)
                 return .success(exp)
@@ -133,14 +137,20 @@ public class FXBExp {
     }
     
     
-    public func createTimeMarker(name: String?=nil, description: String?=nil, experimentId: Int64?=nil) async -> Result<FXBTimestamp, FXBError> {
+    public func createTimeMarker(
+        name: String?=nil,
+        description: String?=nil,
+        experimentId: Int64?=nil,
+        specId: Int64
+    ) async -> Result<FXBTimestamp, FXBError> {
         do {
             let res = try await self.db.dbQueue.write { db -> Result<FXBTimestamp, FXBError> in
                 var ts = FXBTimestamp(
                     name: name,
                     description: description,
                     datetime: Date.now,
-                    experimentId: experimentId
+                    experimentId: experimentId,
+                    specId: specId
                 )
                 try ts.insert(db)
                 return .success(ts)
@@ -206,22 +216,27 @@ public class FXBExp {
 }
 
 extension FXBExp {
-    public func trackGPSLocation(latitude: Double,
-                                 longitude: Double,
-                                 altitude: Double,
-                                 horizontalAcc: Double,
-                                 verticalAcc: Double,
-                                 timestamp: Date) async -> Result<Bool, FXBError> {
+    public func trackGPSLocation(
+        latitude: Double,
+        longitude: Double,
+        altitude: Double,
+        horizontalAcc: Double,
+        verticalAcc: Double,
+        timestamp: Date,
+        specId: Int64
+    ) async -> Result<Bool, FXBError> {
 
         do {
             let res = try await self.db.dbQueue.write { db -> Result<Bool, FXBError> in
                 
-                var loc = FXBLocation(latitude: latitude,
-                                   longitude: longitude,
-                                   altitude: altitude,
-                                   horizontalAccuracy: horizontalAcc,
-                                   verticalAccuracy: verticalAcc,
-                                   timestamp: timestamp
+                var loc = FXBLocation(
+                    latitude: latitude,
+                    longitude: longitude,
+                    altitude: altitude,
+                    horizontalAccuracy: horizontalAcc,
+                    verticalAccuracy: verticalAcc,
+                    timestamp: timestamp,
+                    specId: specId
                 )
                 try loc.insert(db)
                 return .success(true)

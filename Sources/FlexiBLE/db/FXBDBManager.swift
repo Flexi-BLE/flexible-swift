@@ -449,8 +449,8 @@ public final class FXBDBManager {
                 t.column("experiment_id", .integer)
                     .indexed()
                     .references(FXBExperiment.databaseTableName)
-                t.column("is_current_schema", .boolean).defaults(to: true)
-//                t.column("user_id", .text).notNull(onConflict: .fail)
+                t.column("spec_id", .integer)
+                    .references(FXBSpecTable.databaseTableName)
                 
                 for dv in metadata.dataValues {
                     t.column(dv.name, .double)
@@ -467,7 +467,9 @@ public final class FXBDBManager {
                 
                 t.autoIncrementedPrimaryKey("id")
                 t.column("created_at", .datetime).defaults(to: Date())
-                t.column("is_current_schema", .boolean).defaults(to: true)
+                t.column("uploaded", .boolean).defaults(to: false)
+                t.column("spec_id", .integer)
+                    .references(FXBSpecTable.databaseTableName)
                 
                 for cv in metadata.configValues {
                     t.column(cv.name, .text).notNull()
@@ -486,7 +488,8 @@ public final class FXBDBManager {
         for ds: FXBDataStream,
         anchorDate: Date,
         allValues: [[AEDataValue]],
-        timestamps: [Date]
+        timestamps: [Date],
+        specId: Int64
     ) async {
         let tableName = "\(tableName(from: ds.name))_data"
         
@@ -497,7 +500,7 @@ public final class FXBDBManager {
             INSERT INTO \(tableName)
         """
         
-        let colsSql = "(\(cols), created_at, ts) VALUES"
+        let colsSql = "(\(cols), created_at, ts, spec_id) VALUES"
         
         sql += colsSql
         
@@ -506,13 +509,15 @@ public final class FXBDBManager {
         for (i, values) in allValues.enumerated() {
             args.append(contentsOf: values)
             args.append(Date())
-            sql += "(\(placeholders), ?, ?), "
+            sql += "(\(placeholders), ?, ?, ?), "
             
             if ds.includeAnchorTimestamp && ds.offsetDataValue != nil {
                 args.append(timestamps[i])
             } else {
                 args.append(Date())
             }
+            
+            args.append(specId)
         }
         
         sql.removeLast(2)
@@ -532,7 +537,8 @@ public final class FXBDBManager {
     
     internal func dynamicConfigRecordInsert(
         for ds: FXBDataStream,
-        values: [String]
+        values: [String],
+        specId: Int64
     ) async {
         
         let tableName = "\(tableName(from: ds.name))_config"
@@ -542,11 +548,11 @@ public final class FXBDBManager {
         
         let sql = """
             INSERT INTO \(tableName)
-            (\(cols), created_at)
-            VALUES (\(placeholders), ?);
+            (\(cols), created_at, spec_id)
+            VALUES (\(placeholders), ?, ?);
         """
         
-        let args = StatementArguments(values + [Date()])
+        let args = StatementArguments(values + [Date(), specId])
         
         do {
             try await self.dbQueue.write { [sql, args] db in
@@ -588,10 +594,10 @@ public final class FXBDBManager {
         }
     }
     
-    internal func insert(bpm: Int, sensorLocation: String) async {
+    internal func insert(bpm: Int, sensorLocation: String, specId: Int64) async {
         do {
             try await self.dbQueue.write({ db in
-                var hr = FXBHeartRate(bpm: bpm, sensorLocation: sensorLocation)
+                var hr = FXBHeartRate(bpm: bpm, sensorLocation: sensorLocation, specId: specId)
                 try hr.insert(db)
             })
         } catch {

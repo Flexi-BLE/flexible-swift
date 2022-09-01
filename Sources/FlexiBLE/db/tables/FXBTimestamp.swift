@@ -17,6 +17,7 @@ public struct FXBTimestamp: Codable {
     var createdAt: Date
     public var datetime: Date
     var uploaded: Bool = false
+    internal var specId: Int64
         
     enum CodingKeys: String, CodingKey {
         case id
@@ -26,14 +27,22 @@ public struct FXBTimestamp: Codable {
         case createdAt = "created_at"
         case datetime
         case uploaded
+        case specId = "spec_id"
     }
     
-    init(name: String?, description: String?=nil, datetime:Date=Date.now, experimentId: Int64?=nil) {
+    init(
+        name: String?,
+        description: String?=nil,
+        datetime:Date=Date.now,
+        experimentId: Int64?=nil,
+        specId: Int64
+    ) {
         self.name = name
         self.description = description
         self.datetime = datetime
         self.createdAt = Date.now
         self.experimentId = experimentId
+        self.specId = specId
     }
     
     public static func dummy() -> FXBTimestamp {
@@ -41,7 +50,8 @@ public struct FXBTimestamp: Codable {
             name: "test",
             description: "test123",
             datetime: Date(),
-            experimentId: 123
+            experimentId: 123,
+            specId: 1
         )
     }
 }
@@ -55,6 +65,7 @@ extension FXBTimestamp: FetchableRecord, MutablePersistableRecord {
         static let createdAt = Column(CodingKeys.createdAt)
         static let datetime = Column(CodingKeys.datetime)
         static let uploaded = Column(CodingKeys.uploaded)
+        static let specId = Column(CodingKeys.specId)
     }
     
     mutating public func didInsert(with rowID: Int64, for column: String?) {
@@ -73,5 +84,7 @@ extension FXBTimestamp: FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.createdAt.stringValue, .datetime).notNull(onConflict: .fail)
         table.column(CodingKeys.datetime.stringValue, .datetime)
         table.column(CodingKeys.uploaded.stringValue, .boolean)
+        table.column(CodingKeys.specId.stringValue, .integer)
+            .references(FXBSpecTable.databaseTableName)
     }
 }
