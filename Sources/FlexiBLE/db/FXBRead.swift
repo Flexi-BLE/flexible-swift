@@ -60,24 +60,60 @@ public struct FXBRead {
         }
     }
     
-    public func GetTotalRecords(from start: Date, to end: Date) async throws -> Int {
+    public func getTotalRecords(from start: Date?, to end: Date?, uploaded: Bool = false) async throws -> Int {
         let dtns = await dynamicTableNames()
         
         return try await dbMgr.dbQueue.read { db -> Int in
             var total = 0
             for tbl in dtns {
-                let q = """
+                var q = """
                     SELECT COUNT(id)
                     FROM \(tbl)
-                    WHERE ts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())'
                 """
+                
+                if let start = start, let end = end {
+                    q += "\nWHERE ts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())' AND"
+                }
+                
+                q += "\nuploaded == \(uploaded);"
                 
                 total += try Int.fetchOne(
                     db,
                     sql: q
                 ) ?? 0
             }
+            
+            var locReq = FXBLocation.all()
+            if let start = start, let end = end {
+                locReq = locReq.filter(Column("ts") >= start && Column("ts") < end)
+            }
+            total += try locReq.filter(Column("uploaded") == uploaded).fetchCount(db)
+            
+            
+            var hrReq = FXBHeartRate.all()
+            if let start = start, let end = end {
+                hrReq = hrReq.filter(Column("created_at") >= start && Column("created_at") < end)
+            }
+            total += try hrReq.filter(Column("uploaded") == uploaded).fetchCount(db)
+            
             return total
+        }
+    }
+    
+    internal func getTotalRecords(for tableName: String, from start: Date?=nil, to end: Date?=nil, uploaded: Bool = false) async throws -> Int {
+        return try await dbMgr.dbQueue.read { db -> Int in
+            var q = """
+                SELECT COUNT(id)
+                FROM \(tableName)
+            """
+            
+            if let start = start, let end = end {
+                q += "\nWHERE ts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())' AND"
+            }
+            
+            q += "\nuploaded == \(uploaded);"
+            
+            return try Int.fetchOne(db, sql: q) ?? 0
         }
     }
 }

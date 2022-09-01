@@ -235,7 +235,7 @@ extension FXBExp {
                     altitude: altitude,
                     horizontalAccuracy: horizontalAcc,
                     verticalAccuracy: verticalAcc,
-                    timestamp: timestamp,
+                    ts: timestamp,
                     specId: specId
                 )
                 try loc.insert(db)

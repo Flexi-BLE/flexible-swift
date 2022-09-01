@@ -15,7 +15,7 @@ public struct FXBLocation: Codable {
     public var altitude: Double
     public var horizontalAccuracy: Double
     public var verticalAccuracy: Double
-    public var timestamp: Date
+    public var ts: Date
     public var createdAt: Date
     internal var specId: Int64
     
@@ -27,7 +27,7 @@ public struct FXBLocation: Codable {
         case altitude
         case horizontalAccuracy = "horizontal_acc"
         case verticalAccuracy = "vertical_acc"
-        case timestamp
+        case ts
         case specId = "spec_id"
 
     }
@@ -38,7 +38,7 @@ public struct FXBLocation: Codable {
         altitude: Double,
         horizontalAccuracy: Double,
         verticalAccuracy: Double,
-        timestamp: Date,
+        ts: Date,
         specId: Int64
     ) {
         self.latitude = latitude
@@ -46,7 +46,7 @@ public struct FXBLocation: Codable {
         self.altitude = altitude
         self.horizontalAccuracy = horizontalAccuracy
         self.verticalAccuracy = verticalAccuracy
-        self.timestamp = timestamp
+        self.ts = ts
         self.createdAt = Date.now
         self.specId = specId
     }
@@ -61,7 +61,7 @@ extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
         static let altitude = Column(CodingKeys.altitude)
         static let horiztalAccuracy = Column(CodingKeys.horizontalAccuracy)
         static let verticalAccuracy = Column(CodingKeys.verticalAccuracy)
-        static let timestamp = Column(CodingKeys.timestamp)
+        static let ts = Column(CodingKeys.ts)
         static let createdAt = Column(CodingKeys.createdAt)
         static let specId = Column(CodingKeys.specId)
     }
@@ -79,7 +79,7 @@ extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.altitude.stringValue, .double)
         table.column(CodingKeys.horizontalAccuracy.stringValue, .double)
         table.column(CodingKeys.verticalAccuracy.stringValue, .double)
-        table.column(CodingKeys.timestamp.stringValue, .datetime)
+        table.column(CodingKeys.ts.stringValue, .datetime)
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
         table.column(CodingKeys.specId.stringValue, .integer)
             .references(FXBSpecTable.databaseTableName)

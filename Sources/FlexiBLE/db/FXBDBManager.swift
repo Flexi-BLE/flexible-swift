@@ -597,7 +597,12 @@ public final class FXBDBManager {
     internal func insert(bpm: Int, sensorLocation: String, specId: Int64) async {
         do {
             try await self.dbQueue.write({ db in
-                var hr = FXBHeartRate(bpm: bpm, sensorLocation: sensorLocation, specId: specId)
+                var hr = FXBHeartRate(
+                    bpm: bpm,
+                    sensorLocation: sensorLocation,
+                    ts: Date.now,
+                    specId: specId
+                )
                 try hr.insert(db)
             })
         } catch {

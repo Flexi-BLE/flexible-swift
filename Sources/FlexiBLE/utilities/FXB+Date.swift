@@ -15,4 +15,13 @@ extension Date {
         
         return formatter.string(from: self)
     }
+    
+    
+    var unixEpochMilliseconds: TimeInterval {
+        return (self.timeIntervalSince1970 * 1000.0).rounded()
+    }
+    
+    var unixEpochNanoseconds: TimeInterval {
+        return (self.timeIntervalSince1970 * 1000000000).rounded()
+    }
 }
