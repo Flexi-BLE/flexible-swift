@@ -69,10 +69,11 @@ public struct FXBRead {
                 var q = """
                     SELECT COUNT(id)
                     FROM \(tbl)
+                    WHERE
                 """
                 
                 if let start = start, let end = end {
-                    q += "\nWHERE ts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())' AND"
+                    q += "\n ts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())' AND"
                 }
                 
                 q += "\nuploaded == \(uploaded);"
@@ -105,10 +106,11 @@ public struct FXBRead {
             var q = """
                 SELECT COUNT(id)
                 FROM \(tableName)
+                WHERE
             """
             
             if let start = start, let end = end {
-                q += "\nWHERE ts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())' AND"
+                q += "\nts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())' AND"
             }
             
             q += "\nuploaded == \(uploaded);"

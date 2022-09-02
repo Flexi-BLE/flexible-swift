@@ -18,12 +18,14 @@ public struct FXBConnection: Codable {
     public var device: String
     public var status: Status
     public var createdAt: Date
+    public var uploaded: Bool = false
     
     enum CodingKeys: String, CodingKey {
         case id
         case device
         case status
         case createdAt = "created_at"
+        case uploaded
     }
     
     init(device: String, status: Status) {
@@ -40,6 +42,7 @@ extension FXBConnection: TableRecord, FetchableRecord, MutablePersistableRecord 
         static let device = Column(CodingKeys.device)
         static let status = Column(CodingKeys.status)
         static let createdAt = Column(CodingKeys.createdAt)
+        static let uploaded = Column(CodingKeys.uploaded)
     }
     
     mutating public func didInsert(with rowID: Int64, for column: String?) {
@@ -53,5 +56,6 @@ extension FXBConnection: TableRecord, FetchableRecord, MutablePersistableRecord 
         table.column(CodingKeys.device.stringValue, .text)
         table.column(CodingKeys.status.stringValue, .text)
         table.column(CodingKeys.createdAt.stringValue, .datetime)
+        table.column(CodingKeys.uploaded.stringValue, .boolean)
     }
 }

@@ -8,35 +8,50 @@
 import Foundation
 import GRDB
 
-internal class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
-    @Published var state: FXBDataUploaderState
-    var stateValue: Published<FXBDataUploaderState> { return _state }
-    var statePublisher: Published<FXBDataUploaderState>.Publisher { return $state }
+public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
+    @Published public var state: FXBDataUploaderState
+    public var stateValue: Published<FXBDataUploaderState> { return _state }
+    public var statePublisher: Published<FXBDataUploaderState>.Publisher { return $state }
     
-    @Published private(set) var progress: Float
-    var progressValue: Published<Float> {
+    @Published public private(set) var progress: Float
+    public var progressValue: Published<Float> {
         return _progress
     }
-    var progressPublisher: Published<Float>.Publisher {
+    public var progressPublisher: Published<Float>.Publisher {
         return $progress
     }
     
-    @Published private (set) var estNumRecs: Int
-    var estNumRecsValue: Published<Int> { return _estNumRecs }
-    var estNumRecsPublisher: Published<Int>.Publisher { return $estNumRecs }
+    @Published public private (set) var estNumRecs: Int
+    public var estNumRecsValue: Published<Int> { return _estNumRecs }
+    public var estNumRecsPublisher: Published<Int>.Publisher { return $estNumRecs }
     
-    @Published var totalUploaded: Int {
+    @Published public var totalUploaded: Int {
         didSet {
             self.progress = Float(totalUploaded) / Float(estNumRecs)
         }
     }
-    var totalUploadedValue: Published<Int> { return _totalUploaded }
-    var totalUploadedPublisher: Published<Int>.Publisher { return $totalUploaded }
+    public var totalUploadedValue: Published<Int> { return _totalUploaded }
+    public var totalUploadedPublisher: Published<Int>.Publisher { return $totalUploaded }
     
-    var batchSize: Int
-    var tableStatuses: [FXBTableUploadState]
+    public var batchSize: Int
+    public var tableStatuses: [FXBTableUploadState]
     
-    init(batchSize: Int=1000) {
+    private let url: URL
+    private let org: String
+    private let bucket: String
+    private let token: String
+    
+    public init(
+        url: URL,
+         org: String,
+         bucket: String,
+         token: String,
+         batchSize: Int=1000
+    ) {
+        self.url = url
+        self.org = org
+        self.bucket = bucket
+        self.token = token
         self.batchSize = batchSize
         self.state = .notStarted
         self.progress = 0.0
@@ -52,7 +67,7 @@ internal class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
         ]
     }
     
-    func start() {
+    public func start() {
         Task {
             do {
                 self.state = .initializing
@@ -71,7 +86,7 @@ internal class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
         }
     }
     
-    func pause() {
+    public func pause() {
         self.state = .paused
     }
     
@@ -85,10 +100,10 @@ internal class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
     }
     
     private func continuousUpload() async throws {
-        while self.state == .running, self.estNumRecs > 0 {
-            
-            try await calculateRemaining()
-        }
+//        while self.state == .running, self.estNumRecs > 0 {
+//
+//            try await calculateRemaining()
+//        }
     }
     
     private func calculateRemaining() async throws {

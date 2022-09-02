@@ -17,6 +17,7 @@ public struct FXBLocation: Codable {
     public var verticalAccuracy: Double
     public var ts: Date
     public var createdAt: Date
+    public var uploaded: Bool = false
     internal var specId: Int64
     
     enum CodingKeys: String, CodingKey {
@@ -28,6 +29,7 @@ public struct FXBLocation: Codable {
         case horizontalAccuracy = "horizontal_acc"
         case verticalAccuracy = "vertical_acc"
         case ts
+        case uploaded
         case specId = "spec_id"
 
     }
@@ -63,6 +65,7 @@ extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
         static let verticalAccuracy = Column(CodingKeys.verticalAccuracy)
         static let ts = Column(CodingKeys.ts)
         static let createdAt = Column(CodingKeys.createdAt)
+        static let uploaded = Column(CodingKeys.uploaded)
         static let specId = Column(CodingKeys.specId)
     }
     
@@ -81,6 +84,7 @@ extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.verticalAccuracy.stringValue, .double)
         table.column(CodingKeys.ts.stringValue, .datetime)
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
+        table.column(CodingKeys.uploaded.stringValue, .boolean)
         table.column(CodingKeys.specId.stringValue, .integer)
             .references(FXBSpecTable.databaseTableName)
     }

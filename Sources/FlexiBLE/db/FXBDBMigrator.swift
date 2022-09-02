@@ -40,6 +40,12 @@ internal class FXBDBMigrator {
             )
             
             try? db.create(
+                table: FXBHeartRate.databaseTableName,
+                ifNotExists: true,
+                body: FXBHeartRate.create
+            )
+            
+            try? db.create(
                 table: FXBThroughput.databaseTableName,
                 ifNotExists: true,
                 body: FXBThroughput.create

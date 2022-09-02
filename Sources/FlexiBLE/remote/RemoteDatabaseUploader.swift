@@ -34,7 +34,7 @@ public enum FXBDataUploaderState {
     }
 }
 
-public protocol FXBRemoteDatabaseUploader {
+public protocol FXBRemoteDatabaseUploader: ObservableObject {
     var state: FXBDataUploaderState { get }
     var stateValue: Published<FXBDataUploaderState> { get }
     var statePublisher: Published<FXBDataUploaderState>.Publisher { get }
@@ -57,19 +57,6 @@ public protocol FXBRemoteDatabaseUploader {
     
     func start()
     func pause()
-}
-
-extension FXBRemoteDatabaseUploader {
-    var staticTables: [FetchableRecord.Type] {
-        return [
-            FXBConnection.self,
-            FXBExperiment.self,
-            FXBHeartRate.self,
-            FXBLocation.self,
-            FXBThroughput.self,
-            FXBTimestamp.self
-        ]
-    }
 }
 
 public class FXBTableUploadState {
