@@ -102,7 +102,8 @@ class DataStreamHandler {
                 anchorDate: anchorDate,
                 allValues: allValues,
                 timestamps: timestamps,
-                specId: FlexiBLE.shared.specId
+                specId: FlexiBLE.shared.specId,
+                device: deviceName
             )
         
         try? await FXBWrite().recordThroughput(
@@ -131,7 +132,8 @@ class DataStreamHandler {
             .dynamicConfigRecordInsert(
                 for: def,
                 values: values,
-                specId: FlexiBLE.shared.specId
+                specId: FlexiBLE.shared.specId,
+                device: deviceName
             )
     }
     

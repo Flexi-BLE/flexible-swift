@@ -41,29 +41,39 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
     private let bucket: String
     private let token: String
     
+    public let startDate: Date?
+    public let endDate: Date?
+    
+    public let deviceId: String
+    
     public init(
         url: URL,
-         org: String,
-         bucket: String,
-         token: String,
-         batchSize: Int=1000
+        org: String,
+        bucket: String,
+        token: String,
+        startDate: Date?=nil,
+        endDate: Date?=nil,
+        batchSize: Int=50,
+        deviceId: String
     ) {
         self.url = url
         self.org = org
         self.bucket = bucket
         self.token = token
+        self.startDate = startDate
+        self.endDate = endDate
         self.batchSize = batchSize
         self.state = .notStarted
         self.progress = 0.0
         self.estNumRecs = 0
         self.totalUploaded = 0
+        self.deviceId = deviceId
         
         tableStatuses = [
-            FXBTableUploadState(table: FXBConnection.databaseTableName, isStatic: true),
-            FXBTableUploadState(table: FXBExperiment.databaseTableName, isStatic: true),
-            FXBTableUploadState(table: FXBTimestamp.databaseTableName, isStatic: true),
-            FXBTableUploadState(table: FXBHeartRate.databaseTableName, isStatic: true),
-            FXBTableUploadState(table: FXBLocation.databaseTableName, isStatic: true)
+            FXBTableUploadState(table: .experiment),
+            FXBTableUploadState(table: .timestamp),
+            FXBTableUploadState(table: .heartRate),
+            FXBTableUploadState(table: .location)
         ]
     }
     
@@ -72,7 +82,7 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
             do {
                 self.state = .initializing
                 await addDynamicTableStates()
-                try await calculateRemaining()
+                self.estNumRecs = try await calculateRemaining()
                 self.state = .running
             } catch {
                 self.state = .error(msg: "error initializing upload: \(error.localizedDescription)")
@@ -93,33 +103,54 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
     private func addDynamicTableStates() async {
         let dtns = await FXBRead().dynamicTableNames()
         for tn in dtns {
-            if tableStatuses.first(where: { $0.table == tn }) == nil {
-                tableStatuses.append(FXBTableUploadState(table: tn, isStatic: false))
+            if tableStatuses.first(where: { $0.table.tableName == tn }) == nil {
+                tableStatuses.append(FXBTableUploadState(table: .dynamic(name: tn)))
             }
         }
     }
     
     private func continuousUpload() async throws {
-//        while self.state == .running, self.estNumRecs > 0 {
-//
-//            try await calculateRemaining()
-//        }
+        while self.state == .running {
+            if let tableStatus = tableStatuses.first(where: { $0.totalRemaining > 0 }) {
+                do {
+                    let records = try await tableStatus.table.ILPQuery(from: startDate, to: endDate, uploaded: false, deviceId: deviceId)
+                    
+                    try await Task.sleep(nanoseconds: 1000000000)
+                    try await tableStatus.table.updateUpload(lines: records)
+                    
+                    tableStatus.uploaded += records.count
+                    tableStatus.totalRemaining -= records.count
+                    
+                    DispatchQueue.main.async {
+                        self.totalUploaded += records.count
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        self.state = .error(msg: "error querying records for \(tableStatus.table.tableName): error \(error.localizedDescription)")
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.state = .done
+                }
+            }
+        }
     }
     
-    private func calculateRemaining() async throws {
+    private func calculateRemaining() async throws -> Int{
         var tmpTotal = 0
         for status in tableStatuses {
             let st = try await FXBRead().getTotalRecords(
-                for: status.table,
-                from: nil,
-                to: nil,
+                for: status.table.tableName,
+                from: startDate,
+                to: endDate,
                 uploaded: false
             )
             status.totalRemaining = st
             tmpTotal += st
         }
         
-        self.estNumRecs = tmpTotal
+        return tmpTotal
     }
     
     

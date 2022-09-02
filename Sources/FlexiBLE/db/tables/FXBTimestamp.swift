@@ -15,7 +15,7 @@ public struct FXBTimestamp: Codable {
     public var description: String?
     public var experimentId: Int64?
     var createdAt: Date
-    public var datetime: Date
+    public var ts: Date
     var uploaded: Bool = false
     internal var specId: Int64
         
@@ -25,7 +25,7 @@ public struct FXBTimestamp: Codable {
         case description
         case experimentId = "experiment_id"
         case createdAt = "created_at"
-        case datetime
+        case ts
         case uploaded
         case specId = "spec_id"
     }
@@ -33,13 +33,13 @@ public struct FXBTimestamp: Codable {
     init(
         name: String?,
         description: String?=nil,
-        datetime:Date=Date.now,
+        ts:Date=Date.now,
         experimentId: Int64?=nil,
         specId: Int64
     ) {
         self.name = name
         self.description = description
-        self.datetime = datetime
+        self.ts = ts
         self.createdAt = Date.now
         self.experimentId = experimentId
         self.specId = specId
@@ -49,7 +49,7 @@ public struct FXBTimestamp: Codable {
         return FXBTimestamp(
             name: "test",
             description: "test123",
-            datetime: Date(),
+            ts: Date(),
             experimentId: 123,
             specId: 1
         )
@@ -63,7 +63,7 @@ extension FXBTimestamp: FetchableRecord, MutablePersistableRecord {
         static let description = Column(CodingKeys.description)
         static let eventId = Column(CodingKeys.experimentId)
         static let createdAt = Column(CodingKeys.createdAt)
-        static let datetime = Column(CodingKeys.datetime)
+        static let datetime = Column(CodingKeys.ts)
         static let uploaded = Column(CodingKeys.uploaded)
         static let specId = Column(CodingKeys.specId)
     }
@@ -82,7 +82,7 @@ extension FXBTimestamp: FetchableRecord, MutablePersistableRecord {
             .indexed()
             .references(FXBExperiment.databaseTableName, onDelete: .cascade)
         table.column(CodingKeys.createdAt.stringValue, .datetime).notNull(onConflict: .fail)
-        table.column(CodingKeys.datetime.stringValue, .datetime)
+        table.column(CodingKeys.ts.stringValue, .datetime).notNull().indexed()
         table.column(CodingKeys.uploaded.stringValue, .boolean)
         table.column(CodingKeys.specId.stringValue, .integer)
             .references(FXBSpecTable.databaseTableName)

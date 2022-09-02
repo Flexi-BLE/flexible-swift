@@ -16,6 +16,14 @@ extension Date {
         return formatter.string(from: self)
     }
     
+    static func fromSQLString(_ str: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM-dd hh:mm:ss.SSS"
+        
+        return formatter.date(from: str)
+    }
+    
     
     var unixEpochMilliseconds: TimeInterval {
         return (self.timeIntervalSince1970 * 1000.0).rounded()

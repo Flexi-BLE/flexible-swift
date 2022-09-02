@@ -60,19 +60,17 @@ public protocol FXBRemoteDatabaseUploader: ObservableObject {
 }
 
 public class FXBTableUploadState {
-    var table: String
+    var table: FXBTimeSeriesTable
     var startDate: Date?
     var endDate: Date?
     var totalRemaining: Int
     var uploaded: Int
-    var isStatic: Bool
     
-    init(table: String, isStatic: Bool) {
+    init(table: FXBTimeSeriesTable) {
         self.table = table
         self.startDate = nil
         self.endDate = nil
         self.totalRemaining = 0
         self.uploaded = 0
-        self.isStatic = isStatic
     }
 }

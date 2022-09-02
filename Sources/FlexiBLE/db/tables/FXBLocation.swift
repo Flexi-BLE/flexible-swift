@@ -82,7 +82,7 @@ extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.altitude.stringValue, .double)
         table.column(CodingKeys.horizontalAccuracy.stringValue, .double)
         table.column(CodingKeys.verticalAccuracy.stringValue, .double)
-        table.column(CodingKeys.ts.stringValue, .datetime)
+        table.column(CodingKeys.ts.stringValue, .datetime).notNull().indexed()
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
         table.column(CodingKeys.uploaded.stringValue, .boolean)
         table.column(CodingKeys.specId.stringValue, .integer)

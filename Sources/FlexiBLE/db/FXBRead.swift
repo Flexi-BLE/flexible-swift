@@ -73,7 +73,11 @@ public struct FXBRead {
                 """
                 
                 if let start = start, let end = end {
-                    q += "\n ts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())' AND"
+                    q += "\nts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())' AND"
+                } else if let start = start {
+                    q += "\nts >= '\(start.SQLiteFormat())' AND"
+                } else if let end = end {
+                    q += "\nts < '\(end.SQLiteFormat())' AND"
                 }
                 
                 q += "\nuploaded == \(uploaded);"
@@ -111,6 +115,10 @@ public struct FXBRead {
             
             if let start = start, let end = end {
                 q += "\nts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())' AND"
+            } else if let start = start {
+                q += "\nts >= '\(start.SQLiteFormat())' AND"
+            } else if let end = end {
+                q += "\nts < '\(end.SQLiteFormat())' AND"
             }
             
             q += "\nuploaded == \(uploaded);"

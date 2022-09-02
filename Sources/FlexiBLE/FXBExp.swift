@@ -148,7 +148,7 @@ public class FXBExp {
                 var ts = FXBTimestamp(
                     name: name,
                     description: description,
-                    datetime: Date.now,
+                    ts: Date.now,
                     experimentId: experimentId,
                     specId: specId
                 )

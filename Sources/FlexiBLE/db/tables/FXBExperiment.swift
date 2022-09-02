@@ -16,6 +16,7 @@ public struct FXBExperiment: Codable {
     public var description: String?
     public var start: Date
     public var end: Date?
+    private var ts: Date
     public var trackGPS: Bool = false
     public var active: Bool = false
     internal var uploaded: Bool = false
@@ -30,6 +31,7 @@ public struct FXBExperiment: Codable {
         case createdAt = "created_at"
         case start
         case end
+        case ts
         case uploaded
         case active
         case trackGPS = "track_gps"
@@ -51,6 +53,7 @@ public struct FXBExperiment: Codable {
         self.createdAt = Date.now
         self.start = start
         self.end = end
+        self.ts = start
         self.active = active
         self.trackGPS = trackGPS
         self.specId = specId
@@ -74,6 +77,7 @@ extension FXBExperiment: FetchableRecord, MutablePersistableRecord {
         static let createdAt = Column(CodingKeys.createdAt)
         static let start = Column(CodingKeys.start)
         static let end = Column(CodingKeys.end)
+        static let ts = Column(CodingKeys.ts)
         static let active = Column(CodingKeys.active)
         static let uploaded = Column(CodingKeys.uploaded)
         static let trackGPS = Column(CodingKeys.trackGPS)
@@ -94,6 +98,7 @@ extension FXBExperiment: FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
         table.column(CodingKeys.start.stringValue, .datetime)
         table.column(CodingKeys.end.stringValue, .datetime)
+        table.column(CodingKeys.ts.stringValue, .datetime).notNull().indexed()
         table.column(CodingKeys.uploaded.stringValue, .boolean)
         table.column(CodingKeys.active.stringValue, .boolean)
         table.column(CodingKeys.trackGPS.stringValue, .boolean)

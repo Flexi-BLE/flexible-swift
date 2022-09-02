@@ -58,7 +58,7 @@ extension FXBHeartRate: TableRecord, FetchableRecord, MutablePersistableRecord {
         table.autoIncrementedPrimaryKey(CodingKeys.id.stringValue)
         table.column(CodingKeys.sensorLocation.stringValue, .text)
         table.column(CodingKeys.bpm.stringValue, .integer).notNull()
-        table.column(CodingKeys.ts.stringValue, .date).notNull()
+        table.column(CodingKeys.ts.stringValue, .date).notNull().indexed()
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
         table.column(CodingKeys.uploaded.stringValue, .boolean).defaults(to: false)
         table.column(CodingKeys.specId.stringValue, .integer)

@@ -61,4 +61,13 @@ public class GenericRow: Identifiable {
     public static func dummy() -> GenericRow {
         return GenericRow(metadata: [FXBTableInfo.dummy()], row: Row())
     }
+    
+    public func getValue<T>(for colName: String) -> T? {
+        if let idx = self.metadata.firstIndex(where: { $0.name == colName }),
+           let val = self.columns[idx].value as? T {
+            return val
+        }
+        
+        return nil
+    }
 }
