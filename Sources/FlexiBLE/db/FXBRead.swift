@@ -126,4 +126,23 @@ public struct FXBRead {
             return try Int.fetchOne(db, sql: q) ?? 0
         }
     }
+    
+    public func getDistinctValuesForColumn(for column_name: String, table_name: String) async -> [String]? {
+        var distinctValues: [String] = []
+        try? await dbMgr.dbQueue.read { db in
+            let q = """
+                    SELECT DISTINCT \(column_name)
+                    FROM \(table_name)
+                """
+            let queryResult = try Row.fetchAll(db, sql: q)
+            distinctValues = queryResult.map({ $0[column_name] })
+            //                for eachEntry in queryResult {
+            //                    if let doubleValue = Double.fromDatabaseValue(eachEntry[column_name]) {
+            //                        distinctValues.append(String(doubleValue))
+            //                    }
+            //                }
+            //                return distinctValues
+        }
+        return distinctValues
+    }
 }

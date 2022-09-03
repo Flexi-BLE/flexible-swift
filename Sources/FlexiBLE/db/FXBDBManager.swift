@@ -24,7 +24,7 @@ public final class FXBDBManager {
         do {
             let dirPath = try fileManager
                 .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-                    .appendingPathComponent("data", isDirectory: true)
+                    .appendingPathComponent("resources", isDirectory: true)
             
             try fileManager.createDirectory(at: dirPath, withIntermediateDirectories: true)
             
@@ -41,7 +41,7 @@ public final class FXBDBManager {
         
         #if DEBUG
         // Protect sensitive information by enabling verbose debugging in DEBUG builds only
-//        Bundle.module.copyFilesFromBundleToDocumentsFolderWith(fileName: "aeble.sqlite", in: "data")
+//        Bundle.module.copyFilesFromBundleToDocumentsFolderWith(fileName: "aeble.sqlite", in: "resources")
         configuration.publicStatementArguments = true
 
         #endif
