@@ -70,3 +70,38 @@ internal class ILPRecord {
         return s
     }
 }
+
+extension Array where Element == ILPRecord {
+    func ship(url baseURL: URL, org: String, bucket: String, token: String) async throws -> Bool {
+        var urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
+        urlComponents?.queryItems = [
+            URLQueryItem(name: "org", value: org),
+            URLQueryItem(name: "bucket", value: bucket)
+        ]
+        guard let url = urlComponents?.url else {
+            return false
+        }
+
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("Token \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("text/plain; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        req.httpBody = self.map({ $0.line }).joined(separator: "\n").data(using: .utf8)
+        
+        
+        let (data, res) = try await URLSession.shared.data(for: req)
+
+        guard let httpRes = res as? HTTPURLResponse else {
+            return false
+        }
+        if (200...299).contains(httpRes.statusCode) {
+            webLog.info("successful influx upload: \(httpRes.statusCode)")
+            return true
+        } else {
+            webLog.error("error: \(String(data: data, encoding: .utf8) ?? "--unknown--")")
+        }
+
+        return false
+    }
+}

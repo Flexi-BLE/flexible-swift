@@ -27,13 +27,13 @@ enum FXBTimeSeriesTable {
 }
 
 extension FXBTimeSeriesTable {
-    func ILPQuery(from start: Date?=nil, to end: Date?=nil, uploaded: Bool=false, deviceId: String) async throws -> [ILPRecord] {
+    func ILPQuery(from start: Date?=nil, to end: Date?=nil, uploaded: Bool=false, limit: Int, deviceId: String) async throws -> [ILPRecord] {
         switch self {
-        case .heartRate: return try await IRPQueryHeartRate(from: start, to: end, uploaded: uploaded, deviceId: deviceId)
-        case .location: return try await IRPQueryLocation(from: start, to: end, uploaded: uploaded, deviceId: deviceId)
-        case .experiment: return try await IRPQueryExperiment(from: start, to: end, uploaded: uploaded, deviceId: deviceId)
-        case .timestamp: return try await IRPQueryTimestamp(from: start, to: end, uploaded: uploaded, deviceId: deviceId)
-        case .dynamic(let name): return try await IRPQueryDynamic(name: name, from: start, to: end, uploaded: uploaded, deviceId: deviceId)
+        case .heartRate: return try await IRPQueryHeartRate(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .location: return try await IRPQueryLocation(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .experiment: return try await IRPQueryExperiment(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .timestamp: return try await IRPQueryTimestamp(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .dynamic(let name): return try await IRPQueryDynamic(name: name, from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
         }
     }
     
@@ -130,27 +130,33 @@ extension FXBTimeSeriesTable {
                 timestamp: ts
             )
             
-            ilp.tag("deviceId", deviceId)
+            ilp.tag("device_id", deviceId)
             
             for dv in measurement.dataValues {
-                switch dv.type {
-                case .float:
-                    if let v: Float = rec.getValue(for: dv.name) {
-                        ilp.field(dv.name, float: v)
-                    }
-                case .int:
-                    if let v: Int = rec.getValue(for: dv.name) {
-                        ilp.field(dv.name, int: v)
-                    }
-                case .string:
-                    if let v: String = rec.getValue(for: dv.name) {
-                        ilp.field(dv.name, str: v)
-                    }
-                case .unsignedInt:
-                    if let v: UInt = rec.getValue(for: dv.name) {
-                        ilp.field(dv.name, uint: v)
-                    }
+//                print(device)
+//                print(dv.name)
+//                print(dv.type)
+                if let v: Double = rec.getValue(for: dv.name) {
+                    ilp.field(dv.name, float: Float(v))
                 }
+//                switch dv.type {
+//                case .float:
+//                    if let v: Float = rec.getValue(for: dv.name) {
+//                        ilp.field(dv.name, float: v)
+//                    }
+//                case .int:
+//                    if let v: Int = rec.getValue(for: dv.name) {
+//                        ilp.field(dv.name, int: v)
+//                    }
+//                case .string:
+//                    if let v: String = rec.getValue(for: dv.name) {
+//                        ilp.field(dv.name, str: v)
+//                    }
+//                case .unsignedInt:
+//                    if let v: UInt = rec.getValue(for: dv.name) {
+//                        ilp.field(dv.name, uint: v)
+//                    }
+//                }
             }
             
             ilps.append(ilp)
@@ -182,7 +188,7 @@ extension FXBTimeSeriesTable {
             let ilp = ILPRecord(
                 staticTable: self,
                 id: id,
-                measurement: FXBConnection.databaseTableName,
+                measurement: FXBHeartRate.databaseTableName,
                 timestamp: rec.ts
             )
             
@@ -257,7 +263,7 @@ extension FXBTimeSeriesTable {
             let ilp_st = ILPRecord(
                 staticTable: self,
                 id: id,
-                measurement: FXBConnection.databaseTableName,
+                measurement: FXBExperiment.databaseTableName,
                 timestamp: rec.start
             )
             

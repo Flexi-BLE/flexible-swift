@@ -80,18 +80,30 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
     public func start() {
         Task {
             do {
-                self.state = .initializing
+                DispatchQueue.main.async {
+                    self.state = .initializing
+                }
+                
                 await addDynamicTableStates()
-                self.estNumRecs = try await calculateRemaining()
-                self.state = .running
+                
+                let numRemaining = try await calculateRemaining()
+                
+                DispatchQueue.main.async {
+                    self.estNumRecs = numRemaining
+                    self.state = .running
+                }
             } catch {
-                self.state = .error(msg: "error initializing upload: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.state = .error(msg: "error initializing upload: \(error.localizedDescription)")
+                }
             }
             
             do {
                 try await continuousUpload()
             } catch {
-                self.state = .error(msg: "error in record upload: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.state = .error(msg: "error in record upload: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -113,9 +125,22 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
         while self.state == .running {
             if let tableStatus = tableStatuses.first(where: { $0.totalRemaining > 0 }) {
                 do {
-                    let records = try await tableStatus.table.ILPQuery(from: startDate, to: endDate, uploaded: false, deviceId: deviceId)
+                    let records = try await tableStatus.table.ILPQuery(from: startDate, to: endDate, uploaded: false, limit: batchSize, deviceId: deviceId)
                     
-                    try await Task.sleep(nanoseconds: 1000000000)
+                    let success = try await records.ship(
+                        url: url,
+                        org: org,
+                        bucket: bucket,
+                        token: token
+                    )
+                    
+                    guard success else {
+                        DispatchQueue.main.async {
+                            self.state = .error(msg: "unable to upload records")
+                        }
+                        return
+                    }
+                    
                     try await tableStatus.table.updateUpload(lines: records)
                     
                     tableStatus.uploaded += records.count
