@@ -9,10 +9,13 @@ import Foundation
 import OSLog
 
 /// General Logging
-internal let gLog = Logger(subsystem: "com.hesterlab.aeble", category: "general")
+internal let gLog = Logger(subsystem: "com.blainerothrock.flexible", category: "general")
 
 /// Bluetooth Logging
-internal let bleLog = Logger(subsystem: "com.hesterlab.aeble", category: "ble")
+internal let bleLog = Logger(subsystem: "com.blainerothrock.flexible", category: "ble")
 
 /// Persistence (Data) Logging
-internal let pLog = Logger(subsystem: "com.hesterlab.aeble", category: "persistence")
+internal let pLog = Logger(subsystem: "com.blainerothrock.flexible", category: "persistence")
+
+/// Remote Upload Logger
+internal let webLog = Logger(subsystem: "com.blainerothrock.flexible", category: "outbound-web")

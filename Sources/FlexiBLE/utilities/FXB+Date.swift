@@ -29,7 +29,11 @@ extension Date {
         return (self.timeIntervalSince1970 * 1000.0).rounded()
     }
     
-    var unixEpochNanoseconds: TimeInterval {
-        return (self.timeIntervalSince1970 * 1000000000).rounded()
+    var unixEpochNanoseconds: Int {
+        let nano = (self.timeIntervalSince1970 * 1000000000).rounded()
+        
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = NumberFormatter.Style.decimal
+        return Int(numberFormatter.number(from: "\(nano)")!)
     }
 }
