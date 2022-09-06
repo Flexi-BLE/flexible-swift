@@ -129,20 +129,45 @@ public struct FXBRead {
     
     public func getDistinctValuesForColumn(for column_name: String, table_name: String) async -> [String]? {
         var distinctValues: [String] = []
-        try? await dbMgr.dbQueue.read { db in
+        return try? await dbMgr.dbQueue.read { db -> [String] in
             let q = """
                     SELECT DISTINCT \(column_name)
-                    FROM \(table_name)
+                    FROM \(table_name)_data
                 """
             let queryResult = try Row.fetchAll(db, sql: q)
-            distinctValues = queryResult.map({ $0[column_name] })
-            //                for eachEntry in queryResult {
-            //                    if let doubleValue = Double.fromDatabaseValue(eachEntry[column_name]) {
-            //                        distinctValues.append(String(doubleValue))
-            //                    }
-            //                }
-            //                return distinctValues
+//            distinctValues = queryResult.map({ $0[column_name] })
+//            return distinctValues
+                            for eachEntry in queryResult {
+                                if let doubleValue = Double.fromDatabaseValue(eachEntry[column_name]) {
+                                    distinctValues.append(String(doubleValue))
+                                }
+                            }
+                            return distinctValues
         }
-        return distinctValues
+//        return distinctValues
+    }
+    
+    public func getDatabaseValuesWithQuery(sqlQuery: String, columnName: String, propertyName: String) async -> (queryData:[(mark: String, data: [(ts: Date, val: Double)])], maxVal: Double, minValue: Double) {
+        var databaseResult: [(mark: String, data:[(ts: Date, val: Double)])] = []
+        var minValue = Double.greatestFiniteMagnitude
+        var maxValue = -Double.greatestFiniteMagnitude
+        do {
+            return try await dbMgr.dbQueue.read({ db in
+                var eachData: [(ts: Date, val: Double)] = []
+                let r = try Row.fetchAll(db, sql: sqlQuery)
+                if r.count == 0 {
+                    return ([],0.0,0.0)
+                }
+                for row in r {
+                    let timestamp: Date = row["ts"]
+                    let value: Double = row[columnName]
+                    maxValue = max(maxValue, value)
+                    minValue = min(minValue, value)
+                    eachData.append((ts: timestamp, val: value))
+                }
+                databaseResult.append((mark: "\(propertyName)-\(columnName)", data: eachData))
+                return (databaseResult, maxValue, minValue)
+            })
+        }  catch { return ([],0.0,0.0)}
     }
 }
