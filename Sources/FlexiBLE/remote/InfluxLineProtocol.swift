@@ -25,7 +25,7 @@ internal class ILPRecord {
     }
     
     func tag(_ name: String, _ val: String) {
-        tags[name] = "\"\(val)\""
+        tags[name] = "\(val)"
     }
     
     func field(_ name: String, float: Float) {
@@ -89,6 +89,7 @@ extension Array where Element == ILPRecord {
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         req.httpBody = self.map({ $0.line }).joined(separator: "\n").data(using: .utf8)
         
+        webLog.debug("uploading records, sample: \(self[0].line)")
         
         let (data, res) = try await URLSession.shared.data(for: req)
 

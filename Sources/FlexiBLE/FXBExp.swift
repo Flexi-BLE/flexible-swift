@@ -71,42 +71,42 @@ public class FXBExp {
     }
     
     
-    public func endExperiment(id: Int64) async -> Result<Bool, Error> {
-        do {
-            let exp = try await db.dbQueue.write { db -> FXBExperiment? in
-                var exp = try FXBExperiment.fetchOne(db, key: ["id": id])
-                exp?.end = Date.now
-                try exp?.update(db)
-                return exp
-            }
-            
-            guard let exp = exp,
-                  let expId = exp.id,
-                  let expEnd = exp.end else {
-                return .failure(FXBError.dbError(msg: "No event found"))
-            }
-            
-            let dtNames = await db.activeDynamicTables()
-            
-            for tableName in dtNames {
-                try await db.dbQueue.write { db in
-                    let sql = """
-                        UPDATE \(tableName)
-                        SET experiment_id = \(expId)
-                        WHERE created_at >= ? AND created_at < ?
-                    """
-                    try db.execute(
-                        sql: sql,
-                        arguments: StatementArguments([exp.start, expEnd])
-                    )
-                }
-            }
-                        
-            return .success(true)
-        } catch {
-            return .failure(error)
-        }
-    }
+//    public func endExperiment(id: Int64) async -> Result<Bool, Error> {
+//        do {
+//            let exp = try await db.dbQueue.write { db -> FXBExperiment? in
+//                var exp = try FXBExperiment.fetchOne(db, key: ["id": id])
+//                exp?.end = Date.now
+//                try exp?.update(db)
+//                return exp
+//            }
+//            
+//            guard let exp = exp,
+//                  let expId = exp.id,
+//                  let expEnd = exp.end else {
+//                return .failure(FXBError.dbError(msg: "No event found"))
+//            }
+//            
+//            let dtNames = await db.activeDynamicTables()
+//            
+//            for tableName in dtNames {
+//                try await db.dbQueue.write { db in
+//                    let sql = """
+//                        UPDATE \(tableName)
+//                        SET experiment_id = \(expId)
+//                        WHERE created_at >= ? AND created_at < ?
+//                    """
+//                    try db.execute(
+//                        sql: sql,
+//                        arguments: StatementArguments([exp.start, expEnd])
+//                    )
+//                }
+//            }
+//                        
+//            return .success(true)
+//        } catch {
+//            return .failure(error)
+//        }
+//    }
     
     public func deleteExperiment(id: Int64) async -> Result<Bool, Error> {
         do {

@@ -13,7 +13,8 @@ enum FXBTimeSeriesTable {
     case heartRate
     case location
     case timestamp
-    case dynamic(name: String)
+    case dynamicData(name: String)
+    case dynamicConfig(name: String)
     
     var tableName: String {
         switch self {
@@ -21,7 +22,8 @@ enum FXBTimeSeriesTable {
         case .timestamp: return FXBTimestamp.databaseTableName
         case .heartRate: return FXBHeartRate.databaseTableName
         case .location: return FXBLocation.databaseTableName
-        case .dynamic(let name): return name
+        case .dynamicData(let name): return name
+        case .dynamicConfig(let name): return name
         }
     }
 }
@@ -33,7 +35,8 @@ extension FXBTimeSeriesTable {
         case .location: return try await IRPQueryLocation(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
         case .experiment: return try await IRPQueryExperiment(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
         case .timestamp: return try await IRPQueryTimestamp(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
-        case .dynamic(let name): return try await IRPQueryDynamic(name: name, from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .dynamicData(let name): return try await IRPQueryDynamicData(name: name, from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .dynamicConfig(let name): return try await IRPQueryDynamicConfig(name: name, from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
         }
     }
     
@@ -57,7 +60,7 @@ extension FXBTimeSeriesTable {
         }
     }
     
-    private func IRPQueryDynamic(
+    private func IRPQueryDynamicData(
         name: String,
         from start: Date?=nil,
         to end: Date?=nil,
@@ -124,7 +127,7 @@ extension FXBTimeSeriesTable {
             }
             
             let ilp = ILPRecord(
-                staticTable: .dynamic(name: name),
+                staticTable: .dynamicData(name: name),
                 id: id,
                 measurement: name,
                 timestamp: ts
@@ -136,8 +139,18 @@ extension FXBTimeSeriesTable {
 //                print(device)
 //                print(dv.name)
 //                print(dv.type)
-                if let v: Double = rec.getValue(for: dv.name) {
-                    ilp.field(dv.name, float: Float(v))
+                if dv.variableType == .value {
+                    if let v: Double = rec.getValue(for: dv.name) {
+                        ilp.field(dv.name, float: Float(v))
+                    }
+                } else if dv.variableType == .tag {
+                    if let v: Double = rec.getValue(for: dv.name) {
+                        if let options = dv.valueOptions {
+                            ilp.tag(dv.name, options[Int(v)])
+                        } else {
+                            ilp.tag(dv.name, String(v))
+                        }
+                    }
                 }
 //                switch dv.type {
 //                case .float:
@@ -157,6 +170,102 @@ extension FXBTimeSeriesTable {
 //                        ilp.field(dv.name, uint: v)
 //                    }
 //                }
+            }
+            
+            ilps.append(ilp)
+        }
+        
+        
+        return ilps
+    }
+    
+    private func IRPQueryDynamicConfig(
+        name: String,
+        from start: Date?=nil,
+        to end: Date?=nil,
+        uploaded: Bool?=false,
+        limit: Int=1000,
+        deviceId: String
+    ) async throws -> [ILPRecord] {
+        
+        let tableInfo = try await FXBDBManager
+            .shared.dbQueue.read({ db -> [FXBTableInfo] in
+            let result = try Row.fetchAll(db, sql: "PRAGMA table_info(\(name))")
+            return result.map({ FXBTableInfo.make(from: $0) })
+        })
+        
+        let records = try await FXBDBManager.shared
+            .dbQueue.read({ db -> [GenericRow] in
+            var q = "SELECT * FROM \(name)"
+            if uploaded != nil || start != nil || end != nil {
+                q += " WHERE"
+            }
+            if let uploaded = uploaded {
+                q += " uploaded = \(uploaded)"
+                if start != nil || end != nil {
+                    q += " AND"
+                }
+            }
+            if let start = start {
+                q += " ts >= '\(start.SQLiteFormat())'"
+                if end != nil {
+                    q += " AND"
+                }
+            }
+            if let end = end {
+                q += " ts < '\(end.SQLiteFormat())'"
+            }
+            
+            q += " LIMIT \(limit)"
+            
+            let recs = try Row
+                .fetchAll(db, sql: q)
+                
+                
+            return recs.map({ GenericRow(metadata: tableInfo, row: $0) })
+        })
+        
+        
+        
+        let specIds = Array(Set(records.compactMap({ r -> Int64? in
+            return r.getValue(for: "spec_id")
+        })))
+        
+        let specs = try await getSpecs(for: specIds)
+        
+        var ilps: [ILPRecord] = []
+        
+        for rec in records {
+            guard let specId: Int64 = rec.getValue(for: "spec_id"),
+                  let id: Int64 = rec.getValue(for: "id"),
+                  let tsStr: String = rec.getValue(for: "ts"),
+                  let ts = Date.fromSQLString(tsStr),
+                  let deviceName: String = rec.getValue(for: "device"),
+                  let spec = specs[specId],
+                  let device = spec.devices.first(where: { $0.name == deviceName }),
+                  let measurement = device.dataStreams.first(where: { $0.name == name.replacingOccurrences(of: "_config", with: "") }) else {
+                continue
+            }
+            
+            let ilp = ILPRecord(
+                staticTable: .dynamicConfig(name: name),
+                id: id,
+                measurement: name,
+                timestamp: ts
+            )
+            
+            ilp.tag("device_id", deviceId)
+            
+            for cv in measurement.configValues {
+                if let v: String = rec.getValue(for: cv.name) {
+                    if let options = cv.options {
+                        guard let idx = Int(v) else { continue }
+                        ilp.field(cv.name, str: options[idx].name)
+                    } else {
+                        guard let vInt = Int(v) else { continue }
+                        ilp.field(cv.name, int: vInt)
+                    }
+                }
             }
             
             ilps.append(ilp)
