@@ -12,6 +12,62 @@ public struct FXBWrite {
     
     let dbMgr = FXBDBManager.shared
     
+    public func purgeAllUploadedRecords() async throws {
+        let dynamicTables = await FlexiBLE.shared.read.dynamicTableNames()
+        
+        try await dbMgr.dbQueue.write({ db in
+            let uc = Column("uploaded")
+            
+            try FXBExperiment.filter(uc == true).deleteAll(db)
+            try FXBTimestamp.filter(uc == true).deleteAll(db)
+            try FXBHeartRate.filter(uc == true).deleteAll(db)
+            try FXBLocation.filter(uc == true).deleteAll(db)
+            
+            for tbl in dynamicTables {
+                let q_data = """
+                    DELETE FROM \(tbl)_data
+                    WHERE uploaded = true
+                """
+                try db.execute(sql: q_data)
+                
+                let q_config = """
+                    DELETE FROM \(tbl)_config
+                    WHERE uploaded = true
+                """
+                try db.execute(sql: q_config)
+            }
+        })
+    }
+    
+    public func purgeAllRecords() async throws {
+        let dynamicTables = await FlexiBLE.shared.read.dynamicTableNames()
+        
+        try await dbMgr.dbQueue.write({ db in
+        
+            try FXBConnection.deleteAll(db)
+            try FXBDataUpload.deleteAll(db)
+            try FXBThroughput.deleteAll(db)
+            try FXBExperiment.deleteAll(db)
+            try FXBTimestamp.deleteAll(db)
+            try FXBHeartRate.deleteAll(db)
+            try FXBLocation.deleteAll(db)
+            
+            for tbl in dynamicTables {
+                let q_data = """
+                    DELETE FROM \(tbl)_data
+                """
+                try db.execute(sql: q_data)
+                
+                let q_config = """
+                    DELETE FROM \(tbl)_config
+                """
+                try db.execute(sql: q_config)
+            }
+        })
+    }
+    
+
+    
     // MARK: - Connection
     public func recordConnection(deviceName: String, status: FXBConnection.Status) async throws {
         try await dbMgr.dbQueue.write({ db in

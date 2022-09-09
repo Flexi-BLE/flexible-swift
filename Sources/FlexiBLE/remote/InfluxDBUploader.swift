@@ -33,6 +33,10 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
     public var totalUploadedValue: Published<Int> { return _totalUploaded }
     public var totalUploadedPublisher: Published<Int>.Publisher { return $totalUploaded }
     
+    @Published public private (set) var statusMessage: String
+    public var statusMessageValue: Published<String> { return _statusMessage }
+    public var statusMessagePublisher: Published<String>.Publisher { return $statusMessage }
+    
     public var batchSize: Int
     public var tableStatuses: [FXBTableUploadState]
     
@@ -68,6 +72,7 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
         self.estNumRecs = 0
         self.totalUploaded = 0
         self.deviceId = deviceId
+        self.statusMessage = ""
         
         tableStatuses = [
             FXBTableUploadState(table: .experiment),
@@ -88,9 +93,10 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
                 
                 let numRemaining = try await calculateRemaining()
                 
+                self.state = .running
+                
                 DispatchQueue.main.async {
                     self.estNumRecs = numRemaining
-                    self.state = .running
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -116,7 +122,8 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
         let dtns = await FXBRead().dynamicTableNames()
         for tn in dtns {
             if tableStatuses.first(where: { $0.table.tableName == tn }) == nil {
-                tableStatuses.append(FXBTableUploadState(table: .dynamic(name: tn)))
+                tableStatuses.append(FXBTableUploadState(table: .dynamicData(name: "\(tn)_data")))
+                tableStatuses.append(FXBTableUploadState(table: .dynamicConfig(name: "\(tn)_config")))
             }
         }
     }
@@ -124,6 +131,10 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
     private func continuousUpload() async throws {
         while self.state == .running {
             if let tableStatus = tableStatuses.first(where: { $0.totalRemaining > 0 }) {
+                DispatchQueue.main.async {
+                    self.statusMessage = "Uploading \(tableStatus.table.tableName) ..."
+                }
+                
                 do {
                     let records = try await tableStatus.table.ILPQuery(from: startDate, to: endDate, uploaded: false, limit: batchSize, deviceId: deviceId)
                     

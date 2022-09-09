@@ -24,6 +24,7 @@ public struct FXBDataValueDefinition: Codable {
     internal let multiplier: Double?
     public let variableType: FXBDataValueQueryType
     public let dependsOn: [String]?
+    public let valueOptions: [String]?
 
 //    internal let isUnsignedNegative: Bool
 //    internal let isSigned: Bool

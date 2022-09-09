@@ -58,24 +58,6 @@ public final class FXBDBManager {
         }
     }
     
-    public func purgeUpdatedDynamicRecords() async {
-        let tableNames = await activeDynamicTables()
-        let statements = tableNames.map{ "DELETE FROM \($0) WHERE updated = true" }
-        let sql = statements.joined(separator: "; ")
-        try? await dbQueue.write({ db in
-            try? db.execute(sql: sql)
-        })
-    }
-    
-    public func purgeAllDynamicRecords() async {
-        let tableNames = await activeDynamicTables()
-        let statements = tableNames.map{ "DELETE FROM \($0)" }
-        let sql = statements.joined(separator: "; ")
-        try? await dbQueue.write({ db in
-            try? db.execute(sql: sql)
-        })
-    }
-    
     public func lastDataStreamDate(for stream: FXBDataStream) async -> Date? {
         do {
             return try await dbQueue.read({ (db) -> Date? in
@@ -480,7 +462,7 @@ public final class FXBDBManager {
             
             // create dyanmic table entry
             let metadataData = try? Data.sharedJSONEncoder.encode(metadata)
-            let dynamicTable = DynamicTable(name: dataTableName, metadata: metadataData)
+            let dynamicTable = DynamicTable(name: name, metadata: metadataData)
             try? dynamicTable.insert(db)
             pLog.info("Dynamic Table Created: \(name)")
         }

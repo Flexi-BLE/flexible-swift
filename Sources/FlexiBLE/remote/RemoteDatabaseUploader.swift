@@ -51,6 +51,10 @@ public protocol FXBRemoteDatabaseUploader: ObservableObject {
     var totalUploadedValue: Published<Int> { get }
     var totalUploadedPublisher: Published<Int>.Publisher { get }
     
+    var statusMessage: String { get }
+    var statusMessageValue: Published<String> { get }
+    var statusMessagePublisher: Published<String>.Publisher { get }
+    
     var batchSize: Int { get }
     var tableStatuses: [FXBTableUploadState] { get }
     

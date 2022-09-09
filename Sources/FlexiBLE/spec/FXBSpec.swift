@@ -36,11 +36,12 @@ extension FXBSpec {
     
     public static func load(from url: URL) async throws -> FXBSpec? {
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            let req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData)
+            let (data, _) = try await URLSession.shared.data(for: req)
             let config = try Data.sharedJSONDecoder.decode(FXBSpec.self, from: data)
             return config
         } catch {
-            gLog.debug("unable to download Device Config from \(url.absoluteURL)")
+            gLog.debug("unable to download Device Config from \(url.absoluteURL), error: \(error.localizedDescription)")
             return nil
         }
     }
