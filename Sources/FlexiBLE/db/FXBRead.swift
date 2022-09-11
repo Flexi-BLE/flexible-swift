@@ -135,16 +135,13 @@ public struct FXBRead {
                     FROM \(table_name)_data
                 """
             let queryResult = try Row.fetchAll(db, sql: q)
-//            distinctValues = queryResult.map({ $0[column_name] })
-//            return distinctValues
-                            for eachEntry in queryResult {
-                                if let doubleValue = Double.fromDatabaseValue(eachEntry[column_name]) {
-                                    distinctValues.append(String(doubleValue))
-                                }
-                            }
-                            return distinctValues
+            for eachEntry in queryResult {
+                if let doubleValue = Double.fromDatabaseValue(eachEntry[column_name]) {
+                    distinctValues.append(String(doubleValue))
+                }
+            }
+            return distinctValues
         }
-//        return distinctValues
     }
     
     public func getDatabaseValuesWithQuery(sqlQuery: String, columnName: String, propertyName: String) async -> (queryData:[(mark: String, data: [(ts: Date, val: Double)])], maxVal: Double, minValue: Double) {
