@@ -1,3 +1,3 @@
-# aeble-swift
+# FlexiBLE Swift Package
 
-Adaptive Experimentation over Bluetooth Low Energy.
+Please see iOS repository for more details, the Swift Package documentation coming soon.
