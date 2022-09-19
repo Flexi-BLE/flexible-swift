@@ -22,10 +22,10 @@ public struct FXBRead {
         
         let locations = try await dbMgr.dbQueue.read { db -> [FXBLocation] in
             var q: QueryInterfaceRequest<FXBLocation> = FXBLocation
-                .filter(Column("timestamp") >= startDate)
+                .filter(Column("ts") >= startDate)
             
             if let endDate = endDate {
-                q = q.filter(Column("timestamp") <= endDate)
+                q = q.filter(Column("ts") <= endDate)
             }
             
             if let limit = limit {

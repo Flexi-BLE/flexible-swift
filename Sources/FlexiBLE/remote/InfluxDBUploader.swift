@@ -8,30 +8,19 @@
 import Foundation
 import GRDB
 
-public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
-    @Published public var state: FXBDataUploaderState
-    public var stateValue: Published<FXBDataUploaderState> { return _state }
-    public var statePublisher: Published<FXBDataUploaderState>.Publisher { return $state }
+public class InfluxDBUploader: FXBRemoteDatabaseUploader {
+    public var state: FXBDataUploaderState
     
-    @Published public private(set) var progress: Float
-    public var progressValue: Published<Float> {
-        return _progress
-    }
-    public var progressPublisher: Published<Float>.Publisher {
-        return $progress
-    }
+    public private(set) var progress: Float
+
     
-    @Published public private (set) var estNumRecs: Int
-    public var estNumRecsValue: Published<Int> { return _estNumRecs }
-    public var estNumRecsPublisher: Published<Int>.Publisher { return $estNumRecs }
+    public private (set) var estNumRecs: Int
     
-    @Published public var totalUploaded: Int {
+    public var totalUploaded: Int {
         didSet {
             self.progress = Float(totalUploaded) / Float(estNumRecs)
         }
     }
-    public var totalUploadedValue: Published<Int> { return _totalUploaded }
-    public var totalUploadedPublisher: Published<Int>.Publisher { return $totalUploaded }
     
     public var batchSize: Int
     public var tableStatuses: [FXBTableUploadState]
@@ -80,30 +69,22 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
     public func start() {
         Task {
             do {
-                DispatchQueue.main.async {
-                    self.state = .initializing
-                }
+                self.state = .initializing
                 
                 await addDynamicTableStates()
                 
                 let numRemaining = try await calculateRemaining()
                 
-                DispatchQueue.main.async {
-                    self.estNumRecs = numRemaining
-                    self.state = .running
-                }
+                self.estNumRecs = numRemaining
+                self.state = .running
             } catch {
-                DispatchQueue.main.async {
-                    self.state = .error(msg: "error initializing upload: \(error.localizedDescription)")
-                }
+                self.state = .error(msg: "error initializing upload: \(error.localizedDescription)")
             }
             
             do {
                 try await continuousUpload()
             } catch {
-                DispatchQueue.main.async {
-                    self.state = .error(msg: "error in record upload: \(error.localizedDescription)")
-                }
+                self.state = .error(msg: "error in record upload: \(error.localizedDescription)")
             }
         }
     }
@@ -125,7 +106,13 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
         while self.state == .running {
             if let tableStatus = tableStatuses.first(where: { $0.totalRemaining > 0 }) {
                 do {
-                    let records = try await tableStatus.table.ILPQuery(from: startDate, to: endDate, uploaded: false, limit: batchSize, deviceId: deviceId)
+                    let records = try await tableStatus.table.ILPQuery(
+                        from: startDate,
+                        to: endDate,
+                        uploaded: false,
+                        limit: batchSize,
+                        deviceId: deviceId
+                    )
                     
                     let success = try await records.ship(
                         url: url,
@@ -135,9 +122,7 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
                     )
                     
                     guard success else {
-                        DispatchQueue.main.async {
-                            self.state = .error(msg: "unable to upload records")
-                        }
+                        self.state = .error(msg: "unable to upload records")
                         return
                     }
                     
@@ -146,18 +131,12 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader, ObservableObject {
                     tableStatus.uploaded += records.count
                     tableStatus.totalRemaining -= records.count
                     
-                    DispatchQueue.main.async {
-                        self.totalUploaded += records.count
-                    }
+                    self.totalUploaded += records.count
                 } catch {
-                    DispatchQueue.main.async {
-                        self.state = .error(msg: "error querying records for \(tableStatus.table.tableName): error \(error.localizedDescription)")
-                    }
+                    self.state = .error(msg: "error querying records for \(tableStatus.table.tableName): error \(error.localizedDescription)")
                 }
             } else {
-                DispatchQueue.main.async {
-                    self.state = .done
-                }
+                self.state = .done
             }
         }
     }
