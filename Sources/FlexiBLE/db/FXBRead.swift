@@ -128,8 +128,8 @@ public struct FXBRead {
     }
     
     public func getDistinctValuesForColumn(for column_name: String, table_name: String) async -> [String]? {
-        var distinctValues: [String] = []
         return try? await dbMgr.dbQueue.read { db -> [String] in
+            var distinctValues: [String] = []
             let q = """
                     SELECT DISTINCT \(column_name)
                     FROM \(table_name)_data
@@ -145,11 +145,12 @@ public struct FXBRead {
     }
     
     public func getDatabaseValuesWithQuery(sqlQuery: String, columnName: String, propertyName: String) async -> (queryData:[(mark: String, data: [(ts: Date, val: Double)])], maxVal: Double, minValue: Double) {
-        var databaseResult: [(mark: String, data:[(ts: Date, val: Double)])] = []
-        var minValue = Double.greatestFiniteMagnitude
-        var maxValue = -Double.greatestFiniteMagnitude
         do {
             return try await dbMgr.dbQueue.read({ db in
+                var databaseResult: [(mark: String, data:[(ts: Date, val: Double)])] = []
+                var minValue = Double.greatestFiniteMagnitude
+                var maxValue = -Double.greatestFiniteMagnitude
+                
                 var eachData: [(ts: Date, val: Double)] = []
                 let r = try Row.fetchAll(db, sql: sqlQuery)
                 if r.count == 0 {
