@@ -16,6 +16,8 @@ internal class InfoServiceHandler: ServiceHandler {
     internal var referenceDate: Date?
     internal var referenceMs: UInt64?
     
+    internal var versionId: String?
+    
     var deviceName: String
     
     init(serviceId: CBUUID, def: FXBDevice) {
@@ -64,6 +66,8 @@ internal class InfoServiceHandler: ServiceHandler {
                     referenceMs = nil
                 }
             }
+        } else if uuid == def.specVersionUuid {
+            self.versionId = String(data: data, encoding: .utf8)
         }
         
     }

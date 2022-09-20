@@ -29,6 +29,9 @@ public class FXBPeripheral: NSObject, ObservableObject {
     
     @Published public var batteryLevel: Int?
     @Published public var rssi: Int = 0
+    @Published public var specVersion: String?
+    
+    internal var cancellables: [AnyCancellable] = []
     
     internal var serviceHandlers: [DataStreamHandler] = []
     internal let infoServiceHandler: InfoServiceHandler
@@ -48,6 +51,16 @@ public class FXBPeripheral: NSObject, ObservableObject {
             serviceId: metadata.infoServiceUuid,
             def: metadata
         )
+        
+        super.init()
+        
+        self.infoServiceHandler
+            .versionId
+            .publisher
+            .sink { [weak self] v in
+                self?.specVersion = v
+            }
+            .store(in: &cancellables)
     }
     
     internal func set(peripheral: CBPeripheral) {
