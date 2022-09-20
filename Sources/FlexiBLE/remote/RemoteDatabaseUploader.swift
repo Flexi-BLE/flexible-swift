@@ -77,6 +77,7 @@ public protocol FXBRemoteDatabaseUploader {
     var totalUploaded: Int { get }
     var batchSize: Int { get }
     var tableStatuses: [FXBTableUploadState] { get }
+    var statusMessage: String { get }
     
     
     func start()

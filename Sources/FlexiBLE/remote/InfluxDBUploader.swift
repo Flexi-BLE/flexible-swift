@@ -22,6 +22,8 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
         }
     }
     
+    public private (set) var statusMessage: String
+    
     public var batchSize: Int
     public var tableStatuses: [FXBTableUploadState]
     
@@ -57,6 +59,7 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
         self.estNumRecs = 0
         self.totalUploaded = 0
         self.deviceId = deviceId
+        self.statusMessage = ""
         
         tableStatuses = [
             FXBTableUploadState(table: .experiment),
@@ -97,7 +100,8 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
         let dtns = await FXBRead().dynamicTableNames()
         for tn in dtns {
             if tableStatuses.first(where: { $0.table.tableName == tn }) == nil {
-                tableStatuses.append(FXBTableUploadState(table: .dynamic(name: tn)))
+                tableStatuses.append(FXBTableUploadState(table: .dynamicData(name: "\(tn)_data")))
+                tableStatuses.append(FXBTableUploadState(table: .dynamicConfig(name: "\(tn)_config")))
             }
         }
     }
@@ -105,6 +109,10 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
     private func continuousUpload() async throws {
         while self.state == .running {
             if let tableStatus = tableStatuses.first(where: { $0.totalRemaining > 0 }) {
+                DispatchQueue.main.async {
+                    self.statusMessage = "Uploading \(tableStatus.table.tableName) ..."
+                }
+                
                 do {
                     let records = try await tableStatus.table.ILPQuery(
                         from: startDate,
