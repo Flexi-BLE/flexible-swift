@@ -8,7 +8,7 @@
 import Foundation
 
 
-public struct FXBRegisteredDevice: Codable {
+public struct FXBRegisteredDeviceSpec: Codable {
     public let name: String
     internal let services: [BLERegisteredService]
     public let description: String

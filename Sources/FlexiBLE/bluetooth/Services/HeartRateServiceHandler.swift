@@ -14,10 +14,10 @@ internal class HeartRateServiceHandler: ServiceHandler {
     private var sensorLocation: String = "unknown"
     private let heartRateMeasurementUuid = CBUUID(string: "2a37")
     private let bodyLocationUuid = CBUUID(string: "2a38")
-    internal var deviceName: String
+    internal var device: Device
     
-    init(deviceName: String) {
-        self.deviceName = deviceName
+    init(device: Device) {
+        self.device = device
     }
     
     func setup(peripheral: CBPeripheral, service: CBService) {
@@ -63,10 +63,10 @@ internal class HeartRateServiceHandler: ServiceHandler {
                 )
                 
                 try? await FXBWrite().recordThroughput(
-                     deviceName: self.deviceName,
-                     dataStreamName: "heart_rate",
-                     byteCount: data.count,
-                     specId: FlexiBLE.shared.specId
+                    deviceName: self.device.deviceName,
+                    dataStreamName: "heart_rate",
+                    byteCount: data.count,
+                    specId: FlexiBLE.shared.specId
                  )
             }
         case bodyLocationUuid:
