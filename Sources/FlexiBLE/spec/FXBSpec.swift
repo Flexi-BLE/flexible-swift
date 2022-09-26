@@ -13,8 +13,8 @@ public struct FXBSpec: Codable {
     public let createdAt: Date
     public let updatedAt: Date
     public let tags: [String]
-    public let bleRegisteredDevices: [FXBRegisteredDevice]
-    public let devices: [FXBDevice]
+    public let bleRegisteredDevices: [FXBRegisteredDeviceSpec]
+    public let devices: [FXBDeviceSpec]
 }
 
 extension FXBSpec {

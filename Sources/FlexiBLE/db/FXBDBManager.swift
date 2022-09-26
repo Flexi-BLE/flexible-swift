@@ -56,6 +56,19 @@ public final class FXBDBManager {
         } catch {
             fatalError("cannot create database")
         }
+        
+        do {
+            try self.dbQueue.write { db in
+                let sql = """
+                    UPDATE \(FXBConnection.databaseTableName)
+                    SET \(FXBConnection.CodingKeys.disconnectedAt.stringValue) = '\(Date.now.SQLiteFormat())'
+                    WHERE \(FXBConnection.CodingKeys.disconnectedAt.stringValue) IS NULL;
+                """
+                try db.execute(sql: sql)
+            }
+        } catch {
+            pLog.error("unable to update handing connection records: \(error.localizedDescription)")
+        }
     }
     
     public func lastDataStreamDate(for stream: FXBDataStream) async -> Date? {
@@ -76,7 +89,7 @@ public final class FXBDBManager {
         }
     }
     
-    public func lastDataStreamDate(for thing: FXBDevice) async -> Date? {
+    public func lastDataStreamDate(for thing: FXBDeviceSpec) async -> Date? {
         var dates: [Date] = []
         for ds in thing.dataStreams {
             if let date = await lastDataStreamDate(for: ds) {
@@ -100,7 +113,7 @@ public final class FXBDBManager {
         } catch { return 0 }
     }
     
-    public func actualRecordCount(for thing: FXBDevice) async -> Int {
+    public func actualRecordCount(for thing: FXBDeviceSpec) async -> Int {
         var count = 0
         for ds in thing.dataStreams {
             count += await actualRecordCount(for: ds)
@@ -119,7 +132,7 @@ public final class FXBDBManager {
         } catch { return 0 }
     }
     
-    public func recordCountByIndex(for thing: FXBDevice) async -> Int {
+    public func recordCountByIndex(for thing: FXBDeviceSpec) async -> Int {
         var count = 0
         for ds in thing.dataStreams {
             count += await recordCountByIndex(for: ds)
@@ -143,7 +156,7 @@ public final class FXBDBManager {
         } catch { return 0 }
     }
     
-    public func unUploadedCount(for thing: FXBDevice) async -> Int {
+    public func unUploadedCount(for thing: FXBDeviceSpec) async -> Int {
         var count = 0
         for ds in thing.dataStreams {
             count += await unUploadedCount(for: ds)
@@ -224,7 +237,7 @@ public final class FXBDBManager {
         } catch { return UploadAggregate(0, 0, 0) }
     }
     
-    public func uploadAgg(for thing: FXBDevice) async -> UploadAggregate {
+    public func uploadAgg(for thing: FXBDeviceSpec) async -> UploadAggregate {
         var totalRecord: Int = 0
         var successes: Int = 0
         var failures: Int = 0

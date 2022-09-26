@@ -38,6 +38,44 @@ public struct FXBRead {
         return locations
     }
     
+    // MARK: - spec
+    public func spec(by id: Int64) async -> FXBSpec? {
+        if id == FlexiBLE.shared.specId { return FlexiBLE.shared.spec }
+        do {
+            let specTableRecord = try await dbMgr.dbQueue.read { db in
+                return try FXBSpecTable.fetchOne(db, key: id)
+            }
+            
+            if let specTableRecord = specTableRecord {
+                return try Data.sharedJSONDecoder.decode(FXBSpec.self, from: specTableRecord.data)
+            }
+        } catch {
+            pLog.error("unable to query spec by id \(id): \(error.localizedDescription)")
+        }
+        
+        return nil
+    }
+    
+    // MARK: - Connections
+    public func connectionRecords(connectedOnly: Bool = false) async -> [FXBConnection] {
+        do {
+            return try await dbMgr.dbQueue.read { db -> [FXBConnection] in
+                if connectedOnly {
+                    return try FXBConnection
+                        .filter(Column(FXBConnection.CodingKeys.disconnectedAt.stringValue) == nil)
+                        .order(literal: "connected_at DESC")
+                        .fetchAll(db)
+                }
+                return try FXBConnection
+                    .order(literal: "connected_at DESC")
+                    .fetchAll(db)
+            }
+        } catch {
+            pLog.error("unable to query connection records \(error.localizedDescription)")
+            return []
+        }
+    }
+    
     
     // MARK: - Aggregate
     internal func dynamicTableNames(active: Bool = false) async -> [String] {

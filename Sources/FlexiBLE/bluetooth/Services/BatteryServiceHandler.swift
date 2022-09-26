@@ -9,12 +9,12 @@ import Foundation
 import CoreBluetooth
 
 internal class BatteryServiceHandler: ServiceHandler {
-    var deviceName: String
+    var device: Device
     
     internal var serviceUuid: CBUUID = BLERegisteredService.battery.uuid
     
-    init(deviceName: String) {
-        self.deviceName = deviceName
+    init(device: Device) {
+        self.device = device
     }
     
     func setup(peripheral: CBPeripheral, service: CBService) {

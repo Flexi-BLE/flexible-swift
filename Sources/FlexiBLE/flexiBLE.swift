@@ -12,8 +12,8 @@ public final class FlexiBLE: ObservableObject {
     public let read: FXBRead
     public let write: FXBWrite
     
-    public var specId: Int64 = -1
-    public var spec: FXBSpec? = nil
+    @Published public var specId: Int64 = -1
+    @Published public var spec: FXBSpec? = nil
     
     private init() {
         self.db = FXBDBManager.shared
@@ -32,6 +32,12 @@ public final class FlexiBLE: ObservableObject {
     public func startScan(with spec: FXBSpec) {
         Task {
             conn.scan(with: spec)
+        }
+    }
+    
+    public func stopScan() {
+        Task {
+            conn.stopScan()
         }
     }
 }
