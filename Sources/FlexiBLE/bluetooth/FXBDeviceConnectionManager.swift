@@ -83,7 +83,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
             if let ds = spec.dataStreams.first(where: { $0.serviceCbuuid == service.uuid }) {
                 let handler = DataStreamHandler(
                     uuid: service.uuid,
-                    deviceName: spec.name,
+                    deviceName: peripheral.name ?? spec.name,
                     dataStream: ds
                 )
                 serviceHandlers.append(handler)
