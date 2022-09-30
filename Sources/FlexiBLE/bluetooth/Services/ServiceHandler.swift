@@ -10,7 +10,6 @@ import CoreBluetooth
 
 protocol ServiceHandler {
     var serviceUuid: CBUUID { get }
-    var deviceName: String { get }
     
     func setup(peripheral: CBPeripheral, service: CBService)
     

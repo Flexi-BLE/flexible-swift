@@ -8,7 +8,7 @@
 import Foundation
 import CoreBluetooth
 
-internal extension FXBDevice {
+internal extension FXBDeviceSpec {
     var serviceIds: [CBUUID] {
         let serviceIds = self.dataStreams.map({ $0.serviceCbuuid })
         let registeredId = self.ble.bleRegisteredServices.map({ $0.uuid })
@@ -38,6 +38,14 @@ internal extension FXBDevice {
         return CBUUID(string: ble.epochCharUuid)
     }
     
+    var specVersionUuid: CBUUID {
+        return CBUUID(string: ble.specVersionCharUuid)
+    }
+    
+    var specIdUuid: CBUUID {
+        return CBUUID(string: ble.specIdCharUuid)
+    }
+    
     func dataStreams(from uuid: CBUUID) -> [FXBDataStream] {
         return self.dataStreams
             .filter({ $0.serviceCbuuid == uuid })
@@ -58,7 +66,7 @@ internal extension FXBDataStream {
     }
 }
 
-internal extension FXBRegisteredDevice {
+internal extension FXBRegisteredDeviceSpec {
     var serviceIds: [CBUUID] {
         return self.services.map({ $0.uuid })
     }

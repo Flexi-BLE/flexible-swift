@@ -14,6 +14,7 @@ internal struct FXBSpecTable: Codable {
     var version: String
     var data: Data
     var createdAt: Date
+    var ts: Date
     var updatedAt: Date?
     
     enum CodingKeys: String, CodingKey {
@@ -22,6 +23,7 @@ internal struct FXBSpecTable: Codable {
         case version
         case data
         case createdAt = "created_at"
+        case ts
         case updatedAt = "updated_at"
     }
 }
@@ -34,6 +36,7 @@ extension FXBSpecTable: FetchableRecord, MutablePersistableRecord {
         static let data = Column(CodingKeys.data)
         static let createdAt = Column(CodingKeys.createdAt)
         static let updatedAt = Column(CodingKeys.updatedAt)
+        static let ts = Column(CodingKeys.ts)
     }
     
     mutating func didInsert(with rowID: Int64, for column: String?) {
@@ -49,5 +52,6 @@ extension FXBSpecTable: FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.data.stringValue, .blob).notNull(onConflict: .fail)
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date.now)
         table.column(CodingKeys.updatedAt.stringValue, .datetime)
+        table.column(CodingKeys.ts.stringValue, .date).indexed()
     }
 }

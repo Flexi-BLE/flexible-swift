@@ -69,10 +69,14 @@ public struct FXBWrite {
 
     
     // MARK: - Connection
-    public func recordConnection(deviceName: String, status: FXBConnection.Status) async throws {
-        try await dbMgr.dbQueue.write({ db in
-            var connection = FXBConnection(device: deviceName, status: status)
+    public func recordConnection(deviceType: String, deviceName: String, connectedAt: Date) async throws -> FXBConnection? {
+        guard FlexiBLE.shared.specId > 0 else { return nil }
+        
+        return try await dbMgr.dbQueue.write({ db in
+            var connection = FXBConnection(deviceType: deviceType, deviceName: deviceName, specId: FlexiBLE.shared.specId)
+            connection.connectedAt = connectedAt
             try connection.insert(db)
+            return connection
         })
     }
     
@@ -118,7 +122,7 @@ public struct FXBWrite {
                     version: version,
                     data: data,
                     createdAt: Date(),
-                    updatedAt: nil
+                    ts: Date(), updatedAt: nil
                 )
                 try rec.insert(db)
                 return rec.id!

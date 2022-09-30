@@ -89,6 +89,8 @@ extension Array where Element == ILPRecord {
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         req.httpBody = self.map({ $0.line }).joined(separator: "\n").data(using: .utf8)
         
+        guard self.count > 0 else { return false }
+        
         webLog.debug("uploading records, sample: \(self[0].line)")
         
         let (data, res) = try await URLSession.shared.data(for: req)

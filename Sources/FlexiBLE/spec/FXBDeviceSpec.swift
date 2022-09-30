@@ -1,5 +1,5 @@
 //
-//  PeripheralMetadata.swift
+//  FXBDeviceSpec.swift
 //  
 //
 //  Created by Blaine Rothrock on 2/17/22.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct FXBDevice: Codable, Equatable {
+public struct FXBDeviceSpec: Codable, Equatable {
     public let id: UUID = UUID()
     public let name: String
     public let description: String
@@ -17,7 +17,7 @@ public struct FXBDevice: Codable, Equatable {
     
     internal let ble: FXBDeviceBLE
     
-    public static func ==(lhs: FXBDevice, rhs: FXBDevice) -> Bool {
+    public static func ==(lhs: FXBDeviceSpec, rhs: FXBDeviceSpec) -> Bool {
         return lhs.id == rhs.id
     }
 }

@@ -15,9 +15,13 @@ public class FXBConnectionManager: NSObject, ObservableObject {
     @Published public private(set) var centralState: CBManagerState = .unknown
     @Published public private(set) var isScanning: Bool = false
         
-    @Published public private(set) var peripherals: [FXBPeripheral] = []
-    @Published public private(set) var registeredPeripherals: [FXBRegisteredPeripheral] = []
+    @Published public private(set) var fxbFoundDevices: [FXBDevice] = []
+    @Published public private(set) var fxbConnectedDevices: [FXBDevice] = []
     
+    @Published public private(set) var foundRegisteredDevices: [FXBRegisteredDevice] = []
+    @Published public private(set) var connectedRegisteredDevices: [FXBRegisteredDevice] = []
+    
+    private var spec: FXBSpec?
     private var scanOnPoweredOn: Bool = true
     private let db: FXBDBManager
     
@@ -28,112 +32,51 @@ public class FXBConnectionManager: NSObject, ObservableObject {
         self.centralManager = CBCentralManager(
             delegate: self,
             queue: nil,
-            options: [CBCentralManagerOptionRestoreIdentifierKey: "AEBLE"]
+            options: [CBCentralManagerOptionRestoreIdentifierKey: "FlexiBLE"]
         )
     }
     
-    public func peripheral(for name: String) -> FXBPeripheral? {
-        return peripherals.first(where: { $0.metadata.name == name })
-    }
-    
-    public func registeredPeripheral(for name: String) -> FXBRegisteredPeripheral? {
-        return registeredPeripherals.first(where: { $0.metadata.name == name })
-    }
-    
-    public func disable(thing: FXBDevice) {
-        guard let p = self.peripherals.first(where: { $0.metadata.name == thing.name }) else {
+    public func enable(device: FXBDevice) {
+        guard centralManager.state == .poweredOn else {
             return
         }
         
-        if !p.isEnabled { return }
-        
-        switch p.state {
-        case .connected:
-            p.isEnabled = false
-            if let cbPeripheral = p.cbp {
-                centralManager.cancelPeripheralConnection(cbPeripheral)
-            }
-        default:
-            p.isEnabled = false
-        }
-        toggleScanWithConnections()
+        device.connectionState = .connecting
+        centralManager.connect(device.cbPeripheral)
     }
     
-    public func disable(registeredDevice: FXBRegisteredDevice) {
-        guard let p = self.registeredPeripherals.first(where: { $0.metadata.name == registeredDevice.name }) else {
+    public func disable(device: FXBDevice) {
+        centralManager.cancelPeripheralConnection(device.cbPeripheral)
+    }
+    
+    public func enable(device: FXBRegisteredDevice) {
+        guard centralManager.state == .poweredOn else {
             return
         }
         
-        if !p.isEnabled { return }
-        
-        switch p.state {
-        case .connected:
-            p.isEnabled = false
-            if let cbPeripheral = p.cbp {
-                centralManager.cancelPeripheralConnection(cbPeripheral)
-            }
-        default:
-            p.isEnabled = false
-        }
-        
-        toggleScanWithConnections()
+        centralManager.connect(device.cbPeripheral)
     }
     
-    public func enable(thing: FXBDevice) {
-        guard let p = self.peripherals.first(where: { $0.metadata.name == thing.name }) else {
-            return
-        }
-        
-        if p.isEnabled && p.state == .connected { return }
-        
-        p.isEnabled = true
-        
-        toggleScanWithConnections()
-    }
-    
-    public func enable(registeredDevice: FXBRegisteredDevice) {
-        guard let p = self.registeredPeripherals.first(where: { $0.metadata.name == registeredDevice.name }) else {
-            return
-        }
-        
-        if p.isEnabled && p.state == .connected { return }
-        
-        p.isEnabled = true
-        
-        toggleScanWithConnections()
+    public func disable(device: FXBRegisteredDevice) {
+        centralManager.cancelPeripheralConnection(device.cbPeripheral)
     }
     
     public func updateConfig(
-        thingName: String,
-        dataSteam: FXBDataStream,
+        deviceName: String,
+        dataStream: FXBDataStream,
         data: Data
     ) {
         
-        if let p = peripherals.first(where: { $0.metadata.name == thingName }) {
-            if let dsh = p.serviceHandlers.first(where: { $0.def.name == dataSteam.name }),
-               let cbp = p.cbp {
-                
-                dsh.writeConfig(peripheral: cbp, data: data)
+        if let device = fxbConnectedDevices.first(where: { $0.deviceName == deviceName }) {
+            guard let manager = device.connectionManager else { return }
+            if let dsh = manager.serviceHandlers.first(where: { $0.def.name == dataStream.name }) {
+                dsh.writeConfig(peripheral: device.cbPeripheral, data: data)
             }
         }
-        
     }
     
-    internal func scan(with payload: FXBSpec) {
-        for peripheralMetadata in payload.devices {
-            let p = FXBPeripheral(
-                metadata: peripheralMetadata,
-                db: self.db
-            )
-            self.peripherals.append(p)
-        }
-        
-        for rdm in payload.bleRegisteredDevices {
-            if registeredPeripherals.first(where: { $0.metadata.name != rdm.name }) == nil {
-                let dp = FXBRegisteredPeripheral(metadata: rdm)
-                self.registeredPeripherals.append(dp)
-            }
-        }
+    internal func scan(with spec: FXBSpec) {
+        self.spec = spec
         
         guard centralManager.state == .poweredOn else { return }
         
@@ -141,47 +84,20 @@ public class FXBConnectionManager: NSObject, ObservableObject {
         startScan()
     }
     
-    private func toggleScanWithConnections() {
-        var allConnected = true
-        
-        for p in peripherals {
-            if p.isEnabled && p.state != .connected {
-                allConnected = false
-                break
-            }
-        }
-        
-        for p in registeredPeripherals {
-            if p.isEnabled && p.state != .connected {
-                allConnected = false
-                break
-            }
-        }
-        
-        if allConnected {
-            stopScan()
-        } else {
-            startScan()
-        }
-    }
-    
     private func startScan() {
-        guard centralManager.state == .poweredOn else {
+        guard centralManager.state == .poweredOn,
+              let spec = self.spec else {
             bleLog.fault("central manager state is not on: \(self.centralManager.state.rawValue)")
             return
         }
         
         var services: [CBUUID] = []
-        for p in self.peripherals {
-            if p.isEnabled {
-                services.append(contentsOf: p.metadata.serviceIds)
-            }
+        for device in spec.devices {
+            services.append(device.infoServiceUuid)
         }
         
-        for device in self.registeredPeripherals {
-            if device.isEnabled {
-                services.append(contentsOf: device.metadata.serviceIds)
-            }
+        for device in spec.bleRegisteredDevices {
+            services.append(contentsOf: device.serviceIds)
         }
 
         guard services.count > 0 else {
@@ -193,27 +109,23 @@ public class FXBConnectionManager: NSObject, ObservableObject {
         bleLog.info("scanning for devices with services: \(services)")
         
         centralManager.scanForPeripherals(
-            withServices:nil,
+            withServices:services,
             options: nil
         )
-        isScanning = centralManager.isScanning
+        DispatchQueue.main.async {
+            self.isScanning = self.centralManager.isScanning
+        }
     }
     
     internal func stopScan() {
         centralManager.stopScan()
-        isScanning = centralManager.isScanning
+        DispatchQueue.main.async {
+            self.isScanning = self.centralManager.isScanning
+            self.fxbFoundDevices = []
+            self.foundRegisteredDevices = []
+        }
         
         bleLog.info("stopped scan")
-    }
-    
-    internal func disconnect(_ peripheral: FXBPeripheral) {
-        guard let p = peripheral.cbp else { return }
-        
-        centralManager.cancelPeripheralConnection(p)
-    }
-    
-    private func connect(_ peripheral: CBPeripheral) {
-        centralManager.connect(peripheral, options: [:])
     }
 }
 
@@ -238,78 +150,100 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
     }
     
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        if let p = peripherals.first(where: { $0.metadata.name == peripheral.name }),
-           p.isEnabled {
-            p.set(peripheral: peripheral)
-            bleLog.info("Peripheral Found \(p.metadata.name)")
+        bleLog.debug("peripheral found: \(peripheral.name ?? "--none--"), (\(peripheral.identifier))")
+        
+        guard let peripheralName = peripheral.name, let spec = self.spec else { return }
+        
+        if let deviceDef = spec.devices.first(where: { peripheralName.starts(with: $0.name) }) {
+            guard fxbConnectedDevices.first(where: { peripheralName == $0.deviceName }) == nil,
+                  fxbFoundDevices.first(where: { peripheralName == $0.deviceName }) == nil else { return }
             
-            if peripheral.state == .disconnected {
-                centralManager.connect(
-                    peripheral
+            fxbFoundDevices.append(
+                FXBDevice(
+                    spec: deviceDef,
+                    specVersion: spec.schemaVersion,
+                    specId: spec.id,
+                    deviceName: peripheralName,
+                    cbPeripheral: peripheral)
+            )
+        }
+        
+        if let registeredDeviceSpec = spec.bleRegisteredDevices.first(where: { peripheralName.starts(with: $0.name) }) {
+            guard connectedRegisteredDevices.first(where: { peripheralName == $0.deviceName }) == nil,
+                  foundRegisteredDevices.first(where: { peripheralName == $0.deviceName }) == nil else { return }
+            
+            foundRegisteredDevices.append(
+                FXBRegisteredDevice(
+                    spec: registeredDeviceSpec,
+                    specVersion: spec.schemaVersion,
+                    deviceName: peripheralName,
+                    cbPeripheral: peripheral
                 )
-            }
-            
-        } else if let p = registeredPeripherals.first(where: { $0.metadata.name == peripheral.name }),
-                  p.isEnabled {
-            
-            p.set(peripheral: peripheral)
-            
-            if peripheral.state == .disconnected {
-                bleLog.info("Registered Peripheral Found \(p.metadata.name)")
-                centralManager.connect(
-                    peripheral
-                )
-            }
+            )
         }
     }
     
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         
-        if let p = peripherals.first(where: { $0.metadata.name == peripheral.name }) {
-            bleLog.info("connceted to: \(p.metadata.name)")
-            p.didUpdateState()
-            Task {
-                try? await FXBWrite().recordConnection(
-                    deviceName: p.metadata.name,
-                    status: .connected
-                )
-            }
-        } else if let p = registeredPeripherals.first(where: { $0.metadata.name == peripheral.name }) {
-            bleLog.info("connceted to: \(p.metadata.name)")
-            p.didUpdateState()
-            Task {
-                try? await FXBWrite().recordConnection(
-                    deviceName: p.metadata.name,
-                    status: .connected
-                )
-            }
-        }
+        if let i = fxbFoundDevices.firstIndex(where: { $0.deviceName == peripheral.name }) {
+            let device = fxbFoundDevices[i]
+            
+            bleLog.info("connceted to: \(device.spec.name)")
+            
+            device.connect(with: FXBDeviceConnectionManager(spec: device.spec, peripheral: peripheral))
+            
+            fxbFoundDevices.remove(at: i)
+            fxbConnectedDevices.append(device)
+        } else if let i = foundRegisteredDevices.firstIndex(where: { $0.deviceName == peripheral.name }) {
+            let device = foundRegisteredDevices[i]
+            
+            bleLog.info("connceted to: \(device.deviceName)")
+            
+            device.connect(with: FXBRegisteredDeviceConnectionManager(device: device))
+            foundRegisteredDevices.remove(at: i)
+            connectedRegisteredDevices.append(device)
         
-        toggleScanWithConnections()
+        }
+    }
+    
+    public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        if let i = fxbFoundDevices.firstIndex(where: { $0.deviceName == peripheral.name }) {
+            let device = fxbFoundDevices[i]
+            bleLog.info("failed connection to \(device.spec.name), error: \(error?.localizedDescription ?? "--none--")")
+            device.connectionState = .disconnected
+        } else if let i = foundRegisteredDevices.firstIndex(where: { $0.deviceName == peripheral.name }) {
+            let device = foundRegisteredDevices[i]
+            bleLog.info("failed connection to \(device.spec.name), error: \(error?.localizedDescription ?? "--none--")")
+            device.connectionState = .disconnected
+        }
     }
     
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        
-        if let p = peripherals.first(where: { $0.metadata.name == peripheral.name }) {
-            bleLog.info("\(p.metadata.name) disconnected")
-            p.didUpdateState()
-            Task {
-                try? await FXBWrite().recordConnection(
-                    deviceName: p.metadata.name,
-                    status: .disconnected
-                )
+                
+        if let i = fxbConnectedDevices.firstIndex(where: { $0.deviceName == peripheral.name }) {
+            let device = fxbConnectedDevices[i]
+            
+            bleLog.info("\(peripheral.name ?? "--unknown--") disconnected")
+            
+            device.disconnect()
+            fxbConnectedDevices.remove(at: i)
+            if isScanning {
+                stopScan()
+                startScan()
             }
-        } else if let p = registeredPeripherals.first(where: { $0.metadata.name == peripheral.name }) {
-            bleLog.info("\(p.metadata.name) disconnected")
-            p.didUpdateState()
-            Task {
-                try? await FXBWrite().recordConnection(
-                    deviceName: p.metadata.name,
-                    status: .disconnected
-                )
+    
+        } else if let i = connectedRegisteredDevices.firstIndex(where: { $0.deviceName == peripheral.name }) {
+            let device = connectedRegisteredDevices[i]
+            
+            bleLog.info("\(peripheral.name ?? "--unknown--") disconnected")
+            
+            device.disconnect()
+            connectedRegisteredDevices.remove(at: i)
+            if isScanning {
+                stopScan()
+                startScan()
             }
+            
         }
-        
-        if (isScanning) { startScan() }
     }
 }

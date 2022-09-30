@@ -1,5 +1,5 @@
 //
-//  AEBLEPeripheral.swift
+//  FXBDeviceConnectionManager.swift
 //  
 //
 //  Created by blaine on 2/22/22.
@@ -10,80 +10,68 @@ import CoreBluetooth
 import Combine
 import GRDB
 
-public enum FXBPeripheralState: String {
-    case notFound = "not found"
-    case connected = "connected"
-    case disconnected = "disconnected"
-}
-
 /// FlexiBLE Bluetooth Enabled CoreBluetooth Delegate
 ///
 /// - Author: Blaine Rothrock
-public class FXBPeripheral: NSObject, ObservableObject {
-    @Published public private(set) var state: FXBPeripheralState = .disconnected
-    
-    var isEnabled: Bool = true
+public class FXBDeviceConnectionManager: NSObject {
     
     /// AE Representation of Peripheral
-    public let metadata: FXBDevice
+    private let spec: FXBDeviceSpec
+    private let peripheral: CBPeripheral
     
     @Published public var batteryLevel: Int?
     @Published public var rssi: Int = 0
     
+    internal var observers = Set<AnyCancellable>()
+    
     internal var serviceHandlers: [DataStreamHandler] = []
     internal let infoServiceHandler: InfoServiceHandler
+    
+    internal var currentReferenceDate: Date?
     
     /// Reference to database
     /// - Remark:
     ///  Holding reference to the database is not ideal, this should be reworked to require database dependency.
     private let db: FXBDBManager
-
-    /// Core Bluetooth Peripheral
-    internal var cbp: CBPeripheral?
     
-    internal init(metadata: FXBDevice, db: FXBDBManager) {
-        self.metadata = metadata
-        self.db = db
-        self.infoServiceHandler = InfoServiceHandler(
-            serviceId: metadata.infoServiceUuid,
-            def: metadata
-        )
-    }
-    
-    internal func set(peripheral: CBPeripheral) {
-        self.cbp = peripheral
-        self.didUpdateState()
-    }
-    
-    internal func didUpdateState() {
-        guard let peripheral = self.cbp else { return }
+    internal init(spec: FXBDeviceSpec, peripheral: CBPeripheral) {
+        self.spec = spec
+        self.peripheral = peripheral
+        self.db = FXBDBManager.shared
         
-        switch peripheral.state {
-        case .connected, .connecting: self.onConnect()
-        default: self.onDisconnect()
-        }
+        self.infoServiceHandler = InfoServiceHandler(
+            spec: self.spec
+        )
+        
+        super.init()
+        self.peripheral.delegate = self
+        self.peripheral.discoverServices(spec.serviceIds)
+        
+        self.infoServiceHandler.$referenceDate.sink { [weak self] refDate in
+            self?.currentReferenceDate = refDate
+        }.store(in: &observers)
     }
+//
+//    internal func set(peripheral: CBPeripheral) {
+//        self.cbp = peripheral
+//        self.didUpdateState()
+//    }
+    
+//    internal func didUpdateState() {
+//
+//        switch device.cbPeripheral.state {
+//        case .connected, .connecting: self.onConnect()
+//        default: self.onDisconnect()
+//        }
+//    }
     
     public func requestRSSI() {
-        cbp?.readRSSI()
-    }
-    
-    private func onConnect() {
-        guard let peripheral = self.cbp else { return }
-        self.state = .connected
-        peripheral.delegate = self
-        
-        peripheral.discoverServices(metadata.serviceIds)
-    }
-    
-    private func onDisconnect() {
-        self.serviceHandlers = []
-        self.state = .disconnected
+        peripheral.readRSSI()
     }
 }
 
 // MARK: - Core Bluetooth Peripheral Delegate
-extension FXBPeripheral: CBPeripheralDelegate {
+extension FXBDeviceConnectionManager: CBPeripheralDelegate {
     
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let services = peripheral.services else { return }
@@ -92,10 +80,10 @@ extension FXBPeripheral: CBPeripheralDelegate {
             bleLog.debug("did discover service \(service.uuid)")
             peripheral.discoverCharacteristics(nil, for: service)
             
-            if let ds = metadata.dataStreams.first(where: { $0.serviceCbuuid == service.uuid }) {
+            if let ds = spec.dataStreams.first(where: { $0.serviceCbuuid == service.uuid }) {
                 let handler = DataStreamHandler(
                     uuid: service.uuid,
-                    deviceName: metadata.name,
+                    deviceName: peripheral.name ?? spec.name,
                     dataStream: ds
                 )
                 serviceHandlers.append(handler)
@@ -115,7 +103,7 @@ extension FXBPeripheral: CBPeripheralDelegate {
             handleRegisteredServiceDiscovery(peripheral: peripheral, service: service)
         } else if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.setup(peripheral: peripheral, service: service)
-        } else if service.uuid == metadata.infoServiceUuid {
+        } else if service.uuid == spec.infoServiceUuid {
             infoServiceHandler.setup(peripheral: peripheral, service: service)
         }
         
@@ -138,9 +126,9 @@ extension FXBPeripheral: CBPeripheralDelegate {
             handler.didUpdate(
                 uuid: characteristic.uuid,
                 data: characteristic.value,
-                referenceDate: infoServiceHandler.referenceDate ?? Date()
+                referenceDate: self.currentReferenceDate ?? Date()
             )
-        } else if service.uuid == metadata.infoServiceUuid {
+        } else if service.uuid == spec.infoServiceUuid {
             infoServiceHandler.didUpdate(uuid: characteristic.uuid, data: characteristic.value)
         }
     }
@@ -157,7 +145,7 @@ extension FXBPeripheral: CBPeripheralDelegate {
         
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.didWrite(uuid: characteristic.uuid)
-        } else if service.uuid == metadata.infoServiceUuid {
+        } else if service.uuid == spec.infoServiceUuid {
             infoServiceHandler.didWrite(uuid: characteristic.uuid)
         }
         
@@ -170,13 +158,13 @@ extension FXBPeripheral: CBPeripheralDelegate {
 }
 
 // MARK: - Core Bluetooth Delegate Helpers
-extension FXBPeripheral {
+extension FXBDeviceConnectionManager {
     // TODO: A place for this sort of thing
 }
 
 
 // MARK: - Registered Services
-extension FXBPeripheral {
+extension FXBDeviceConnectionManager {
     func handleRegisteredServiceDiscovery(peripheral: CBPeripheral, service: CBService) {
         guard let regSvc = BLERegisteredService.from(service.uuid) else { return }
         

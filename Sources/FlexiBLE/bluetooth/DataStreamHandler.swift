@@ -6,15 +6,20 @@
 //
 
 import Foundation
+import Combine
 import CoreBluetooth
 import SwiftUI
 
 
-class DataStreamHandler {
+public class DataStreamHandler {
     
     let serviceUuid: CBUUID
     let deviceName: String
     let def: FXBDataStream
+    
+    public typealias RawDataStreamRecord = (ts: Date, value: [AEDataValue], spec: FXBDataStream)
+    public var firehose = PassthroughSubject<RawDataStreamRecord, Never>()
+    public var firehoseTS = PassthroughSubject<Date, Never>()
     
     private var lastestConfig: Data?
     
@@ -86,13 +91,23 @@ class DataStreamHandler {
             }
             
             allValues.append(values)
-            
+    
             if let offsetDef = def.offsetDataValue {
                 let ms = Double(offsetDef.offset(from: packet[i+offsetDef.byteStart..<i+offsetDef.byteEnd]))
 
                 timestampCounter = timestampCounter.addingTimeInterval(ms / 1000.0)
                 let timestamp = timestampCounter
                 timestamps.append(timestamp)
+                
+                self.firehose.send(
+                    RawDataStreamRecord(
+                        ts: timestamp,
+                        value: values,
+                        spec: def
+                    )
+                )
+                
+                self.firehoseTS.send(timestamp)
             }
         }
         

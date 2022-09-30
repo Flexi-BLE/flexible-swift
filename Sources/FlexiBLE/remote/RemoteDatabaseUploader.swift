@@ -18,7 +18,7 @@ public enum FXBDataUploaderState {
     case error(msg: String)
     case done
     
-    var rawValue: Int {
+    public var rawValue: Int {
         switch self {
         case .notStarted: return 0
         case .initializing: return 1
@@ -29,34 +29,55 @@ public enum FXBDataUploaderState {
         }
     }
     
-    static func ==(lhs:FXBDataUploaderState, rhs:FXBDataUploaderState) -> Bool {
+    public var stringValue: String {
+        switch self {
+        case .notStarted: return "not started"
+        case .initializing: return "initializing"
+        case .running: return "running"
+        case .paused: return "paused"
+        case .error(let msg): return "error: \(msg)"
+        case .done: return "done"
+        }
+    }
+    
+    public static func ==(lhs:FXBDataUploaderState, rhs:FXBDataUploaderState) -> Bool {
         return lhs.rawValue == rhs.rawValue
     }
 }
 
-public protocol FXBRemoteDatabaseUploader: ObservableObject {
+//public protocol FXBRemoteDatabaseUploader: ObservableObject {
+//    var state: FXBDataUploaderState { get }
+//    var stateValue: Published<FXBDataUploaderState> { get }
+//    var statePublisher: Published<FXBDataUploaderState>.Publisher { get }
+//
+//    var progress: Float { get }
+//    var progressValue: Published<Float> { get }
+//    var progressPublisher: Published<Float>.Publisher { get }
+//
+//    var estNumRecs: Int { get }
+//    var estNumRecsValue: Published<Int> { get }
+//    var estNumRecsPublisher: Published<Int>.Publisher { get }
+//
+//    var totalUploaded: Int { get }
+//    var totalUploadedValue: Published<Int> { get }
+//    var totalUploadedPublisher: Published<Int>.Publisher { get }
+//
+//    var batchSize: Int { get }
+//    var tableStatuses: [FXBTableUploadState] { get }
+//
+//
+//    func start()
+//    func pause()
+//}
+
+public protocol FXBRemoteDatabaseUploader {
     var state: FXBDataUploaderState { get }
-    var stateValue: Published<FXBDataUploaderState> { get }
-    var statePublisher: Published<FXBDataUploaderState>.Publisher { get }
-      
     var progress: Float { get }
-    var progressValue: Published<Float> { get }
-    var progressPublisher: Published<Float>.Publisher { get }
-    
     var estNumRecs: Int { get }
-    var estNumRecsValue: Published<Int> { get }
-    var estNumRecsPublisher: Published<Int>.Publisher { get }
-    
     var totalUploaded: Int { get }
-    var totalUploadedValue: Published<Int> { get }
-    var totalUploadedPublisher: Published<Int>.Publisher { get }
-    
-    var statusMessage: String { get }
-    var statusMessageValue: Published<String> { get }
-    var statusMessagePublisher: Published<String>.Publisher { get }
-    
     var batchSize: Int { get }
     var tableStatuses: [FXBTableUploadState] { get }
+    var statusMessage: String { get }
     
     
     func start()

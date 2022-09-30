@@ -22,10 +22,10 @@ public struct FXBRead {
         
         let locations = try await dbMgr.dbQueue.read { db -> [FXBLocation] in
             var q: QueryInterfaceRequest<FXBLocation> = FXBLocation
-                .filter(Column("timestamp") >= startDate)
+                .filter(Column("ts") >= startDate)
             
             if let endDate = endDate {
-                q = q.filter(Column("timestamp") <= endDate)
+                q = q.filter(Column("ts") <= endDate)
             }
             
             if let limit = limit {
@@ -36,6 +36,44 @@ public struct FXBRead {
         }
         
         return locations
+    }
+    
+    // MARK: - spec
+    public func spec(by id: Int64) async -> FXBSpec? {
+        if id == FlexiBLE.shared.specId { return FlexiBLE.shared.spec }
+        do {
+            let specTableRecord = try await dbMgr.dbQueue.read { db in
+                return try FXBSpecTable.fetchOne(db, key: id)
+            }
+            
+            if let specTableRecord = specTableRecord {
+                return try Data.sharedJSONDecoder.decode(FXBSpec.self, from: specTableRecord.data)
+            }
+        } catch {
+            pLog.error("unable to query spec by id \(id): \(error.localizedDescription)")
+        }
+        
+        return nil
+    }
+    
+    // MARK: - Connections
+    public func connectionRecords(connectedOnly: Bool = false) async -> [FXBConnection] {
+        do {
+            return try await dbMgr.dbQueue.read { db -> [FXBConnection] in
+                if connectedOnly {
+                    return try FXBConnection
+                        .filter(Column(FXBConnection.CodingKeys.disconnectedAt.stringValue) == nil)
+                        .order(literal: "connected_at DESC")
+                        .fetchAll(db)
+                }
+                return try FXBConnection
+                    .order(literal: "connected_at DESC")
+                    .fetchAll(db)
+            }
+        } catch {
+            pLog.error("unable to query connection records \(error.localizedDescription)")
+            return []
+        }
     }
     
     
@@ -105,23 +143,43 @@ public struct FXBRead {
         }
     }
     
-    internal func getTotalRecords(for tableName: String, from start: Date?=nil, to end: Date?=nil, uploaded: Bool = false) async throws -> Int {
+    public func getTotalRecords(
+        for tableName: String,
+        from start: Date?=nil,
+        to end: Date?=nil,
+        deviceName: String?=nil,
+        uploaded: Bool? = false
+    ) async throws -> Int {
         return try await dbMgr.dbQueue.read { db -> Int in
             var q = """
                 SELECT COUNT(id)
                 FROM \(tableName)
-                WHERE
             """
-            
-            if let start = start, let end = end {
-                q += "\nts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())' AND"
-            } else if let start = start {
-                q += "\nts >= '\(start.SQLiteFormat())' AND"
-            } else if let end = end {
-                q += "\nts < '\(end.SQLiteFormat())' AND"
+            if !(start == nil && end == nil && deviceName == nil && uploaded == nil) {
+                q += "\nWHERE "
             }
             
-            q += "\nuploaded == \(uploaded);"
+            if let deviceName = deviceName {
+                q += "\ndevice = '\(deviceName)'"
+                if (uploaded != nil || start != nil || end != nil) {
+                    q += " AND"
+                }
+            }
+            
+            if let start = start, let end = end {
+                q += "\nts BETWEEN '\(start.SQLiteFormat())' AND '\(end.SQLiteFormat())'"
+                if (uploaded != nil) { q += " AND" }
+            } else if let start = start {
+                q += "\nts >= '\(start.SQLiteFormat())'"
+                if (uploaded != nil) { q += " AND" }
+            } else if let end = end {
+                q += "\nts < '\(end.SQLiteFormat())'"
+                if (uploaded != nil) { q += " AND" }
+            }
+            
+            if let uploaded = uploaded {
+                q += "\nuploaded == \(uploaded);"
+            }
             
             return try Int.fetchOne(db, sql: q) ?? 0
         }

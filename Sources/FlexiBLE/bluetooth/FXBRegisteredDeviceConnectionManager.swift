@@ -8,72 +8,44 @@
 import Foundation
 import CoreBluetooth
 
-public class FXBRegisteredPeripheral: NSObject, ObservableObject {
-    @Published public private(set) var state: FXBPeripheralState = .disconnected
+public class FXBRegisteredDeviceConnectionManager: NSObject, ObservableObject {
     
     var isEnabled: Bool = true
     
-    /// AE Representation of Peripheral
-    public let metadata: FXBRegisteredDevice
+    /// FlexiBLE device representation
+    public let device: FXBRegisteredDevice
     
     internal var serviceHandlers: [ServiceHandler] = []
     
     @Published public var batteryLevel: Int?
     @Published public var rssi: Int = 0
     
-    internal var cbp: CBPeripheral?
-    
-    internal init(metadata: FXBRegisteredDevice) {
-        self.metadata = metadata
-    }
-    
-    internal func set(peripheral: CBPeripheral) {
-        if self.cbp == nil {
-            self.cbp = peripheral
-            self.didUpdateState()
-        }
-    }
-    
-    internal func didUpdateState() {
-        guard let peripheral = self.cbp else { return }
+    internal init(device: FXBRegisteredDevice) {
+        self.device = device
         
-        switch peripheral.state {
-        case .connected, .connecting: self.onConnect()
-        default: self.onDisconnect()
-        }
+        super.init()
+        device.cbPeripheral.delegate = self
+        device.cbPeripheral.discoverServices(device.spec.serviceIds)
     }
     
     public func requestRSSI() {
-        cbp?.readRSSI()
-    }
-    
-    private func onConnect() {
-        guard let peripheral = self.cbp else { return }
-        self.state = .connected
-        peripheral.delegate = self
-        
-        peripheral.discoverServices(metadata.serviceIds)
-    }
-    
-    private func onDisconnect() {
-        self.serviceHandlers = []
-        self.state = .disconnected
+        device.cbPeripheral.readRSSI()
     }
 }
 
 // MARK: - Core Bluetooth Peripheral Delegate
-extension FXBRegisteredPeripheral: CBPeripheralDelegate {
+extension FXBRegisteredDeviceConnectionManager: CBPeripheralDelegate {
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let services = peripheral.services else { return }
         
         for service in services {
             bleLog.debug("did discover registered service \(service.uuid)")
-            if metadata.serviceIds.contains(service.uuid) {
+            if device.spec.serviceIds.contains(service.uuid) {
                 peripheral.discoverCharacteristics(nil, for: service)
                 
                 if let registeredService = BLERegisteredService.from(service.uuid) {
                     
-                    serviceHandlers.append(registeredService.handler(deviceName: metadata.name))
+                    serviceHandlers.append(registeredService.handler(device: device))
                 }
             }
             
