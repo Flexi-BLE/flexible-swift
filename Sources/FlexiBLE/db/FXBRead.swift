@@ -143,23 +143,43 @@ public struct FXBRead {
         }
     }
     
-    internal func getTotalRecords(for tableName: String, from start: Date?=nil, to end: Date?=nil, uploaded: Bool = false) async throws -> Int {
+    public func getTotalRecords(
+        for tableName: String,
+        from start: Date?=nil,
+        to end: Date?=nil,
+        deviceName: String?=nil,
+        uploaded: Bool? = false
+    ) async throws -> Int {
         return try await dbMgr.dbQueue.read { db -> Int in
             var q = """
                 SELECT COUNT(id)
                 FROM \(tableName)
-                WHERE
             """
-            
-            if let start = start, let end = end {
-                q += "\nts >= '\(start.SQLiteFormat())' AND ts < '\(end.SQLiteFormat())' AND"
-            } else if let start = start {
-                q += "\nts >= '\(start.SQLiteFormat())' AND"
-            } else if let end = end {
-                q += "\nts < '\(end.SQLiteFormat())' AND"
+            if !(start == nil && end == nil && deviceName == nil && uploaded == nil) {
+                q += "\nWHERE "
             }
             
-            q += "\nuploaded == \(uploaded);"
+            if let deviceName = deviceName {
+                q += "\ndevice = '\(deviceName)'"
+                if (uploaded != nil || start != nil || end != nil) {
+                    q += " AND"
+                }
+            }
+            
+            if let start = start, let end = end {
+                q += "\nts BETWEEN '\(start.SQLiteFormat())' AND '\(end.SQLiteFormat())'"
+                if (uploaded != nil) { q += " AND" }
+            } else if let start = start {
+                q += "\nts >= '\(start.SQLiteFormat())'"
+                if (uploaded != nil) { q += " AND" }
+            } else if let end = end {
+                q += "\nts < '\(end.SQLiteFormat())'"
+                if (uploaded != nil) { q += " AND" }
+            }
+            
+            if let uploaded = uploaded {
+                q += "\nuploaded == \(uploaded);"
+            }
             
             return try Int.fetchOne(db, sql: q) ?? 0
         }
