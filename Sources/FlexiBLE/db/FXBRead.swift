@@ -185,6 +185,58 @@ public struct FXBRead {
         }
     }
     
+    public func getRecords(
+        for tableName: String,
+        from start: Date?=nil,
+        to end: Date? = nil,
+        deviceName: String?=nil,
+        uploaded: Bool? = nil
+    ) async throws -> [GenericRow] {
+        do {
+            let tableInfo = try await FXBDBManager
+                .shared.dbQueue.read({ db -> [FXBTableInfo] in
+                    let result = try Row.fetchAll(db, sql: "PRAGMA table_info(\(tableName))")
+                    return result.map({ FXBTableInfo.make(from: $0) })
+                })
+            
+            let records = try await dbMgr.dbQueue.read { db -> [Row] in
+                var q = """
+                    SELECT *
+                    FROM \(tableName)
+                """
+                if !(start == nil && end == nil && deviceName == nil && uploaded == nil) {
+                    q += "\nWHERE "
+                }
+                
+                if let deviceName = deviceName {
+                    q += "\ndevice = '\(deviceName)'"
+                    if (uploaded != nil || start != nil || end != nil) {
+                        q += " AND"
+                    }
+                }
+                
+                if let start = start, let end = end {
+                    q += "\nts BETWEEN '\(start.SQLiteFormat())' AND '\(end.SQLiteFormat())'"
+                    if (uploaded != nil) { q += " AND" }
+                } else if let start = start {
+                    q += "\nts >= '\(start.SQLiteFormat())'"
+                    if (uploaded != nil) { q += " AND" }
+                } else if let end = end {
+                    q += "\nts < '\(end.SQLiteFormat())'"
+                    if (uploaded != nil) { q += " AND" }
+                }
+                
+                if let uploaded = uploaded {
+                    q += "\nuploaded == \(uploaded);"
+                }
+                
+                return try Row.fetchAll(db, sql: q)
+            }
+            
+            return records.map({ GenericRow(metadata: tableInfo, row: $0) })
+        } catch { throw error }
+    }
+    
     public func getDistinctValuesForColumn(for column_name: String, table_name: String) async -> [String]? {
         return try? await dbMgr.dbQueue.read { db -> [String] in
             var distinctValues: [String] = []

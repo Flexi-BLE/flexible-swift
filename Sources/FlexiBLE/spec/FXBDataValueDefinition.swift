@@ -20,7 +20,7 @@ public struct FXBDataValueDefinition: Codable {
     internal let byteStart: Int
     internal let byteEnd: Int
     internal let size: Int
-    internal let type: FXBDataValueType
+    public let type: FXBDataValueType
     internal let multiplier: Double?
     public let variableType: FXBDataValueQueryType
     public let dependsOn: [String]?
