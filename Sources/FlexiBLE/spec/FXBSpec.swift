@@ -19,7 +19,7 @@ public struct FXBSpec: Codable {
 
 extension FXBSpec {
     public static var mock: FXBSpec {
-        return Bundle.module.decode(FXBSpec.self, from: "exthub.json")
+        return Bundle.module.decode(FXBSpec.self, from: "flexible-sample.json")
     }
     
     public static func load(from fileName: String) -> FXBSpec? {

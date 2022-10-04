@@ -17,7 +17,7 @@ public class DataStreamHandler {
     let deviceName: String
     let def: FXBDataStream
     
-    public typealias RawDataStreamRecord = (ts: Date, value: [AEDataValue], spec: FXBDataStream)
+    public typealias RawDataStreamRecord = (ts: Date, values: [AEDataValue])
     public var firehose = PassthroughSubject<RawDataStreamRecord, Never>()
     public var firehoseTS = PassthroughSubject<Date, Never>()
     
@@ -102,8 +102,7 @@ public class DataStreamHandler {
                 self.firehose.send(
                     RawDataStreamRecord(
                         ts: timestamp,
-                        value: values,
-                        spec: def
+                        values: values
                     )
                 )
                 

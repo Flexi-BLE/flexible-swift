@@ -184,4 +184,125 @@ public struct FXBRead {
             return try Int.fetchOne(db, sql: q) ?? 0
         }
     }
+    
+    public func getRecords(
+        for tableName: String,
+        from start: Date?=nil,
+        to end: Date? = nil,
+        deviceName: String?=nil,
+        uploaded: Bool? = nil
+    ) async throws -> [GenericRow] {
+        do {
+            let tableInfo = try await FXBDBManager
+                .shared.dbQueue.read({ db -> [FXBTableInfo] in
+                    let result = try Row.fetchAll(db, sql: "PRAGMA table_info(\(tableName))")
+                    return result.map({ FXBTableInfo.make(from: $0) })
+                })
+            
+            let records = try await dbMgr.dbQueue.read { db -> [Row] in
+                var q = """
+                    SELECT *
+                    FROM \(tableName)
+                """
+                if !(start == nil && end == nil && deviceName == nil && uploaded == nil) {
+                    q += "\nWHERE "
+                }
+                
+                if let deviceName = deviceName {
+                    q += "\ndevice = '\(deviceName)'"
+                    if (uploaded != nil || start != nil || end != nil) {
+                        q += " AND"
+                    }
+                }
+                
+                if let start = start, let end = end {
+                    q += "\nts BETWEEN '\(start.SQLiteFormat())' AND '\(end.SQLiteFormat())'"
+                    if (uploaded != nil) { q += " AND" }
+                } else if let start = start {
+                    q += "\nts >= '\(start.SQLiteFormat())'"
+                    if (uploaded != nil) { q += " AND" }
+                } else if let end = end {
+                    q += "\nts < '\(end.SQLiteFormat())'"
+                    if (uploaded != nil) { q += " AND" }
+                }
+                
+                if let uploaded = uploaded {
+                    q += "\nuploaded == \(uploaded);"
+                }
+                
+                return try Row.fetchAll(db, sql: q)
+            }
+            
+            return records.map({ GenericRow(metadata: tableInfo, row: $0) })
+        } catch { throw error }
+    }
+    
+    public func getDistinctValuesForColumn(for column_name: String, table_name: String) async -> [String]? {
+        return try? await dbMgr.dbQueue.read { db -> [String] in
+            var distinctValues: [String] = []
+            let q = """
+                    SELECT DISTINCT \(column_name)
+                    FROM \(table_name)_data
+                """
+            let queryResult = try Row.fetchAll(db, sql: q)
+            for eachEntry in queryResult {
+                if let doubleValue = Double.fromDatabaseValue(eachEntry[column_name]) {
+                    distinctValues.append(String(doubleValue))
+                }
+            }
+            return distinctValues
+        }
+    }
+    
+    public func getDatabaseValuesWithQuery(sqlQuery: String, columnName: String, propertyName: String) async -> (queryData:[(mark: String, data: [(ts: Date, val: Double)])], maxVal: Double, minValue: Double, lastRecordTime: Date) {
+        do {
+            return try await dbMgr.dbQueue.read({ db in
+                var databaseResult: [(mark: String, data:[(ts: Date, val: Double)])] = []
+                var minValue = Double.greatestFiniteMagnitude
+                var maxValue = -Double.greatestFiniteMagnitude
+                var lastRecordedTimestamp = Date.now
+                
+                var dataset: [(ts: Date, val: Double)] = []
+                
+                let fetchedRows = try Row.fetchAll(db, sql: sqlQuery)
+                if fetchedRows.count == 0 {
+                    return ([],0.0,0.0, lastRecordedTimestamp)
+                }
+                for row in fetchedRows {
+                    let timestamp: Date = row["ts"]
+                    let value: Double = row[columnName]
+                    
+                    maxValue = max(maxValue, value)
+                    minValue = min(minValue, value)
+                    lastRecordedTimestamp = timestamp
+                    
+                    dataset.append((ts: timestamp, val: value))
+                }
+                databaseResult.append((mark: "\(propertyName)-\(columnName)", data: dataset))
+                return (databaseResult, maxValue, minValue, lastRecordedTimestamp)
+            })
+        }  catch { return ([],0.0,0.0, Date.now)}
+    }
+    
+    public func getRecordsForQuery(sqlQuery: String, tableName: String) async -> [GenericRow]? {
+        do {
+            let tableInfo = try await FXBDBManager
+                .shared.dbQueue.read({ db -> [FXBTableInfo] in
+                    let result = try Row.fetchAll(db, sql: "PRAGMA table_info(\(tableName))")
+                    return result.map({ FXBTableInfo.make(from: $0) })
+                })
+            
+            let records = try await FXBDBManager.shared
+                .dbQueue.read({ db -> [GenericRow] in
+                return try Row
+                    .fetchAll(db, sql: sqlQuery)
+                    .map({ GenericRow(metadata: tableInfo, row: $0) })
+            })
+            return records
+        } catch(let errMessage) {
+            print(errMessage)
+            // Error ?
+        }
+        return nil
+    }
 }
