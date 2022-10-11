@@ -66,13 +66,17 @@ public class FXBConnectionManager: NSObject, ObservableObject {
     public func updateConfig(
         deviceName: String,
         dataStream: FXBDataStream,
-        data: Data
+        data: Data?=nil
     ) {
         
         if let device = fxbConnectedDevices.first(where: { $0.deviceName == deviceName }) {
             guard let manager = device.connectionManager else { return }
             if let dsh = manager.serviceHandlers.first(where: { $0.def.name == dataStream.name }) {
-                dsh.writeConfig(peripheral: device.cbPeripheral, data: data)
+                if let data = data {
+                    dsh.writeConfig(peripheral: device.cbPeripheral, data: data)
+                } else {
+                    dsh.writeDefaultConfig(peripheral: device.cbPeripheral)
+                }
             }
         }
     }
