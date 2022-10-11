@@ -7,6 +7,12 @@
 
 import Foundation
 
+public enum FXBConfigSelectionType: String, Codable {
+    case single = "single"
+    case range = "range"
+    case bitEncodedMultiSelect = "bit-encoded-multi"
+}
+
 public struct FXBDataStreamConfig: Codable {
     public let name: String
     public let description: String
@@ -15,7 +21,8 @@ public struct FXBDataStreamConfig: Codable {
     internal let byteStart: Int
     internal let byteEnd: Int
     internal let size: Int
-    internal let type: FXBDataValueType
+    internal let dataType: FXBDataValueType
+    public let selectionType: FXBConfigSelectionType
     public let unit: String?
     
     public let options: [AEDataStreamConfigOption]?

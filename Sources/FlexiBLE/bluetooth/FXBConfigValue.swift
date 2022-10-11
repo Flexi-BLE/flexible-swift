@@ -27,7 +27,7 @@ public class FXBConfigValue: ObservableObject {
     }
     
     func load(from data: Data) {
-        switch def.type {
+        switch def.dataType {
         case .float: break
         case .int:
             var val : Int = 0

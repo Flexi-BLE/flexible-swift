@@ -177,7 +177,7 @@ extension FXBDataStreamConfig {
             _data = data[self.byteStart..<self.byteEnd]
         }
         
-        switch self.type {
+        switch self.dataType {
         case .float: return Float(0)
         case .unsignedInt:
             var val : UInt = 0
@@ -204,7 +204,7 @@ extension FXBDataStreamConfig {
         
         var data: Data = Data()
         
-        switch self.type {
+        switch self.dataType {
         case .float:
             switch self.size {
             case 2:
