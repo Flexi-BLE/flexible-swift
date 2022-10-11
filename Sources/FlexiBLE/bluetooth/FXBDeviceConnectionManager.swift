@@ -47,9 +47,11 @@ public class FXBDeviceConnectionManager: NSObject {
         self.peripheral.delegate = self
         self.peripheral.discoverServices(spec.serviceIds)
         
-        self.infoServiceHandler.$referenceDate.sink { [weak self] refDate in
-            self?.currentReferenceDate = refDate
-        }.store(in: &observers)
+        self.infoServiceHandler.$referenceDate
+            .sink { [weak self] refDate in
+                self?.currentReferenceDate = refDate
+            }
+            .store(in: &observers)
     }
 //
 //    internal func set(peripheral: CBPeripheral) {

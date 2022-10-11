@@ -23,6 +23,10 @@ public class DataStreamHandler {
     
     private var lastestConfig: Data?
     
+    private var defaultConfig: Data {
+        return def.configValues.reduce(Data(), { $0 + $1.pack(value: $1.defaultValue) })
+    }
+    
     init(uuid: CBUUID, deviceName: String, dataStream: FXBDataStream) {
         self.serviceUuid = uuid
         self.deviceName = deviceName
@@ -158,6 +162,10 @@ public class DataStreamHandler {
         }
         
         peripheral.writeValue(data, for: char, type: .withResponse)
+    }
+    
+    internal func writeDefaultConfig(peripheral: CBPeripheral) {
+        self.writeConfig(peripheral: peripheral, data: self.defaultConfig)
     }
 }
 
