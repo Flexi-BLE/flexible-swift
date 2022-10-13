@@ -361,7 +361,7 @@ public final class FXBDBManager {
             let tables = try? DynamicTable.fetchAll(db)
             
             // check if tables exist
-            if let table = tables?.first(where: { $0.name == dataTableName }),
+            if let table = tables?.first(where: { $0.name == name }),
                let data = table.metadata {
                 
                 let existingMetdata = try? Data.sharedJSONDecoder.decode(FXBDataStream.self, from: data)
