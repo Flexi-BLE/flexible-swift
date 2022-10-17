@@ -13,13 +13,13 @@ public final class FXBDBManager {
     
     internal static var shared = FXBDBManager()
     
-    internal let dbQueue: DatabaseQueue
+    internal var dbQueue: DatabaseQueue
     private let migrator = FXBDBMigrator()
     public let dbPath = FXBDBManager.documentDirPath()
     
     /// Create and retrurn data directory url in application file structure
     private static func documentDirPath(for dbName: String="aeble") -> URL {
-        let fileManager = FileManager()
+        let fileManager = FileManager.default
         
         do {
             let dirPath = try fileManager
@@ -35,7 +35,7 @@ public final class FXBDBManager {
     }
     
     /// parameter url: URL for SQLite database with `.sqlite` extension. Will create if does not exist.
-    private init() {        
+    private init() {
         var configuration = Configuration()
         configuration.qos = DispatchQoS.userInitiated
         
@@ -68,6 +68,15 @@ public final class FXBDBManager {
             }
         } catch {
             pLog.error("unable to update handing connection records: \(error.localizedDescription)")
+        }
+    }
+    
+    internal func erase() {
+        do {
+            try self.dbQueue.erase()
+            self.migrator.migrate(self.dbQueue)
+        } catch {
+            pLog.error("unable to delete database")
         }
     }
     

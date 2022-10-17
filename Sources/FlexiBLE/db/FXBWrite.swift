@@ -39,31 +39,35 @@ public struct FXBWrite {
         })
     }
     
-    public func purgeAllRecords() async throws {
-        let dynamicTables = await FlexiBLE.shared.read.dynamicTableNames()
-        
-        try await dbMgr.dbQueue.write({ db in
-        
-            try FXBConnection.deleteAll(db)
-            try FXBDataUpload.deleteAll(db)
-            try FXBThroughput.deleteAll(db)
-            try FXBExperiment.deleteAll(db)
-            try FXBTimestamp.deleteAll(db)
-            try FXBHeartRate.deleteAll(db)
-            try FXBLocation.deleteAll(db)
-            
-            for tbl in dynamicTables {
-                let q_data = """
-                    DELETE FROM \(tbl)_data
-                """
-                try db.execute(sql: q_data)
-                
-                let q_config = """
-                    DELETE FROM \(tbl)_config
-                """
-                try db.execute(sql: q_config)
-            }
-        })
+    public func purgeAllRecords() {
+
+        FXBDBManager.shared.erase()
+//        let dynamicTables = await FlexiBLE.shared.read.dynamicTableNames()
+//
+//        try await dbMgr.dbQueue.write({ db in
+//
+//            try FXBConnection.deleteAll(db)
+//            try FXBDataUpload.deleteAll(db)
+//            try FXBThroughput.deleteAll(db)
+//            try FXBExperiment.deleteAll(db)
+//            try FXBTimestamp.deleteAll(db)
+//            try FXBHeartRate.deleteAll(db)
+//            try FXBLocation.deleteAll(db)
+//
+//            for tbl in dynamicTables {
+//                let q_data = """
+//                    DELETE FROM \(tbl)_data
+//                """
+//                try db.execute(sql: q_data)
+//
+//                let q_config = """
+//                    DELETE FROM \(tbl)_config
+//                """
+//                try db.execute(sql: q_config)
+//            }
+//
+//            try db.execute(literal: "VACUUM")
+//        })
     }
     
 
