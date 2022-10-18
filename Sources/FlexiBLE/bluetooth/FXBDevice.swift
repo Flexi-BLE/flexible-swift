@@ -72,15 +72,20 @@ public class FXBDevice: Identifiable, Device {
                     }
                 },
                 receiveValue: { [weak self] infoData in
-                    self?.infoData = infoData
-                    self?.connectionState = .connected
-                    bleLog.info("\(self?.deviceName ?? "--") Initialized: (\(infoData.referenceDate))")
+                    guard let self = self else { return }
+                    self.infoData = infoData
+                    self.connectionManager?.serviceHandlers.forEach { $0.writeDefaultConfig(peripheral: self.cbPeripheral) }
+                    bleLog.info("\(self.deviceName) Initialized: (\(infoData.referenceDate))")
                     
-                    if infoData.specId == self?.loadedSpecId,
-                       infoData.versionId == self?.loadedSpecVersion {
-                        self?.isSpecVersionMatched = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: {
+                        self.connectionState = .connected
+                    })
+                    
+                    if infoData.specId == self.loadedSpecId,
+                       infoData.versionId == self.loadedSpecVersion {
+                        self.isSpecVersionMatched = true
                     } else {
-                        self?.isSpecVersionMatched = false
+                        self.isSpecVersionMatched = false
                     }
                     
                     Task(priority: .background) { [weak self] in

@@ -13,18 +13,18 @@ public final class FXBDBManager {
     
     internal static var shared = FXBDBManager()
     
-    internal let dbQueue: DatabaseQueue
+    internal var dbQueue: DatabaseQueue
     private let migrator = FXBDBMigrator()
     public let dbPath = FXBDBManager.documentDirPath()
     
     /// Create and retrurn data directory url in application file structure
     private static func documentDirPath(for dbName: String="aeble") -> URL {
-        let fileManager = FileManager()
+        let fileManager = FileManager.default
         
         do {
             let dirPath = try fileManager
                 .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-                    .appendingPathComponent("data", isDirectory: true)
+                    .appendingPathComponent("resources", isDirectory: true)
             
             try fileManager.createDirectory(at: dirPath, withIntermediateDirectories: true)
             
@@ -35,13 +35,13 @@ public final class FXBDBManager {
     }
     
     /// parameter url: URL for SQLite database with `.sqlite` extension. Will create if does not exist.
-    private init() {        
+    private init() {
         var configuration = Configuration()
         configuration.qos = DispatchQoS.userInitiated
         
         #if DEBUG
         // Protect sensitive information by enabling verbose debugging in DEBUG builds only
-//        Bundle.module.copyFilesFromBundleToDocumentsFolderWith(fileName: "aeble.sqlite", in: "data")
+//        Bundle.module.copyFilesFromBundleToDocumentsFolderWith(fileName: "aeble.sqlite", in: "resources")
         configuration.publicStatementArguments = true
 
         #endif
@@ -68,6 +68,15 @@ public final class FXBDBManager {
             }
         } catch {
             pLog.error("unable to update handing connection records: \(error.localizedDescription)")
+        }
+    }
+    
+    internal func erase() {
+        do {
+            try self.dbQueue.erase()
+            self.migrator.migrate(self.dbQueue)
+        } catch {
+            pLog.error("unable to delete database")
         }
     }
     
@@ -190,65 +199,6 @@ public final class FXBDBManager {
             
             return 1000.0 / Float(diffs.reduce(0, +) / diffs.count)
         } catch { return 0 }
-    }
-    
-    public typealias UploadAggregate = (totalRecords: Int, success: Int, failures: Int)
-    public func uploadAgg(for dataStream: FXBDataStream) async -> UploadAggregate {
-        do {
-            return try await dbQueue.read({ db in
-                let qRecs = """
-                    SELECT SUM(number_of_records)
-                    FROM data_upload
-                    WHERE status = 'success'
-                        AND measurement = ?;
-                """
-                let numRecords = try Int.fetchOne(
-                    db,
-                    sql: qRecs,
-                    arguments: StatementArguments([dataStream.name])
-                )
-                
-                let qSuccess = """
-                    SELECT COUNT(id)
-                    FROM data_upload
-                    WHERE status = 'success'
-                        AND measurement = ?;
-                """
-                let successes = try Int.fetchOne(
-                    db,
-                    sql: qSuccess,
-                    arguments: StatementArguments([dataStream.name])
-                )
-                
-                let qFailures = """
-                    SELECT COUNT(id)
-                    FROM data_upload
-                    WHERE status = 'failure'
-                        AND measurement = ?;
-                """
-                let failures = try Int.fetchOne(
-                    db,
-                    sql: qFailures,
-                    arguments: StatementArguments([dataStream.name])
-                )
-                
-                return UploadAggregate(numRecords ?? 0, successes ?? 0, failures ?? 0)
-            })
-        } catch { return UploadAggregate(0, 0, 0) }
-    }
-    
-    public func uploadAgg(for thing: FXBDeviceSpec) async -> UploadAggregate {
-        var totalRecord: Int = 0
-        var successes: Int = 0
-        var failures: Int = 0
-        for ds in thing.dataStreams {
-           let ua = await uploadAgg(for: ds)
-            totalRecord += ua.totalRecords
-            successes += ua.success
-            failures += ua.failures
-        }
-        
-        return UploadAggregate(totalRecord, successes, failures)
     }
     
     // MARK: - Not Public
@@ -420,7 +370,7 @@ public final class FXBDBManager {
             let tables = try? DynamicTable.fetchAll(db)
             
             // check if tables exist
-            if let table = tables?.first(where: { $0.name == dataTableName }),
+            if let table = tables?.first(where: { $0.name == name }),
                let data = table.metadata {
                 
                 let existingMetdata = try? Data.sharedJSONDecoder.decode(FXBDataStream.self, from: data)

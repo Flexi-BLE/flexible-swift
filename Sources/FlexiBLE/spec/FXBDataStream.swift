@@ -23,3 +23,13 @@ public struct FXBDataStream: Codable, Equatable {
         return lhs.id == rhs.id
     }
 }
+
+public extension FXBDataStream {
+    func config(for name: String) -> FXBDataStreamConfig? {
+        return self.configValues.first(where: { $0.name == name })
+    }
+    
+    func dataValue(for name: String) -> FXBDataValueDefinition? {
+        return self.dataValues.first(where: { $0.name == name })
+    }
+}

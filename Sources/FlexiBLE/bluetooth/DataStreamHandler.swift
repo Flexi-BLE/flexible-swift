@@ -17,11 +17,15 @@ public class DataStreamHandler {
     let deviceName: String
     let def: FXBDataStream
     
-    public typealias RawDataStreamRecord = (ts: Date, value: [AEDataValue], spec: FXBDataStream)
+    public typealias RawDataStreamRecord = (ts: Date, values: [AEDataValue])
     public var firehose = PassthroughSubject<RawDataStreamRecord, Never>()
     public var firehoseTS = PassthroughSubject<Date, Never>()
     
     private var lastestConfig: Data?
+    
+    private var defaultConfig: Data {
+        return def.configValues.reduce(Data(), { $0 + $1.pack(value: $1.defaultValue) })
+    }
     
     init(uuid: CBUUID, deviceName: String, dataStream: FXBDataStream) {
         self.serviceUuid = uuid
@@ -102,8 +106,7 @@ public class DataStreamHandler {
                 self.firehose.send(
                     RawDataStreamRecord(
                         ts: timestamp,
-                        value: values,
-                        spec: def
+                        values: values
                     )
                 )
                 
@@ -160,6 +163,10 @@ public class DataStreamHandler {
         
         peripheral.writeValue(data, for: char, type: .withResponse)
     }
+    
+    internal func writeDefaultConfig(peripheral: CBPeripheral) {
+        self.writeConfig(peripheral: peripheral, data: self.defaultConfig)
+    }
 }
 
 extension FXBDataStreamConfig {
@@ -170,7 +177,7 @@ extension FXBDataStreamConfig {
             _data = data[self.byteStart..<self.byteEnd]
         }
         
-        switch self.type {
+        switch self.dataType {
         case .float: return Float(0)
         case .unsignedInt:
             var val : UInt = 0
@@ -197,7 +204,7 @@ extension FXBDataStreamConfig {
         
         var data: Data = Data()
         
-        switch self.type {
+        switch self.dataType {
         case .float:
             switch self.size {
             case 2:
