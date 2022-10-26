@@ -324,15 +324,19 @@ public final class FXBDBManager {
     ) async {
         let tableName = "\(tableName(from: ds.name))_data"
         
-        let cols = "\(ds.dataValues.map({ $0.name }).joined(separator: ", "))"
+        let varColsString = "\(ds.dataValues.map({ $0.name }).joined(separator: ", "))"
+        var sysCols = ["created_at", "ts", "spec_id", "device"]
+        switch ds.precision {
+        case .ms: break
+        case .us: sysCols.insert("ts_precision", at: 2)
+        }
+        let sysColsString = sysCols.joined(separator: ", ")
         let placeholders = "\(ds.dataValues.map({ _ in "?" }).joined(separator: ", "))"
         
         var sql = """
             INSERT INTO \(tableName)
         """
-        
-        let colsSql = "(\(cols), created_at, ts, tsd, spec_id, device) VALUES"
-        
+        let colsSql = "(\(varColsString), \(sysColsString)) VALUES"
         sql += colsSql
         
         var args: [Any] = []
