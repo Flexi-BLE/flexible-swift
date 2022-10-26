@@ -14,5 +14,5 @@ protocol ServiceHandler {
     func setup(peripheral: CBPeripheral, service: CBService)
     
     func didWrite(uuid: CBUUID)
-    func didUpdate(uuid: CBUUID, data: Data?)
+    func didUpdate(peripheral: CBPeripheral, characteristic: CBCharacteristic)
 }

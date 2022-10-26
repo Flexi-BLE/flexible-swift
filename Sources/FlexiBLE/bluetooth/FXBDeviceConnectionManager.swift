@@ -131,7 +131,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
                 referenceDate: self.currentReferenceDate ?? Date()
             )
         } else if service.uuid == spec.infoServiceUuid {
-            infoServiceHandler.didUpdate(uuid: characteristic.uuid, data: characteristic.value)
+            infoServiceHandler.didUpdate(peripheral: peripheral, characteristic: characteristic)
         }
     }
     

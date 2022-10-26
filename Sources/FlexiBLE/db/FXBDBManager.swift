@@ -70,7 +70,7 @@ public final class FXBDBManager {
             pLog.error("unable to update handing connection records: \(error.localizedDescription)")
         }
     }
-    
+
     internal func erase() {
         do {
             try self.dbQueue.erase()
@@ -79,128 +79,8 @@ public final class FXBDBManager {
             pLog.error("unable to delete database")
         }
     }
-    
-    public func lastDataStreamDate(for stream: FXBDataStream) async -> Date? {
-        do {
-            return try await dbQueue.read({ (db) -> Date? in
-                let q = """
-                    SELECT ts
-                    FROM \(stream.name)
-                    ORDER BY created_at DESC
-                    LIMIT 1
-                """
-            
-                let date = try Date.fetchOne(db, sql: q)
-                return date
-            })
-        } catch {
-            return nil
-        }
-    }
-    
-    public func lastDataStreamDate(for thing: FXBDeviceSpec) async -> Date? {
-        var dates: [Date] = []
-        for ds in thing.dataStreams {
-            if let date = await lastDataStreamDate(for: ds) {
-                dates.append(date)
-            }
-        }
-        return dates.max()
-    }
-    
-    public func actualRecordCount(for dataStream: FXBDataStream) async -> Int {
-        do {
-            return try await dbQueue.read({ db in
-                let q = """
-                    SELECT COUNT(id) FROM \(dataStream.name)
-                """
-                return try Int.fetchOne(
-                    db,
-                    sql: q
-                ) ?? 0
-            })
-        } catch { return 0 }
-    }
-    
-    public func actualRecordCount(for thing: FXBDeviceSpec) async -> Int {
-        var count = 0
-        for ds in thing.dataStreams {
-            count += await actualRecordCount(for: ds)
-        }
-        return count
-    }
-    
-    public func recordCountByIndex(for dataStream: FXBDataStream) async -> Int {
-        do {
-            return try await dbQueue.read({ db in
-                let q = """
-                    SELECT MAX(id) FROM \(dataStream.name)_data
-                """
-                return try Int.fetchOne(db, sql: q) ?? 0
-            })
-        } catch { return 0 }
-    }
-    
-    public func recordCountByIndex(for thing: FXBDeviceSpec) async -> Int {
-        var count = 0
-        for ds in thing.dataStreams {
-            count += await recordCountByIndex(for: ds)
-        }
-        return count
-    }
-    
-    public func unUploadedCount(for dataStream: FXBDataStream) async -> Int {
-        do {
-            return try await dbQueue.read({ db in
-                let q = """
-                    SELECT COUNT(id)
-                    FROM \(dataStream.name)
-                    WHERE uploaded = 0
-                """
-                return try Int.fetchOne(
-                    db,
-                    sql: q
-                ) ?? 0
-            })
-        } catch { return 0 }
-    }
-    
-    public func unUploadedCount(for thing: FXBDeviceSpec) async -> Int {
-        var count = 0
-        for ds in thing.dataStreams {
-            count += await unUploadedCount(for: ds)
-        }
-        return count
-    }
-    
-    public func meanFrequency(for dataSteam: FXBDataStream, last: Int=1000) async -> Float {
-        do {
-            let dates: [Date] = try await dbQueue.read({ db in
-                let q = """
-                    SELECT ts
-                    FROM \(dataSteam.name)
-                    ORDER BY ts DESC
-                    LIMIT \(last)
-                """
-                return try Date.fetchAll(
-                    db,
-                    sql: q
-                )
-            })
-            var diffs: [Int] = []
-            
-            guard dates.count > 0 else { return 0 }
-            
-            for i in 0..<dates.count-1 {
-                let first = Int64(dates[i].timeIntervalSince1970 * 1000.0)
-                let second = Int64(dates[i+1].timeIntervalSince1970 * 1000.0)
-                diffs.append(Int(first - second))
-            }
-            
-            return 1000.0 / Float(diffs.reduce(0, +) / diffs.count)
-        } catch { return 0 }
-    }
-    
+
+
     // MARK: - Not Public
     
     /// replace space with underscores for dynamically naming tables in SQL
@@ -240,12 +120,12 @@ public final class FXBDBManager {
     }
     
     // MARK: - Database Utilities
-   
+
     public func getTableNames() -> [String] {
         let excludedTables = ["grdb_migrations"]
-        
+
         var tableNames: [String] = []
-        
+
         let sql = """
             SELECT name
             FROM sqlite_schema
@@ -253,12 +133,12 @@ public final class FXBDBManager {
                 type = 'table' AND
                 name not LIKE 'sqlite_%';
         """
-        
+
         try? dbQueue.read { db in
             let result = try Row.fetchAll(db, sql: sql)
             tableNames = result.map({ $0["name"] })
         }
-    
+
         return tableNames.filter({ !excludedTables.contains($0) })
     }
     
@@ -403,7 +283,10 @@ public final class FXBDBManager {
                 }
                 
                 t.column("ts", .date).notNull().indexed()
-                
+                switch metadata.precision {
+                case .ms: break
+                case .us: t.column("ts_precision", .integer).notNull().indexed()
+                }
             }
             
             
@@ -433,9 +316,9 @@ public final class FXBDBManager {
     
     internal func dynamicDataRecordInsert(
         for ds: FXBDataStream,
-        anchorDate: Date,
+        anchorDate: Double,
         allValues: [[AEDataValue]],
-        timestamps: [Date],
+        timestamps: [Double],
         specId: Int64,
         device: String
     ) async {
@@ -448,7 +331,7 @@ public final class FXBDBManager {
             INSERT INTO \(tableName)
         """
         
-        let colsSql = "(\(cols), created_at, ts, spec_id, device) VALUES"
+        let colsSql = "(\(cols), created_at, ts, tsd, spec_id, device) VALUES"
         
         sql += colsSql
         
@@ -457,10 +340,18 @@ public final class FXBDBManager {
         for (i, values) in allValues.enumerated() {
             args.append(contentsOf: values)
             args.append(Date())
-            sql += "(\(placeholders), ?, ?, ?, ?), "
+            switch ds.precision {
+            case .ms: sql += "(\(placeholders), ?, ?, ?, ?), "
+            case .us: sql += "(\(placeholders), ?, ?, ?, ?, ?), "
+            }
             
-            if ds.includeAnchorTimestamp && ds.offsetDataValue != nil {
-                args.append(timestamps[i])
+            if ds.offsetDataValue != nil {
+                args.append(Date(timeIntervalSince1970: timestamps[i]))
+                switch ds.precision {
+                case .ms: break
+                case .us: args.append(Int((timestamps[i] - Double(Int(timestamps[i]))) * 1_000_000))
+                }
+
             } else {
                 args.append(Date())
             }

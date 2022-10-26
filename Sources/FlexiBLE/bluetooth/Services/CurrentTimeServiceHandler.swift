@@ -25,7 +25,7 @@ internal class CurrentTimeServiceHandler: ServiceHandler {
         bleLog.debug("did write value for \(self.serviceUuid)")
     }
     
-    func didUpdate(uuid: CBUUID, data: Data?) {
-    
+    func didUpdate(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+        
     }
 }

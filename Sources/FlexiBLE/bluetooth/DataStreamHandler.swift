@@ -67,19 +67,25 @@ public class DataStreamHandler {
         }
         
         
-        var anchorDate = referenceDate
+        var anchorDate = referenceDate.timeIntervalSince1970 as Double
         var dataStartByte = 0
         
-        if def.includeAnchorTimestamp {
-            let ms = data[0..<4].withUnsafeBytes({ $0.load(as: UInt32.self) })
-            bleLog.debug("anchor ms: \(ms), seconds: \(Double(ms) / 1000.0), data size \(data.count)")
-            
-            anchorDate = anchorDate.addingTimeInterval(TimeInterval( Double(ms) / 1000.0 ))
-            dataStartByte = 4
+        let uints = data[0..<4].withUnsafeBytes({ $0.load(as: UInt32.self) })
+        switch def.precision {
+        case .ms:
+            let ms = Double(uints) / 1_000.0
+            bleLog.debug("anchor ms: \(uints), seconds: \(ms), data size \(data.count)")
+            anchorDate = anchorDate + ms
+        case .us:
+            let us = Double(uints) / 1_000_000.0
+            bleLog.debug("anchor us: \(uints), seconds: \(us), data size \(data.count)")
+            anchorDate = anchorDate + us
         }
+       
+        dataStartByte = 4
         
         var allValues: [[AEDataValue]] = []
-        var timestamps: [Date] = []
+        var timestamps: [Double] = []
         
         var timestampCounter = anchorDate
         
@@ -97,20 +103,27 @@ public class DataStreamHandler {
             allValues.append(values)
     
             if let offsetDef = def.offsetDataValue {
-                let ms = Double(offsetDef.offset(from: packet[i+offsetDef.byteStart..<i+offsetDef.byteEnd]))
-
-                timestampCounter = timestampCounter.addingTimeInterval(ms / 1000.0)
-                let timestamp = timestampCounter
-                timestamps.append(timestamp)
+                let units = Double(offsetDef.offset(from: packet[i+offsetDef.byteStart..<i+offsetDef.byteEnd]))
+                
+                switch def.precision {
+                case .ms:
+                    timestampCounter = timestampCounter + (units / 1_000.0)
+                    let timestamp = timestampCounter
+                    timestamps.append(timestamp)
+                case .us:
+                    timestampCounter = timestampCounter + (units / 1_000_000.0)
+                    let timestamp = timestampCounter
+                    timestamps.append(timestamp)
+                }
                 
                 self.firehose.send(
                     RawDataStreamRecord(
-                        ts: timestamp,
+                        ts: Date(timeIntervalSince1970: timestampCounter),
                         values: values
                     )
                 )
                 
-                self.firehoseTS.send(timestamp)
+                self.firehoseTS.send(Date(timeIntervalSince1970: timestampCounter))
             }
         }
         

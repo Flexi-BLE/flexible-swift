@@ -69,22 +69,30 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             }
     }
     
+    private func writeEpoch(peripheral: CBPeripheral, characteristic epochChar: CBCharacteristic) {
+        let now = Date()
+        var nowMs = UInt64(now.timeIntervalSince1970*1000)
+        var data = Data()
+        withUnsafePointer(to: &nowMs) {
+            data.append(UnsafeBufferPointer(start: $0, count: 1))
+        }
+        
+        bleLog.info("Writing epoch time to \(peripheral.name ?? "--device--"): \(now) (\(nowMs))")
+        
+        peripheral.writeValue(data, for: epochChar, type: .withResponse)
+    
+        self.referenceMs = nowMs
+    }
+    
     func setup(peripheral: CBPeripheral, service: CBService) {
         
         if let epochChar = service.characteristics?.first(where: { $0.uuid == spec.epochTimeUuid }) {
-            
-            let now = Date()
-            var nowMs = UInt64(now.timeIntervalSince1970*1000)
-            var data = Data()
-            withUnsafePointer(to: &nowMs) {
-                data.append(UnsafeBufferPointer(start: $0, count: 1))
-            }
-            
-            bleLog.info("Writing epoch time: \(now) (\(nowMs))")
-            
-            peripheral.writeValue(data, for: epochChar, type: .withResponse)
+            writeEpoch(peripheral: peripheral, characteristic: epochChar)
+        }
         
-            self.referenceMs = nowMs
+        // set notify for epoch reset request
+        if let epochResetChar = service.characteristics?.first(where: { $0.uuid == spec.refreshEpochUuid }) {
+            peripheral.setNotifyValue(true, for: epochResetChar)
         }
         
         if let versionChar = service.characteristics?.first(where: { $0.uuid == spec.specVersionUuid }) {
@@ -100,12 +108,12 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         bleLog.debug("did write value for \(self.spec.name)")
     }
     
-    func didUpdate(uuid: CBUUID, data: Data?) {
-        guard let data = data else {
+    func didUpdate(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+        guard let data = characteristic.value else {
             return
         }
         
-        if uuid == spec.epochTimeUuid {
+        if characteristic.uuid == spec.epochTimeUuid {
             
             if data.count == 8 {
             
@@ -120,7 +128,7 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             }
             
             
-        } else if uuid == spec.specVersionUuid {
+        } else if characteristic.uuid == spec.specVersionUuid {
             let versionMajor = Int(data[0])
             let versionMinor = Int(data[1])
             let versionPatch = Int(data[2])
@@ -128,31 +136,15 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             bleLog.info("specification version for \(self.spec.name): \(version)")
             self.versionId = version
             
-//            Task {
-//                do {
-//                    self.fxbDevice.connectionRecord?.specificationVersion = version
-//                    try await FXBDBManager
-//                        .shared
-//                        .dbQueue.write({ try self.device.connectionRecord?.update($0) })
-//                } catch {
-//                    pLog.error("unable to update version for connection record")
-//                }
-//            }
-        } else if uuid == spec.specIdUuid {
+        } else if characteristic.uuid == spec.specIdUuid {
             let id = String(data: data, encoding: .ascii)?.replacingOccurrences(of: "\0", with: "")
             bleLog.info("specification id for \(self.spec.name): \(id ?? "--none--")")
             self.specId = id
             
-//            Task {
-//                do {
-//                    self.fxbDevice.connectionRecord?.specificationIdString = specId
-//                    try await FXBDBManager
-//                        .shared
-//                        .dbQueue.write({ try self.device.connectionRecord?.update($0) })
-//                } catch {
-//                    pLog.error("unable to update spec id for connection record")
-//                }
-//            }
+        } else if characteristic.uuid == spec.refreshEpochUuid {
+            if data[0] == 1 {
+                writeEpoch(peripheral: peripheral, characteristic: characteristic)
+            }
         }
     }
 }

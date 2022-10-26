@@ -38,10 +38,10 @@ internal class HeartRateServiceHandler: ServiceHandler {
         bleLog.debug("did write value for \(self.serviceUuid)")
     }
     
-    func didUpdate(uuid: CBUUID, data: Data?) {
-        guard let data = data else { return }
+    func didUpdate(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+        guard let data = characteristic.value else { return }
         
-        switch uuid {
+        switch characteristic.uuid {
         case heartRateMeasurementUuid:
             var hr: Int = -1
             
