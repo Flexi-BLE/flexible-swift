@@ -18,7 +18,7 @@ let package = Package(
         .package(
             name: "GRDB",
             url: "https://github.com/groue/GRDB.swift.git",
-            branch: "master"
+            branch: "GRDB5"
         )
     ],
     targets: [
