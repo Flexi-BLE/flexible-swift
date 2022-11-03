@@ -64,8 +64,8 @@ extension FXBConnection: TableRecord, FetchableRecord, MutablePersistableRecord 
         static let ts = Column(CodingKeys.ts)
     }
     
-    mutating public func didInsert(with rowID: Int64, for column: String?) {
-        id = rowID
+    mutating public func didInsert(_ inserted: InsertionSuccess) {
+        id = inserted.rowID
     }
     
     public static var databaseTableName: String = "connection"

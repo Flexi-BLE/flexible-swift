@@ -84,8 +84,8 @@ extension FXBExperiment: FetchableRecord, MutablePersistableRecord {
         static let specId = Column(CodingKeys.specId)
     }
         
-    mutating public func didInsert(with rowID: Int64, for column: String?) {
-        id = rowID
+    mutating public func didInsert(_ inserted: InsertionSuccess) {
+        id = inserted.rowID
     }
     
     public static var databaseTableName: String = "experiment"
