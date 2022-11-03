@@ -39,8 +39,8 @@ extension FXBSpecTable: FetchableRecord, MutablePersistableRecord {
         static let ts = Column(CodingKeys.ts)
     }
     
-    mutating func didInsert(with rowID: Int64, for column: String?) {
-        self.id = rowID
+    mutating func didInsert(_ inserted: InsertionSuccess) {
+        id = inserted.rowID
     }
     
     static var databaseTableName: String = "flexible_spec"
