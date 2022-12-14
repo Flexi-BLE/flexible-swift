@@ -23,6 +23,9 @@ public class DataStreamHandler {
     
     private var lastestConfig: Data?
     
+    private var previousReferenceDate: Date = Date(timeIntervalSince1970: TimeInterval.infinity)
+    private var previousAnchorMS: UInt32 = 0
+    
     private var defaultConfig: Data {
         return def.configValues.reduce(Data(), { $0 + $1.pack(value: $1.defaultValue) })
     }
@@ -66,19 +69,31 @@ public class DataStreamHandler {
             packetSize += offsetDef.size
         }
         
-        
-        var anchorDate = referenceDate.timeIntervalSince1970 as Double
         var dataStartByte = 0
         
         let uints = data[0..<4].withUnsafeBytes({ $0.load(as: UInt32.self) })
+        
+        var anchorDate: Double
+        
+        if uints > previousAnchorMS && previousReferenceDate < referenceDate {
+            // reference date has changed, but anchor has not decreased (must wait)
+            anchorDate = previousReferenceDate.timeIntervalSince1970 as Double
+        } else {
+            anchorDate = referenceDate.timeIntervalSince1970 as Double
+            previousReferenceDate = referenceDate
+        }
+        
+        previousAnchorMS = uints
+
+        
         switch def.precision {
         case .ms:
             let ms = Double(uints) / 1_000.0
-            bleLog.debug("anchor ms: \(uints), seconds: \(ms), data size \(data.count)")
+            bleLog.debug("\(anchorDate): anchor ms: \(uints), seconds: \(ms), data size \(data.count)")
             anchorDate = anchorDate + ms
         case .us:
             let us = Double(uints) / 1_000_000.0
-            bleLog.debug("anchor us: \(uints), seconds: \(us), data size \(data.count)")
+            bleLog.debug("\(anchorDate): anchor us: \(uints), seconds: \(us), data size \(data.count)")
             anchorDate = anchorDate + us
         }
        

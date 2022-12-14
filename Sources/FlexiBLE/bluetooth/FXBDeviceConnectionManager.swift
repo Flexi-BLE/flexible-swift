@@ -27,8 +27,6 @@ public class FXBDeviceConnectionManager: NSObject {
     internal var serviceHandlers: [DataStreamHandler] = []
     internal let infoServiceHandler: InfoServiceHandler
     
-    internal var currentReferenceDate: Date?
-    
     /// Reference to database
     /// - Remark:
     ///  Holding reference to the database is not ideal, this should be reworked to require database dependency.
@@ -46,26 +44,7 @@ public class FXBDeviceConnectionManager: NSObject {
         super.init()
         self.peripheral.delegate = self
         self.peripheral.discoverServices(spec.serviceIds)
-        
-        self.infoServiceHandler.$referenceDate
-            .sink { [weak self] refDate in
-                self?.currentReferenceDate = refDate
-            }
-            .store(in: &observers)
     }
-//
-//    internal func set(peripheral: CBPeripheral) {
-//        self.cbp = peripheral
-//        self.didUpdateState()
-//    }
-    
-//    internal func didUpdateState() {
-//
-//        switch device.cbPeripheral.state {
-//        case .connected, .connecting: self.onConnect()
-//        default: self.onDisconnect()
-//        }
-//    }
     
     public func requestRSSI() {
         peripheral.readRSSI()
@@ -124,11 +103,12 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
         
         guard let service = characteristic.service else { return }
         
-        if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
+        if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }),
+           let referenceDate = infoServiceHandler.infoData?.referenceDate {
             handler.didUpdate(
                 uuid: characteristic.uuid,
                 data: characteristic.value,
-                referenceDate: self.currentReferenceDate ?? Date()
+                referenceDate: referenceDate
             )
         } else if service.uuid == spec.infoServiceUuid {
             infoServiceHandler.didUpdate(peripheral: peripheral, characteristic: characteristic)
@@ -148,7 +128,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.didWrite(uuid: characteristic.uuid)
         } else if service.uuid == spec.infoServiceUuid {
-            infoServiceHandler.didWrite(uuid: characteristic.uuid)
+            infoServiceHandler.didWrite(peripheral: peripheral, uuid: characteristic.uuid)
         }
         
         peripheral.readValue(for: characteristic)

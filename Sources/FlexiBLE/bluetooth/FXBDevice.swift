@@ -32,7 +32,6 @@ public class FXBDevice: Identifiable, Device {
     public var connectionManager: FXBDeviceConnectionManager?
     
     @Published public var connectionState: DeviceConnectionState = .disconnected
-    @Published public var infoData: InfoServiceHandler.InfoData?
     @Published public var isSpecVersionMatched: Bool = true
     
     public let loadedSpecVersion: String
@@ -62,24 +61,22 @@ public class FXBDevice: Identifiable, Device {
         self.connectionManager = connectionManager
         
         self.connectionManager?.infoServiceHandler
-            .infoPublisher
+            .$infoData
             .receive(on: DispatchQueue.main)
             .sink(
-                receiveCompletion: { [weak self] comp in
-                    switch comp {
-                    case .failure(_): self?.connectionState = .disconnected
-                    case .finished: self?.connectionState = .connected
-                    }
-                },
                 receiveValue: { [weak self] infoData in
-                    guard let self = self else { return }
-                    self.infoData = infoData
-                    self.connectionManager?.serviceHandlers.forEach { $0.writeDefaultConfig(peripheral: self.cbPeripheral) }
-                    bleLog.info("\(self.deviceName) Initialized: (\(infoData.referenceDate))")
+                    guard let self = self, let infoData = infoData else { return }
                     
-                    DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: {
-                        self.connectionState = .connected
-                    })
+                    if self.connectionState != .connected {
+                        bleLog.info("\(self.deviceName) Initialized: (\(infoData.referenceDate))")
+                        self.connectionManager?.serviceHandlers.forEach { $0.writeDefaultConfig(peripheral: self.cbPeripheral) }
+                        DispatchQueue.main.asyncAfter(
+                            deadline: .now() + .milliseconds(500),
+                            execute: {
+                                self.connectionState = .connected
+                            }
+                        )
+                    }
                     
                     if infoData.specId == self.loadedSpecId,
                        infoData.versionId == self.loadedSpecVersion {
@@ -101,8 +98,7 @@ public class FXBDevice: Identifiable, Device {
                         }
                     }
                 }
-            )
-            .store(in: &cancellables)
+            ).store(in: &cancellables)
         
         Task {
             do {

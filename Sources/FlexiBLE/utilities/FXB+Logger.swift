@@ -19,3 +19,6 @@ internal let pLog = Logger(subsystem: "com.blainerothrock.flexible", category: "
 
 /// Remote Upload Logger
 internal let webLog = Logger(subsystem: "com.blainerothrock.flexible", category: "outbound-web")
+
+/// temp developmental logging
+internal let devLog = Logger(subsystem: "com.blainerothrock.flexible", category: "dev")

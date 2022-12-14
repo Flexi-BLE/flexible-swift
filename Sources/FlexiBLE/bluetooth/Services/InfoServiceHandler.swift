@@ -15,61 +15,34 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
 
     private let spec: FXBDeviceSpec
     
-    internal var referenceMs: UInt64?
-    
-    public enum InfoError: Error {
-        case invalidReferenceId
-        case noVersionId
-        case noSpecId
-    }
-    
     public struct InfoData {
         public let referenceDate: Date
         public let specId: String
         public let versionId: String
     }
 
-    @Published public var versionId: String? = nil
-    @Published public var specId: String? = nil
-    @Published public var referenceDate: Date? = nil
-    public var infoPublisher = PassthroughSubject<InfoData, InfoError>()
+    private var versionId: String = "--none--"
+    private var specId: String = "--none--"
+    private var referenceDate: Date = Date(timeIntervalSince1970: 0.0)
+    
+    private var tempRefDate: Date?
+    
+    @Published public var infoData: InfoData?
     
     private var dataObserver: AnyCancellable?
     
     init(spec: FXBDeviceSpec) {
         self.spec = spec
         self.serviceUuid = spec.infoServiceUuid
-        
-        self.dataObserver = Publishers
-            .Zip3($referenceDate, $versionId, $specId)
-            .dropFirst() // ignore nil initilaization
-            .sink { [weak self] refDate, versionId, specId in
-                guard let refDate = refDate else {
-                    self?.infoPublisher.send(completion: .failure(InfoError.invalidReferenceId))
-                    return
-                }
-                
-                guard let specId = specId else {
-                    self?.infoPublisher.send(completion: .failure(InfoError.noSpecId))
-                    return
-                }
-                
-                guard let versionId = versionId else {
-                    self?.infoPublisher.send(completion: .failure(InfoError.noVersionId))
-                    return
-                }
-                
-                self?.infoPublisher.send(
-                    InfoData(
-                        referenceDate: refDate,
-                        specId: specId,
-                        versionId: versionId
-                    )
-                )
-            }
     }
     
-    private func writeEpoch(peripheral: CBPeripheral, characteristic epochChar: CBCharacteristic) {
+    private func writeEpoch(peripheral: CBPeripheral) {
+        guard let infoService = peripheral.services?.first(where: { $0.uuid == spec.infoServiceUuid }),
+              let epochChar = infoService.characteristics?.first(where: { $0.uuid == spec.epochTimeUuid }) else {
+            bleLog.error("unable to write epoch reference time: cannot locate reference time characteristic.")
+            return
+        }
+        
         let now = Date()
         var nowMs = UInt64(now.timeIntervalSince1970*1000)
         var data = Data()
@@ -78,16 +51,23 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         }
         
         bleLog.info("Writing epoch time to \(peripheral.name ?? "--device--"): \(now) (\(nowMs))")
-        
         peripheral.writeValue(data, for: epochChar, type: .withResponse)
     
-        self.referenceMs = nowMs
+        self.tempRefDate = now // wait to commit until written
+    }
+    
+    private func updateInfoData() {
+        infoData = InfoData(
+            referenceDate: referenceDate,
+            specId: specId,
+            versionId: versionId
+        )
     }
     
     func setup(peripheral: CBPeripheral, service: CBService) {
         
-        if let epochChar = service.characteristics?.first(where: { $0.uuid == spec.epochTimeUuid }) {
-            writeEpoch(peripheral: peripheral, characteristic: epochChar)
+        if let _ = service.characteristics?.first(where: { $0.uuid == spec.epochTimeUuid }) {
+            writeEpoch(peripheral: peripheral)
         }
         
         // set notify for epoch reset request
@@ -104,46 +84,39 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         }
     }
     
-    func didWrite(uuid: CBUUID) {
-        bleLog.debug("did write value for \(self.spec.name)")
+    func didWrite(peripheral: CBPeripheral, uuid: CBUUID) {
+        if uuid == spec.epochTimeUuid {
+            if let temp = tempRefDate {
+                self.referenceDate = temp
+                tempRefDate = nil
+                updateInfoData()
+            }
+        }
     }
     
     func didUpdate(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
         guard let data = characteristic.value else {
             return
         }
-        
-        if characteristic.uuid == spec.epochTimeUuid {
             
-            if data.count == 8 {
-            
-                let refMs = data.withUnsafeBytes({ $0.load(as: UInt64.self) })
-                if refMs != referenceMs {
-                    bleLog.error("failed to update epoch time")
-                    referenceDate = nil
-                    referenceMs = nil
-                } else {
-                    self.referenceDate = Date(timeIntervalSince1970: Double(refMs)/1000.0)
-                }
-            }
-            
-            
-        } else if characteristic.uuid == spec.specVersionUuid {
+        if characteristic.uuid == spec.specVersionUuid {
             let versionMajor = Int(data[0])
             let versionMinor = Int(data[1])
             let versionPatch = Int(data[2])
             let version = "\(versionMajor).\(versionMinor).\(versionPatch)"
             bleLog.info("specification version for \(self.spec.name): \(version)")
             self.versionId = version
+            updateInfoData()
             
         } else if characteristic.uuid == spec.specIdUuid {
             let id = String(data: data, encoding: .ascii)?.replacingOccurrences(of: "\0", with: "")
             bleLog.info("specification id for \(self.spec.name): \(id ?? "--none--")")
-            self.specId = id
+            self.specId = id ?? "--none--"
+            updateInfoData()
             
         } else if characteristic.uuid == spec.refreshEpochUuid {
             if data[0] == 1 {
-                writeEpoch(peripheral: peripheral, characteristic: characteristic)
+                writeEpoch(peripheral: peripheral)
             }
         }
     }
