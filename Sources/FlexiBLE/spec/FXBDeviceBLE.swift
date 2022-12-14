@@ -14,4 +14,5 @@ internal struct FXBDeviceBLE: Codable {
     let epochCharUuid: String
     let specVersionCharUuid: String
     let specIdCharUuid: String
+    let refreshEpochCharUuid: String
 }

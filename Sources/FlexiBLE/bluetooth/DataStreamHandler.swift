@@ -23,6 +23,9 @@ public class DataStreamHandler {
     
     private var lastestConfig: Data?
     
+    private var previousReferenceDate: Date = Date(timeIntervalSince1970: TimeInterval.infinity)
+    private var previousAnchorMS: UInt32 = 0
+    
     private var defaultConfig: Data {
         return def.configValues.reduce(Data(), { $0 + $1.pack(value: $1.defaultValue) })
     }
@@ -66,20 +69,38 @@ public class DataStreamHandler {
             packetSize += offsetDef.size
         }
         
-        
-        var anchorDate = referenceDate
         var dataStartByte = 0
         
-        if def.includeAnchorTimestamp {
-            let ms = data[0..<4].withUnsafeBytes({ $0.load(as: UInt32.self) })
-            bleLog.debug("anchor ms: \(ms), seconds: \(Double(ms) / 1000.0), data size \(data.count)")
-            
-            anchorDate = anchorDate.addingTimeInterval(TimeInterval( Double(ms) / 1000.0 ))
-            dataStartByte = 4
+        let uints = data[0..<4].withUnsafeBytes({ $0.load(as: UInt32.self) })
+        
+        var anchorDate: Double
+        
+        if uints > previousAnchorMS && previousReferenceDate < referenceDate {
+            // reference date has changed, but anchor has not decreased (must wait)
+            anchorDate = previousReferenceDate.timeIntervalSince1970 as Double
+        } else {
+            anchorDate = referenceDate.timeIntervalSince1970 as Double
+            previousReferenceDate = referenceDate
         }
         
+        previousAnchorMS = uints
+
+        
+        switch def.precision {
+        case .ms:
+            let ms = Double(uints) / 1_000.0
+            bleLog.debug("\(anchorDate): anchor ms: \(uints), seconds: \(ms), data size \(data.count)")
+            anchorDate = anchorDate + ms
+        case .us:
+            let us = Double(uints) / 1_000_000.0
+            bleLog.debug("\(anchorDate): anchor us: \(uints), seconds: \(us), data size \(data.count)")
+            anchorDate = anchorDate + us
+        }
+       
+        dataStartByte = 4
+        
         var allValues: [[AEDataValue]] = []
-        var timestamps: [Date] = []
+        var timestamps: [Double] = []
         
         var timestampCounter = anchorDate
         
@@ -97,20 +118,27 @@ public class DataStreamHandler {
             allValues.append(values)
     
             if let offsetDef = def.offsetDataValue {
-                let ms = Double(offsetDef.offset(from: packet[i+offsetDef.byteStart..<i+offsetDef.byteEnd]))
-
-                timestampCounter = timestampCounter.addingTimeInterval(ms / 1000.0)
-                let timestamp = timestampCounter
-                timestamps.append(timestamp)
+                let units = Double(offsetDef.offset(from: packet[i+offsetDef.byteStart..<i+offsetDef.byteEnd]))
+                
+                switch def.precision {
+                case .ms:
+                    timestampCounter = timestampCounter + (units / 1_000.0)
+                    let timestamp = timestampCounter
+                    timestamps.append(timestamp)
+                case .us:
+                    timestampCounter = timestampCounter + (units / 1_000_000.0)
+                    let timestamp = timestampCounter
+                    timestamps.append(timestamp)
+                }
                 
                 self.firehose.send(
                     RawDataStreamRecord(
-                        ts: timestamp,
+                        ts: Date(timeIntervalSince1970: timestampCounter),
                         values: values
                     )
                 )
                 
-                self.firehoseTS.send(timestamp)
+                self.firehoseTS.send(Date(timeIntervalSince1970: timestampCounter))
             }
         }
         

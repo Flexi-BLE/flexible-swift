@@ -21,11 +21,11 @@ internal class CurrentTimeServiceHandler: ServiceHandler {
         
     }
     
-    func didWrite(uuid: CBUUID) {
+    func didWrite(peripheral: CBPeripheral, uuid: CBUUID) {
         bleLog.debug("did write value for \(self.serviceUuid)")
     }
     
-    func didUpdate(uuid: CBUUID, data: Data?) {
-    
+    func didUpdate(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+        
     }
 }

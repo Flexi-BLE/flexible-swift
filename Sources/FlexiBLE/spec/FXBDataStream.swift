@@ -7,11 +7,16 @@
 
 import Foundation
 
+public enum FXBTimeSeriesPrecision: String, Codable {
+    case ms = "ms"
+    case us = "us"
+}
+
 public struct FXBDataStream: Codable, Equatable {
     public let id: String
     public let name: String
     public let description: String?
-    internal let includeAnchorTimestamp: Bool
+    internal let precision: FXBTimeSeriesPrecision
     
     public let offsetDataValue: FXBDataValueDefinition?
     public let dataValues: [FXBDataValueDefinition]
