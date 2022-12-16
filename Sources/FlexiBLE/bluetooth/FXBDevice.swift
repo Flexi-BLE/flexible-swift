@@ -67,8 +67,12 @@ public class FXBDevice: Identifiable, Device {
                 receiveValue: { [weak self] infoData in
                     guard let self = self, let infoData = infoData else { return }
                     
+                    guard let specId = infoData.specId,
+                          let versionId = infoData.versionId,
+                          let referenceDate = infoData.referenceDate else { return }
+                    
                     if self.connectionState != .connected {
-                        bleLog.info("\(self.deviceName) Initialized: (\(infoData.referenceDate))")
+                        bleLog.info("\(self.deviceName) Initialized: (\(referenceDate)")
                         self.connectionManager?.serviceHandlers.forEach { $0.writeDefaultConfig(peripheral: self.cbPeripheral) }
                         DispatchQueue.main.asyncAfter(
                             deadline: .now() + .milliseconds(500),
@@ -78,8 +82,8 @@ public class FXBDevice: Identifiable, Device {
                         )
                     }
                     
-                    if infoData.specId == self.loadedSpecId,
-                       infoData.versionId == self.loadedSpecVersion {
+                    if specId == self.loadedSpecId,
+                       versionId == self.loadedSpecVersion {
                         self.isSpecVersionMatched = true
                     } else {
                         self.isSpecVersionMatched = false
@@ -87,9 +91,9 @@ public class FXBDevice: Identifiable, Device {
                     
                     Task(priority: .background) { [weak self] in
                         do {
-                            self?.connectionRecord?.latestReferenceDate = infoData.referenceDate
-                            self?.connectionRecord?.specificationIdString = infoData.specId
-                            self?.connectionRecord?.specificationVersion = infoData.versionId
+                            self?.connectionRecord?.latestReferenceDate = referenceDate
+                            self?.connectionRecord?.specificationIdString = specId
+                            self?.connectionRecord?.specificationVersion = versionId
                             try await FXBDBManager
                                 .shared
                                 .dbQueue.write({ [weak self] in try self?.connectionRecord?.update($0) })
