@@ -16,14 +16,14 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
     private let spec: FXBDeviceSpec
     
     public struct InfoData {
-        public let referenceDate: Date
-        public let specId: String
-        public let versionId: String
+        public let referenceDate: Date?
+        public let specId: String?
+        public let versionId: String?
     }
 
-    private var versionId: String = "--none--"
-    private var specId: String = "--none--"
-    private var referenceDate: Date = Date(timeIntervalSince1970: 0.0)
+    private var versionId: String?
+    private var specId: String?
+    private var referenceDate: Date?
     
     private var tempRefDate: Date?
     

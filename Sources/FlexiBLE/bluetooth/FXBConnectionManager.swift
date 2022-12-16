@@ -106,7 +106,7 @@ public class FXBConnectionManager: NSObject, ObservableObject {
         startScan()
     }
     
-    private func startScan() {
+    private func startScan(allowDuplicates: Bool = false) {
         guard centralManager.state == .poweredOn,
               let spec = self.spec else {
             bleLog.fault("central manager state is not on: \(self.centralManager.state.rawValue)")
@@ -129,10 +129,14 @@ public class FXBConnectionManager: NSObject, ObservableObject {
 
         bleLog.info("started scan")
         bleLog.info("scanning for devices with services: \(services)")
+
+        let options: [String: Any] = [
+            CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: allowDuplicates)
+        ]
         
         centralManager.scanForPeripherals(
             withServices:services,
-            options: nil
+            options: options
         )
         DispatchQueue.main.async {
             self.isScanning = self.centralManager.isScanning
