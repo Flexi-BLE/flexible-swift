@@ -177,8 +177,9 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
     
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         bleLog.debug("peripheral found: \(peripheral.name ?? "--none--"), (\(peripheral.identifier))")
+        bleLog.debug("advertisement data \(advertisementData)")
         
-        guard let peripheralName = peripheral.name, let spec = self.spec else { return }
+        guard let peripheralName = advertisementData["kCBAdvDataLocalName"] as? String, let spec = self.spec else { return }
         
         if let deviceDef = spec.devices.first(where: { peripheralName.starts(with: $0.name) }) {
             
