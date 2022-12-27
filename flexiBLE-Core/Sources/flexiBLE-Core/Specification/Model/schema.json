@@ -1,0 +1,433 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/FlexiBLESpec",
+    "definitions": {
+        "FlexiBLESpec": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "schema_version": {
+                    "type": "string"
+                },
+                "spec_version": {
+                    "type": "string",
+                    "format": "integer"
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "author": {
+                    "$ref": "#/definitions/Author"
+                },
+                "gatt_devices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GattDevice"
+                    }
+                },
+                "custom_devices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CustomDevice"
+                    }
+                }
+            },
+            "required": [
+                "author",
+                "created_at",
+                "custom_devices",
+                "gatt_devices",
+                "id",
+                "name",
+                "schema_version",
+                "spec_version",
+                "updated_at"
+            ],
+            "title": "Welcome"
+        },
+        "Author": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "organization": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                }
+            },
+            "required": [
+                "email",
+                "name",
+                "organization"
+            ],
+            "title": "Author"
+        },
+        "CustomDevice": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "ble": {
+                    "$ref": "#/definitions/CustomDeviceBle"
+                },
+                "data_streams": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/DataStream"
+                    }
+                }
+            },
+            "required": [
+                "ble",
+                "data_streams",
+                "description",
+                "name"
+            ],
+            "title": "CustomDevice"
+        },
+        "CustomDeviceBle": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "ble_registered_services": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "info_service_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "epoch_char_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "spec_version_char_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "spec_id_char_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "refresh_epoch_char_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            },
+            "required": [
+                "ble_registered_services",
+                "epoch_char_uuid",
+                "info_service_uuid",
+                "refresh_epoch_char_uuid",
+                "spec_id_char_uuid",
+                "spec_version_char_uuid"
+            ],
+            "title": "CustomDeviceBle"
+        },
+        "DataStream": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "precision": {
+                    "type": "string",
+                    "enum": ["ms", "us"]   
+                },
+                "offset_data_value": {
+                    "$ref": "#/definitions/DataValue"
+                },
+                "config_values": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConfigValue"
+                    }
+                },
+                "data_values": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/DataValue"
+                    }
+                },
+                "ble": {
+                    "$ref": "#/definitions/DataStreamBle"
+                }
+            },
+            "required": [
+                "ble",
+                "config_values",
+                "data_values",
+                "description",
+                "id",
+                "name",
+                "offset_data_value",
+                "precision"
+            ],
+            "title": "DataStream"
+        },
+        "DataStreamBle": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "service_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "data_char_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "config_char_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            },
+            "required": [
+                "config_char_uuid",
+                "data_char_uuid",
+                "service_uuid"
+            ],
+            "title": "DataStreamBle"
+        },
+        "ConfigValue": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "length": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "anyOf": [
+                        {
+                            "type": "null"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                "data_type": {
+                    "$ref": "#/definitions/DataType"
+                },
+                "selection_type": {
+                    "$ref": "#/definitions/ConfigSelectionType"
+                },
+                "default_value": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                        }
+                    ],
+                },
+                "options": {
+                    "anyOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Option"
+                            }
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "range": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Range"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "data_type",
+                "default_value_int",
+                "description",
+                "index",
+                "length",
+                "name",
+                "options",
+                "range",
+                "selection_type",
+                "unit"
+            ],
+            "title": "ConfigValue"
+        },
+        "Option": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "value_int": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "description",
+                "name",
+                "value_int"
+            ],
+            "title": "Option"
+        },
+        "Range": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "start": {
+                    "type": "integer"
+                },
+                "end": {
+                    "type": "integer"
+                },
+                "step": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "end",
+                "start",
+                "step"
+            ],
+            "title": "Range"
+        },
+        "DataValue": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "length": {
+                    "type": "integer"
+                },
+                "data_type": {
+                    "type": "string"
+                },
+                "multiplier": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "variable_type": {
+                    "type": "string"
+                },
+                "depends_on": {
+                    "type": "null"
+                },
+                "type": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "description",
+                "index",
+                "length",
+                "multiplier",
+                "name",
+                "unit",
+                "variable_type"
+            ],
+            "title": "DataValue"
+        },
+        "GattDevice": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "services": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "description",
+                "name",
+                "services"
+            ],
+            "title": "GattDevice"
+        }
+    }
+}

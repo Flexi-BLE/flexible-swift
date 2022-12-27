@@ -1,11 +1,11 @@
 import XCTest
-@testable import aeble
+@testable import flexiBLE_Core
 
-final class aebleTests: XCTestCase {
+final class flexiBLE_CoreTests: XCTestCase {
     func testExample() throws {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct
         // results.
-//        XCTAssertEqual(aeble().text, "Hello, World!")
+        XCTAssertEqual(flexiBLE_Core().text, "Hello, World!")
     }
 }

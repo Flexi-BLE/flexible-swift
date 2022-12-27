@@ -2,39 +2,12 @@
   "object": {
     "pins": [
       {
-        "package": "CSV.swift",
-        "repositoryURL": "https://github.com/yaslab/CSV.swift",
-        "state": {
-          "branch": null,
-          "revision": "81d2874c51db364d7e1d71b0d99018a294c87ac1",
-          "version": "2.4.3"
-        }
-      },
-      {
         "package": "GRDB",
         "repositoryURL": "https://github.com/groue/GRDB.swift.git",
         "state": {
           "branch": "master",
-          "revision": "9b0e41ad586d4a52d67143a73732e99e38c29d86",
+          "revision": "7b63ddf54232db97943759e2b022cf61c5d9e745",
           "version": null
-        }
-      },
-      {
-        "package": "Gzip",
-        "repositoryURL": "https://github.com/1024jp/GzipSwift",
-        "state": {
-          "branch": null,
-          "revision": "ba0b6cb51cc6202f896e469b87d2889a46b10d1b",
-          "version": "5.1.1"
-        }
-      },
-      {
-        "package": "influxdb-client-swift",
-        "repositoryURL": "https://github.com/influxdata/influxdb-client-swift",
-        "state": {
-          "branch": null,
-          "revision": "4948e6e2100e27bfe4233e6be9fae72175d2dbe1",
-          "version": "1.1.0"
         }
       }
     ]
