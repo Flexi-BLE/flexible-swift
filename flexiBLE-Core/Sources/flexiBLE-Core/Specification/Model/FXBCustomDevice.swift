@@ -7,12 +7,12 @@
 
 import Foundation
 
-public struct FXBSpecCustomDevice: Codable, Identifiable {
+public class FXBSpecCustomDevice: Codable, Identifiable {
     public let id: UUID
     public let name, customDeviceDescription: String
     private(set) var registeredGattServices: [FXBSpecRegisteredGATTService]
     public let writeDelayMS: Int
-    private(set) var dataStreams: [String:FXBSpecDataStream]
+    private var _dataStreams: [String:FXBSpecDataStream]
     
     public init(name: String, description: String?=nil, registeredGattServices: [FXBSpecRegisteredGATTService]?=nil, writeDelayMS: Int=500) {
         
@@ -21,11 +21,27 @@ public struct FXBSpecCustomDevice: Codable, Identifiable {
         self.customDeviceDescription = description ?? ""
         self.registeredGattServices = registeredGattServices ?? []
         self.writeDelayMS = writeDelayMS
-        self.dataStreams = [:]
+        self._dataStreams = [:]
     }
     
-    public mutating func add(_ dataStream: FXBSpecDataStream, forKey name: String) {
-        dataStreams[name] = dataStream
+    public var dataStreams: [FXBSpecDataStream] {
+        return Array(_dataStreams.values)
+    }
+    
+    public var dataStreamKeys: [String] {
+        return Array(_dataStreams.keys)
+    }
+    
+    public func dataStream(forKey key: String) -> FXBSpecDataStream? {
+        return _dataStreams[key]
+    }
+    
+    public func removeDataSteam(forKey key: String) {
+        self._dataStreams[key] = nil
+    }
+    
+    public func add(_ dataStream: FXBSpecDataStream, forKey name: String) {
+        _dataStreams[name] = dataStream
     }
 
     internal enum CodingKeys: String, CodingKey {
@@ -33,7 +49,7 @@ public struct FXBSpecCustomDevice: Codable, Identifiable {
         case customDeviceDescription = "description"
         case registeredGattServices = "registered_gatt_services"
         case writeDelayMS = "write_delay_ms"
-        case dataStreams = "data_streams"
+        case _dataStreams = "data_streams"
     }
 }
 
