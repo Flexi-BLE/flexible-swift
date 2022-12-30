@@ -9,6 +9,40 @@ import XCTest
 @testable import flexiBLE_Core
 
 final class BitTests: XCTestCase {
+    
+    func testBitToFixedUInt() throws {
+        var byte = [Bit](repeating: .zero, count: 8)
+    
+        XCTAssert(byte.toFixWidthInt() == 0, "zero should be zero")
+        
+        byte = [Bit](repeating: .one, count: 16)
+        XCTAssert(byte.toFixWidthInt() == UInt16.max, "should represent \(UInt16.max)")
+        
+        byte = UInt16(85).bits()
+        XCTAssert(byte.toFixWidthInt() == UInt(85), "should represent 85")
+        
+        let twelveBits = [.one, .zero, .one, .one] + [Bit](repeating: .zero, count: 8)
+        XCTAssert(twelveBits.toFixWidthInt() == UInt16(2816), "should represent 2816")
+        XCTAssert(twelveBits.toFixWidthInt() == UInt32(2816), "should represent 2816")
+        XCTAssert(twelveBits.toFixWidthInt() == UInt64(2816), "should represent 2816")
+    }
+    
+    func testBitToFixedInt() throws {
+        var value = 0
+        var bits = Int(value).bits()
+        XCTAssert(bits.toFixWidthInt() == value, "\(value) should be \(value)")
+        
+        value = -1
+        bits = Int(value).bits()
+        XCTAssert(bits.toFixWidthInt() == value, "\(value) should be \(value)")
+        XCTAssert(bits.toFixWidthInt() == Int8(value), "\(value) should be \(value)")
+        XCTAssert(bits.toFixWidthInt() == Int64(value), "\(value) should be \(value)")
+        
+        // when using signed integers -- a full byte value is expected. These results are not useful.
+        bits = [.one, .zero, .one]
+        XCTAssert(bits.toFixWidthInt() == Int8(-3), "zero should be zero")
+        XCTAssert(bits.toFixWidthInt() == Int16(-3), "zero should be zero")
+    }
 
     func testUInt8() throws {
         var  value: UInt8 = 0
@@ -80,5 +114,28 @@ final class BitTests: XCTestCase {
         
         XCTAssert(value.bits() == bits, "\(value) should be \(value)")
         XCTAssert(value.bytes() == bytes, "\(value) should be \(value)")
+    }
+    
+    func testInttoBytestoBit() throws {
+        let value = UInt16.max
+        let bytes = value.bytes()
+        let bits = value.bits()
+        XCTAssert(bytes.bits() == bits)
+        
+    }
+    
+    func testExtraction() throws {
+        let bits: [Bit] = [Bit](repeating: .zero, count: 100) + [.one, .zero, .one, .zero, .one] + [Bit](repeating: .zero, count: 100)
+        XCTAssert(Array(bits[100...104]).toFixWidthInt() == UInt(21))
+    }
+    
+    func testFloat() throws {
+        var value: Float = 0
+        var bits = [Bit](repeating: .zero, count: 32)
+        var bytes = [UInt8](repeating: 0, count: 8)
+    
+        
+        XCTAssert(value.bits() == bits, "\(value) should be \(value)")
+//        XCTAssert(value.bytes() == bytes, "\(value) should be \(value)")
     }
 }

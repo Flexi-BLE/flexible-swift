@@ -8,9 +8,6 @@
 import Foundation
 
 
-
-typealias Byte = UInt8
-
 extension Data {
     
 }
