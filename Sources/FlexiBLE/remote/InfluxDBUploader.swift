@@ -7,6 +7,7 @@
 
 import Foundation
 import GRDB
+import os
 
 public class InfluxDBUploader: FXBRemoteDatabaseUploader {
     public var state: FXBDataUploaderState
@@ -15,6 +16,8 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
 
     
     public private (set) var estNumRecs: Int
+    
+    private let logger = Logger(subsystem: "com.blainerothrock.flexible", category: "uploader")
     
     public var totalUploaded: Int {
         didSet {
@@ -44,7 +47,7 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
         token: String,
         startDate: Date?=nil,
         endDate: Date?=nil,
-        batchSize: Int=50,
+        batchSize: Int=2500,
         deviceId: String
     ) {
         self.url = url
@@ -114,6 +117,7 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
                 }
                 
                 do {
+                    logger.info("starting upload for \(tableStatus.table.tableName)")
                     let records = try await tableStatus.table.ILPQuery(
                         from: startDate,
                         to: endDate,
@@ -121,6 +125,11 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
                         limit: batchSize,
                         deviceId: deviceId
                     )
+                    logger.info("\(records.count) records found")
+                    
+                    if records.count == 0 {
+                        tableStatus.totalRemaining = 0
+                    }
                     
                     let success = try await records.ship(
                         url: url,
@@ -129,23 +138,37 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
                         token: token
                     )
                     
+                    logger.info("upload success?: \(success)")
+                    
                     guard success else {
                         self.state = .error(msg: "unable to upload records")
                         return
                     }
                     
-                    try await tableStatus.table.updateUpload(lines: records)
+                    await updateUploaded(records: records, tableStatus: tableStatus)
                     
-                    tableStatus.uploaded += records.count
-                    tableStatus.totalRemaining -= records.count
-                    
-                    self.totalUploaded += records.count
                 } catch {
                     self.state = .error(msg: "error querying records for \(tableStatus.table.tableName): error \(error.localizedDescription)")
                 }
             } else {
                 self.state = .done
             }
+        }
+    }
+    
+    private func updateUploaded(records: [ILPRecord], tableStatus: FXBTableUploadState) async {
+        do {
+            try await tableStatus.table.updateUpload(lines: records)
+            
+            tableStatus.uploaded += records.count
+            tableStatus.totalRemaining -= records.count
+            
+            self.totalUploaded += records.count
+            
+            logger.info("updated database records")
+        } catch {
+            self.state = .error(msg: "error updating uploaded state for \(tableStatus.table.tableName): error \(error.localizedDescription)")
+            logger.error("failed to update database records")
         }
     }
     
@@ -164,6 +187,4 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
         
         return tmpTotal
     }
-    
-    
 }

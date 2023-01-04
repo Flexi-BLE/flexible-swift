@@ -89,7 +89,9 @@ extension Array where Element == ILPRecord {
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         req.httpBody = self.map({ $0.line }).joined(separator: "\n").data(using: .utf8)
         
-        guard self.count > 0 else { return false }
+        guard self.count > 0 else {
+            return true
+        }
         
         webLog.debug("uploading records, sample: \(self[0].line)")
         
@@ -99,7 +101,7 @@ extension Array where Element == ILPRecord {
             return false
         }
         if (200...299).contains(httpRes.statusCode) {
-            webLog.info("successful influx upload: \(httpRes.statusCode)")
+            webLog.info("successful influx upload for \(self.first?.measurement ?? "--unknown--"), count: \(self.count): \(httpRes.statusCode)")
             return true
         } else {
             webLog.error("error: \(String(data: data, encoding: .utf8) ?? "--unknown--")")

@@ -242,7 +242,7 @@ extension FXBTimeSeriesTable {
                   let ts = Date.fromSQLString(tsStr),
                   let deviceName: String = rec.getValue(for: "device"),
                   let spec = specs[specId],
-                  let device = spec.devices.first(where: { $0.name == deviceName }),
+                  let device = spec.devices.first(where: { deviceName.starts(with: $0.name) }),
                   let measurement = device.dataStreams.first(where: { $0.name == name.replacingOccurrences(of: "_config", with: "") }) else {
                 continue
             }
