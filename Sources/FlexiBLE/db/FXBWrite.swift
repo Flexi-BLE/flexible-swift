@@ -72,6 +72,25 @@ public struct FXBWrite {
         }
     }
     
+    // MARK: - Device Upload
+    public func recordUpload(success: Bool, byteSize: Int, numberOfRecords: Int, bucket: String?, measurement: String?, errorMessage: String?) async throws -> Int64 {
+        
+        return try await dbMgr.dbQueue.write { (db) -> Int64 in
+            var rec = FXBDataUpload(
+                status: .success,
+                ts: Date.now,
+                byteSize: byteSize,
+                numberOfRecords: numberOfRecords,
+                bucket: bucket,
+                measurement: measurement,
+                errorMessage: errorMessage
+            )
+            
+            try rec.insert(db)
+            return rec.id!
+        }
+    }
+    
     //MARK: - Device Spec
     public func recordSpec(_ spec: FXBSpec) async throws -> Int64 {
         let externalId = spec.id

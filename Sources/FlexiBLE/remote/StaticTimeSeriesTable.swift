@@ -465,4 +465,15 @@ extension FXBTimeSeriesTable {
             try db.execute(sql: q)
         }
     }
+    
+    func purgeUploadedRecords() async throws {
+        try await FXBDBManager.shared.dbQueue.write { db in
+            let q = """
+                DELETE FROM \(tableName)
+                WHERE uploaded = true
+            """
+        
+            try db.execute(sql: q)
+        }
+    }
 }
