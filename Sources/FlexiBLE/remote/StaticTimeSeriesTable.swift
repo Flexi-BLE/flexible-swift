@@ -152,24 +152,6 @@ extension FXBTimeSeriesTable {
                         }
                     }
                 }
-//                switch dv.type {
-//                case .float:
-//                    if let v: Float = rec.getValue(for: dv.name) {
-//                        ilp.field(dv.name, float: v)
-//                    }
-//                case .int:
-//                    if let v: Int = rec.getValue(for: dv.name) {
-//                        ilp.field(dv.name, int: v)
-//                    }
-//                case .string:
-//                    if let v: String = rec.getValue(for: dv.name) {
-//                        ilp.field(dv.name, str: v)
-//                    }
-//                case .unsignedInt:
-//                    if let v: UInt = rec.getValue(for: dv.name) {
-//                        ilp.field(dv.name, uint: v)
-//                    }
-//                }
             }
             
             ilps.append(ilp)
@@ -242,7 +224,7 @@ extension FXBTimeSeriesTable {
                   let ts = Date.fromSQLString(tsStr),
                   let deviceName: String = rec.getValue(for: "device"),
                   let spec = specs[specId],
-                  let device = spec.devices.first(where: { $0.name == deviceName }),
+                  let device = spec.devices.first(where: { deviceName.starts(with: $0.name) }),
                   let measurement = device.dataStreams.first(where: { $0.name == name.replacingOccurrences(of: "_config", with: "") }) else {
                 continue
             }
@@ -462,6 +444,17 @@ extension FXBTimeSeriesTable {
             """
             
             
+            try db.execute(sql: q)
+        }
+    }
+    
+    func purgeUploadedRecords() async throws {
+        try await FXBDBManager.shared.dbQueue.write { db in
+            let q = """
+                DELETE FROM \(tableName)
+                WHERE uploaded = true
+            """
+        
             try db.execute(sql: q)
         }
     }

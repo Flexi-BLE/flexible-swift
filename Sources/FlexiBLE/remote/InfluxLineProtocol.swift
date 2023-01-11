@@ -71,40 +71,66 @@ internal class ILPRecord {
     }
 }
 
+enum InfluxDBUploadError: Error {
+    case invalidURL
+    case unknownHttpResult
+    case httpError(statusCode: Int, message: String)
+}
+
+extension InfluxDBUploadError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .invalidURL: return "Invalild Influx URL"
+        case .unknownHttpResult: return "Unable to parse HTTP response"
+        case .httpError(let statusCode, let message):
+            return "HTTP Error (\(statusCode)): \(message)"
+        }
+    }
+}
+
 extension Array where Element == ILPRecord {
-    func ship(url baseURL: URL, org: String, bucket: String, token: String) async throws -> Bool {
-        var urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
+    func ship(with credentials: InfluxDBCredentials) async -> Result<Bool, Error> {
+        var urlComponents = URLComponents(url: credentials.url, resolvingAgainstBaseURL: false)
         urlComponents?.queryItems = [
-            URLQueryItem(name: "org", value: org),
-            URLQueryItem(name: "bucket", value: bucket)
+            URLQueryItem(name: "org", value: credentials.org),
+            URLQueryItem(name: "bucket", value: credentials.bucket)
         ]
         guard let url = urlComponents?.url else {
-            return false
+            return .failure(InfluxDBUploadError.invalidURL)
         }
 
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
-        req.setValue("Token \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("Token \(credentials.token)", forHTTPHeaderField: "Authorization")
         req.setValue("text/plain; charset=utf-8", forHTTPHeaderField: "Content-Type")
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         req.httpBody = self.map({ $0.line }).joined(separator: "\n").data(using: .utf8)
         
-        guard self.count > 0 else { return false }
+        guard self.count > 0 else {
+            return .success(true)
+        }
         
         webLog.debug("uploading records, sample: \(self[0].line)")
         
-        let (data, res) = try await URLSession.shared.data(for: req)
-
-        guard let httpRes = res as? HTTPURLResponse else {
-            return false
+        do {
+            let (data, res) = try await URLSession.shared.data(for: req)
+            
+            guard let httpRes = res as? HTTPURLResponse else {
+                return .failure(InfluxDBUploadError.unknownHttpResult)
+            }
+            
+            if (200...299).contains(httpRes.statusCode) {
+                webLog.info("successful influx upload for \(self.first?.measurement ?? "--unknown--"), count: \(self.count): \(httpRes.statusCode)")
+                return .success(true)
+            } else {
+                let responseMessage = String(data: data, encoding: .utf8) ?? "--unknown--"
+                webLog.error("error: \(responseMessage)")
+                return .failure(InfluxDBUploadError.httpError(statusCode: httpRes.statusCode, message: responseMessage))
+            }
+        } catch {
+            return .failure(error)
         }
-        if (200...299).contains(httpRes.statusCode) {
-            webLog.info("successful influx upload: \(httpRes.statusCode)")
-            return true
-        } else {
-            webLog.error("error: \(String(data: data, encoding: .utf8) ?? "--unknown--")")
-        }
 
-        return false
+        
     }
 }
