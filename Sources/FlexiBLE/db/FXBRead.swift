@@ -112,6 +112,11 @@ public struct FXBRead {
                     return nil
                 }
                 
+                guard specId == FlexiBLE.shared.specId else {
+                    pLog.error("latest configuration for \(dataStreamName) was under a different specification version")
+                    return nil
+                }
+                
                 // decode specification data
                 let spec = try Data.sharedJSONDecoder.decode(FXBSpec.self, from: specTable.data)
                 
