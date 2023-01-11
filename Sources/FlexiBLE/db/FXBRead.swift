@@ -76,6 +76,72 @@ public struct FXBRead {
         }
     }
     
+    // MARK: - Configurations
+    public func getLatestConfigData(forDataStream dataStreamName: String, inDevice deviceName: String) async -> Data? {
+        do {
+            
+            return try await dbMgr.dbQueue.read { db -> Data? in
+                
+                // query for table pargma (dynamic table creation)
+                let tableRecRows = try Row.fetchAll(db, sql: "PRAGMA table_info(\(dataStreamName)_config)")
+                let tableInfo = tableRecRows.map({FXBTableInfo.make(from: $0)})
+                        
+                guard tableInfo.count > 0 else {
+                    pLog.error("unable to find table pragma in fetching latest config for \(dataStreamName)")
+                    return nil
+                }
+                
+                // query for latest record
+                let q = """
+                    SELECT * FROM \(dataStreamName)_config
+                    ORDER BY ts DESC
+                    LIMIT 1
+                """
+                
+                guard let configRow = try Row.fetchOne(db, sql: q) else {
+                    pLog.info("no latest config record found for \(dataStreamName)")
+                    return nil
+                }
+                // convert to generic row (dynamic record)
+                let lastConfig = GenericRow(metadata: tableInfo, row: configRow)
+                
+                // get specification
+                guard let specId: Int64 = lastConfig.getValue(for: "spec_id"),
+                      let specTable = try FXBSpecTable.fetchOne(db, key: specId) else {
+                    pLog.error("cannot extract specification for latest config of \(dataStreamName)")
+                    return nil
+                }
+                
+                // decode specification data
+                let spec = try Data.sharedJSONDecoder.decode(FXBSpec.self, from: specTable.data)
+                
+                // get specific data stream
+                guard let dataStream = spec
+                    .devices.first(where: { deviceName.starts(with: $0.name) })?
+                    .dataStreams.first(where: { $0.name == dataStreamName }) else {
+                    
+                    pLog.error("unable to find data stream specification cooresponding to \(dataStreamName)")
+                    return nil
+                }
+                
+                // build config byte array
+                var lastConfigData = Data()
+                for configValue in dataStream.configValues {
+                    guard let val: String = lastConfig.getValue(for: configValue.name) else {
+                        pLog.error("unable to extract value for value \(configValue.name) in lastest \(dataStreamName) config")
+                        return nil
+                    }
+                    lastConfigData += configValue.pack(value: val)
+                }
+                
+                return lastConfigData
+            }
+            
+        } catch {
+            return nil
+        }
+    }
+    
     
     // MARK: - Aggregate
     internal func dynamicTableNames(active: Bool = false) async -> [String] {

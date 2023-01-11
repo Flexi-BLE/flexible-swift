@@ -73,7 +73,12 @@ public class FXBDevice: Identifiable, Device {
                     
                     if self.connectionState != .connected {
                         bleLog.info("\(self.deviceName) Initialized: (\(referenceDate)")
-                        self.connectionManager?.serviceHandlers.forEach { $0.writeDefaultConfig(peripheral: self.cbPeripheral) }
+                        
+                        self.connectionManager?.serviceHandlers.forEach {
+                            $0.writeLastConfig(peripheral: self.cbPeripheral)
+//                            $0.writeDefaultConfig(peripheral: self.cbPeripheral)
+                        }
+                        
                         DispatchQueue.main.asyncAfter(
                             deadline: .now() + .milliseconds(500),
                             execute: {

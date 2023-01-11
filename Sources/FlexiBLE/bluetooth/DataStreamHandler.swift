@@ -30,6 +30,10 @@ public class DataStreamHandler {
         return def.configValues.reduce(Data(), { $0 + $1.pack(value: $1.defaultValue) })
     }
     
+    private func lastConfig() async -> Data {
+        return await FXBRead().getLatestConfigData(forDataStream: def.name, inDevice: deviceName) ?? defaultConfig
+    }
+    
     init(uuid: CBUUID, deviceName: String, dataStream: FXBDataStream) {
         self.serviceUuid = uuid
         self.deviceName = deviceName
@@ -194,6 +198,13 @@ public class DataStreamHandler {
     
     internal func writeDefaultConfig(peripheral: CBPeripheral) {
         self.writeConfig(peripheral: peripheral, data: self.defaultConfig)
+    }
+    
+    internal func writeLastConfig(peripheral: CBPeripheral) {
+        Task {
+            let latest = await self.lastConfig()
+            self.writeConfig(peripheral: peripheral, data: latest)
+        }
     }
 }
 
