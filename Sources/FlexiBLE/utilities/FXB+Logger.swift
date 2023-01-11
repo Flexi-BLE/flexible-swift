@@ -22,3 +22,5 @@ internal let webLog = Logger(subsystem: "com.blainerothrock.flexible", category:
 
 /// temp developmental logging
 internal let devLog = Logger(subsystem: "com.blainerothrock.flexible", category: "dev")
+
+let uploadLog = Logger(subsystem: "com.blainerothrock.flexible", category: "uploader")

@@ -45,57 +45,15 @@ public enum FXBDataUploaderState {
     }
 }
 
-//public protocol FXBRemoteDatabaseUploader: ObservableObject {
-//    var state: FXBDataUploaderState { get }
-//    var stateValue: Published<FXBDataUploaderState> { get }
-//    var statePublisher: Published<FXBDataUploaderState>.Publisher { get }
-//
-//    var progress: Float { get }
-//    var progressValue: Published<Float> { get }
-//    var progressPublisher: Published<Float>.Publisher { get }
-//
-//    var estNumRecs: Int { get }
-//    var estNumRecsValue: Published<Int> { get }
-//    var estNumRecsPublisher: Published<Int>.Publisher { get }
-//
-//    var totalUploaded: Int { get }
-//    var totalUploadedValue: Published<Int> { get }
-//    var totalUploadedPublisher: Published<Int>.Publisher { get }
-//
-//    var batchSize: Int { get }
-//    var tableStatuses: [FXBTableUploadState] { get }
-//
-//
-//    func start()
-//    func pause()
-//}
-
 public protocol FXBRemoteDatabaseUploader {
     var state: FXBDataUploaderState { get }
     var progress: Float { get }
     var estNumRecs: Int { get }
     var totalUploaded: Int { get }
-    var batchSize: Int { get }
-    var tableStatuses: [FXBTableUploadState] { get }
+    var tableUploaders: [FXBTableUploader] { get }
     var statusMessage: String { get }
     
     
-    func start()
+    func upload() async -> Result<Bool, Error>
     func pause()
-}
-
-public class FXBTableUploadState {
-    var table: FXBTimeSeriesTable
-    var startDate: Date?
-    var endDate: Date?
-    var totalRemaining: Int
-    var uploaded: Int
-    
-    init(table: FXBTimeSeriesTable) {
-        self.table = table
-        self.startDate = nil
-        self.endDate = nil
-        self.totalRemaining = 0
-        self.uploaded = 0
-    }
 }

@@ -152,24 +152,6 @@ extension FXBTimeSeriesTable {
                         }
                     }
                 }
-//                switch dv.type {
-//                case .float:
-//                    if let v: Float = rec.getValue(for: dv.name) {
-//                        ilp.field(dv.name, float: v)
-//                    }
-//                case .int:
-//                    if let v: Int = rec.getValue(for: dv.name) {
-//                        ilp.field(dv.name, int: v)
-//                    }
-//                case .string:
-//                    if let v: String = rec.getValue(for: dv.name) {
-//                        ilp.field(dv.name, str: v)
-//                    }
-//                case .unsignedInt:
-//                    if let v: UInt = rec.getValue(for: dv.name) {
-//                        ilp.field(dv.name, uint: v)
-//                    }
-//                }
             }
             
             ilps.append(ilp)
