@@ -68,6 +68,12 @@ internal class FXBDBMigrator {
                 ifNotExists: true,
                 body: FXBDataUpload.create
             )
+            
+            try? db.create(
+                table: FXBBackup.databaseTableName,
+                ifNotExists: true,
+                body: FXBBackup.create
+            )
         }
         
         #if DEBUG

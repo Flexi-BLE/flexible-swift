@@ -24,6 +24,14 @@ extension Date {
         return formatter.date(from: str)
     }
     
+    func timestamp() -> String {
+        let formatter = DateFormatter()
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyyMMdd_HHmmss"
+        
+        return formatter.string(from: self)
+    }
+    
     
     var unixEpochMilliseconds: TimeInterval {
         return (self.timeIntervalSince1970 * 1000.0).rounded()

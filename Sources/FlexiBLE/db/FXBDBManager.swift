@@ -13,22 +13,44 @@ public final class FXBDBManager {
     
     internal static var shared = FXBDBManager()
     
-    internal var dbQueue: DatabaseQueue
+    internal var dbQueue: DatabasePool
     private let migrator = FXBDBMigrator()
     public let dbPath = FXBDBManager.documentDirPath()
     
+    internal var archiveSizeThresholdBytes: UInt64?=nil
+    internal var activeKeepTimeInterval: Double = 1_000_000
+    
+    private var lastActiveDBSizeCheck: Date = Date.now
+    private var activeDBCheckInterval: Double = 30
+    private var isArchving: Bool = false
+    
+    static let activeDBName: String = "FXB_active.sqlite"
+    
     /// Create and retrurn data directory url in application file structure
-    private static func documentDirPath(for dbName: String="aeble") -> URL {
-        let fileManager = FileManager.default
-        
+    private static func documentDirPath() -> URL {
+        return Self.dbDirectory().appendingPathComponent(Self.activeDBName)
+    }
+    
+    private static func dbDirectory() -> URL {
         do {
-            let dirPath = try fileManager
-                .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-                    .appendingPathComponent("resources", isDirectory: true)
+            let dirPath = try FileManager.default
+                .url(
+                    for: .documentDirectory,
+                    in: .userDomainMask,
+                    appropriateFor: nil,
+                    create: true
+                )
+                .appendingPathComponent(
+                    "resources",
+                    isDirectory: true
+                )
             
-            try fileManager.createDirectory(at: dirPath, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(
+                at: dirPath,
+                withIntermediateDirectories: true
+            )
             
-            return dirPath.appendingPathComponent("\(dbName).sqlite")
+            return dirPath
         } catch {
             fatalError("Unable to access document directory")
         }
@@ -47,7 +69,7 @@ public final class FXBDBManager {
         #endif
                     
         do {
-            self.dbQueue = try DatabaseQueue(
+            self.dbQueue = try DatabasePool(
                 path: self.dbPath.path,
                 configuration: configuration
             )
@@ -57,18 +79,8 @@ public final class FXBDBManager {
             fatalError("cannot create database")
         }
         
-        do {
-            try self.dbQueue.write { db in
-                let sql = """
-                    UPDATE \(FXBConnection.databaseTableName)
-                    SET \(FXBConnection.CodingKeys.disconnectedAt.stringValue) = '\(Date.now.SQLiteFormat())'
-                    WHERE \(FXBConnection.CodingKeys.disconnectedAt.stringValue) IS NULL;
-                """
-                try db.execute(sql: sql)
-            }
-        } catch {
-            pLog.error("unable to update handing connection records: \(error.localizedDescription)")
-        }
+        // in the event of application restart, update disconnection date of a any connection records
+        updateOrphandedConnectionRecords()
     }
 
     internal func erase() {
@@ -86,6 +98,22 @@ public final class FXBDBManager {
     /// replace space with underscores for dynamically naming tables in SQL
     private func tableName(from name: String) -> String {
         return name.replacingOccurrences(of: " ", with: "_").lowercased()
+    }
+    
+    /// Set all connection records with null disconnected date to current date.
+    private func updateOrphandedConnectionRecords() {
+        do {
+            try self.dbQueue.write { db in
+                let sql = """
+                    UPDATE \(FXBConnection.databaseTableName)
+                    SET \(FXBConnection.CodingKeys.disconnectedAt.stringValue) = '\(Date.now.SQLiteFormat())'
+                    WHERE \(FXBConnection.CodingKeys.disconnectedAt.stringValue) IS NULL;
+                """
+                try db.execute(sql: sql)
+            }
+        } catch {
+            pLog.error("unable to update handing connection records: \(error.localizedDescription)")
+        }
     }
     
     /// Inactivate a dynamically created table (update name and set active=0)
@@ -377,6 +405,17 @@ public final class FXBDBManager {
         } catch {
             bleLog.error("error inserting ble data records: \(error.localizedDescription)")
         }
+        
+        if let archiveSizeThresholdBytes = self.archiveSizeThresholdBytes,
+            Date.now.addingTimeInterval(-activeKeepTimeInterval) > lastActiveDBSizeCheck {
+            lastActiveDBSizeCheck = Date.now
+            if activeDBSize() > archiveSizeThresholdBytes, !isArchving {
+                isArchving = true
+                Task(priority: .background) {
+                    await createDBBackup(startingAt: Date.now.addingTimeInterval(-activeKeepTimeInterval), progressCallback: nil)
+                }
+            }
+        }
     }
     
     internal func dynamicConfigRecordInsert(
@@ -452,6 +491,113 @@ public final class FXBDBManager {
             })
         } catch {
             bleLog.error("error inserting heart rate record: \(error.localizedDescription)")
+        }
+    }
+    
+    /// created a db backup and purges records before a given time.
+    public func createDBBackup(startingAt date: Date, progressCallback: ((Bool, Float)->())?) async {
+        
+        pLog.info("dbbackup: Starting backup process")
+        
+        let backupName = "archive_\(date.timestamp()).sqlite"
+        let archivePath = Self.dbDirectory()
+            .appendingPathComponent(backupName)
+        
+        
+        var configuration = Configuration()
+        configuration.qos = .background
+        
+        do {
+            let archiveQueue = try DatabaseQueue(
+                path: archivePath.absoluteString,
+                configuration: configuration
+            )
+            
+            try self.dbQueue.backup(to: archiveQueue, progress: { progress in
+                let percent = Float(progress.completedPageCount) / Float(progress.totalPageCount)
+                pLog.info("dbbackup: database backup progress (complete: \(progress.isCompleted)): \(percent * 100.0)%")
+                
+                progressCallback?(progress.isCompleted, percent)
+            })
+            
+            // delete old data records
+            pLog.info("dbbackup: Deleting records before \(date)")
+            let tables = await activeDynamicTables()
+            
+            let activeSize = activeDBSize()
+            
+            try await self.dbQueue.write { [tables] db in
+//                try db.inSavepoint {
+                for table in tables {
+                    
+                    pLog.info("dbbackup: deleting data from \(table)_data before \(date.SQLiteFormat())")
+                    
+                    let sqlData = """
+                        DELETE FROM \(table)_data
+                        WHERE ts < '\(date.SQLiteFormat())'
+                    """
+                    
+                    try db.execute(sql: sqlData)
+                    
+//                        let sqlConfig = """
+//                            DELETE FROM \(table)_config
+//                            WHERE ts < '\(date.SQLiteFormat())'
+//                        """
+//
+//                        try db.execute(sql: sqlConfig)
+                
+                }
+                
+                let tsCol = Column("ts")
+                
+                try FXBHeartRate.filter(tsCol < date).deleteAll(db)
+                try FXBLocation.filter(tsCol < date).deleteAll(db)
+                try FXBDataUpload.filter(tsCol < date).deleteAll(db)
+                try FXBThroughput.filter(FXBThroughput.Columns.createdAt < date).deleteAll(db)
+                
+                var backup = FXBBackup(date: date, fileName: archivePath.absoluteString)
+                try backup.insert(db)
+                
+                
+                    
+//                    return .commit
+//                }
+                
+            }
+            
+
+            pLog.info("dbbackup: setting last archive to \(Date.now)")
+
+            self.isArchving = false
+            
+            
+        } catch {
+            self.isArchving = false
+            pLog.error("dbbackup: unable to create backup \(backupName): \(error.localizedDescription)")
+            
+        }
+        
+    }
+    
+    private func getLastArchive() -> Date? {
+        do {
+            return try dbQueue.write { db -> Date? in
+                return try FXBBackup.order(Column("createAt")).fetchOne(db)?.ts
+            }
+        } catch {
+            return nil
+        }
+    }
+    
+    private func activeDBSize() -> UInt64 {
+        let path = Self.dbDirectory().appendingPathComponent(Self.activeDBName)
+    
+        if let attr = try? FileManager.default.attributesOfItem(atPath: path.path) {
+            let size = attr[FileAttributeKey.size] as! UInt64
+            pLog.info("active database size: \(size) bytes")
+            return size
+        } else {
+            return 0
         }
     }
 }

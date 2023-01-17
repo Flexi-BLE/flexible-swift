@@ -4,7 +4,6 @@ import GRDB
 public final class FlexiBLE: ObservableObject {
     public static var shared = FlexiBLE()
     
-    
     public let conn: FXBConnectionManager
     public let db: FXBDBManager
     public let exp: FXBExp
@@ -27,6 +26,11 @@ public final class FlexiBLE: ObservableObject {
     public func setSpec(_ spec: FXBSpec) async throws {
         self.specId = try await self.write.recordSpec(spec)
         self.spec = spec
+    }
+    
+    public func setArchive(bytes: UInt64, keepInterval: TimeInterval) {
+        db.archiveSizeThresholdBytes = bytes
+        db.activeKeepTimeInterval = keepInterval
     }
     
     public func startScan(with spec: FXBSpec) {

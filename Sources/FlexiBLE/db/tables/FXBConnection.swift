@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  FXBConnection.swift
 //  
 //
 //  Created by Blaine Rothrock on 8/7/22.

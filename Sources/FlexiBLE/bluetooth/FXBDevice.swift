@@ -153,13 +153,14 @@ public class FXBRegisteredDevice: ObservableObject, Identifiable, Device {
     
     public let id: UUID = UUID()
     public let spec: FXBRegisteredDeviceSpec
-    @Published public var connectionManager: FXBRegisteredDeviceConnectionManager?
-    @Published public var connectionState: DeviceConnectionState = .disconnected
     public let loadedSpecVersion: String
     public let deviceName: String
     
     public let cbPeripheral: CBPeripheral
     public var connectionRecord: FXBConnection?
+    
+    @Published public var connectionManager: FXBRegisteredDeviceConnectionManager?
+    @Published public var connectionState: DeviceConnectionState = .disconnected
     
     internal init(spec: FXBRegisteredDeviceSpec, specVersion: String, deviceName: String, cbPeripheral: CBPeripheral) {
         self.spec = spec
