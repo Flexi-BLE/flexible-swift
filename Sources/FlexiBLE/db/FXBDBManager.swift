@@ -20,8 +20,7 @@ public final class FXBDBManager {
     internal var archiveSizeThresholdBytes: UInt64?=nil
     internal var activeKeepTimeInterval: Double = 1_000_000
     
-    private var lastActiveDBSizeCheck: Date = Date.now
-    private var activeDBCheckInterval: Double = 30
+    private var lastArchive: Date = Date.now
     private var isArchving: Bool = false
     
     static let activeDBName: String = "FXB_active.sqlite"
@@ -407,9 +406,9 @@ public final class FXBDBManager {
         }
         
         if let archiveSizeThresholdBytes = self.archiveSizeThresholdBytes,
-            Date.now.addingTimeInterval(-activeKeepTimeInterval) > lastActiveDBSizeCheck {
-            lastActiveDBSizeCheck = Date.now
-            if activeDBSize() > archiveSizeThresholdBytes, !isArchving {
+            Date.now.addingTimeInterval(-activeKeepTimeInterval) > lastArchive {
+            lastArchive = Date.now
+            if activeDBSize() >= archiveSizeThresholdBytes, !isArchving {
                 isArchving = true
                 Task(priority: .background) {
                     await createDBBackup(startingAt: Date.now.addingTimeInterval(-activeKeepTimeInterval), progressCallback: nil)
@@ -523,8 +522,6 @@ public final class FXBDBManager {
             // delete old data records
             pLog.info("dbbackup: Deleting records before \(date)")
             let tables = await activeDynamicTables()
-            
-            let activeSize = activeDBSize()
             
             try await self.dbQueue.write { [tables] db in
 //                try db.inSavepoint {
