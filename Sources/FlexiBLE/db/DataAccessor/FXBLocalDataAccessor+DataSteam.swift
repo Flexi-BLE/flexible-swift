@@ -103,9 +103,9 @@ extension FXBLocalDataAccessor {
                     if let _ = start, let _ = end {
                         dateClause = "ts BETWEEN :start AND :end"
                     } else if let _ = start {
-                        dateClause = "ts > :start"
+                        dateClause = "ts >= :start"
                     } else if let _ = end {
-                        dateClause = "ts < :end"
+                        dateClause = "ts =< :end"
                     }
                     
                     var sqlData = """
@@ -123,7 +123,7 @@ extension FXBLocalDataAccessor {
                     var sqlThroughput = """
                         UPDATE throughput
                         SET uploaded = true
-                        WHERE ts BETWEEN :start AND :end
+                        WHERE data_stream = :dataStream
                     """
                     
                     if !dateClause.isEmpty {

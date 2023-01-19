@@ -63,6 +63,8 @@ public class FXBTableUploader {
     func upload() async -> Result<Bool, Error> {
         let start = Date.now
         
+        dbLog.debug("data upload: starting upload for \(self.table.tableName) (\(self.totalRemaining)")
+        
         var records = await nextRecords()
         
         while !records.isEmpty {
@@ -70,6 +72,8 @@ public class FXBTableUploader {
             numberOfAPICalls += 1
             switch res {
             case .success(_):
+                
+                dbLog.error("data upload: successfully upload \(records.count) records")
                 
                 totalRemaining -= records.count
                 uploaded += records.count
@@ -103,7 +107,7 @@ public class FXBTableUploader {
             uploadLog.info("updated database records")
         } catch {
             errorMessage = "error updating uploaded flag: error \(error.localizedDescription)"
-            uploadLog.error("failed to update database records")
+            uploadLog.error("failed to update database records uploaded = true")
         }
     }
     

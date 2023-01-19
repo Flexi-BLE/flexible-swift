@@ -48,6 +48,8 @@ extension FXBUploadableTable {
         limit: Int=1000,
         deviceId: String
     ) async throws -> [ILPRecord] {
+        
+        dbLog.debug("data upload: querying records for \(tableName) from \(start?.timestamp() ?? "--none--") to \(end?.timestamp() ?? "--none--")")
 
         let records = try await FlexiBLE.shared.dbAccess?.dataStream.records(
             for: tableName,
@@ -305,7 +307,17 @@ extension FXBUploadableTable {
         let end = lines.map({ $0.timestamp }).max() ?? Date.now
         let start = lines.map({ $0.timestamp }).min() ?? Date.now
         
-        try await FlexiBLE.shared.dbAccess?.dataStream.updateUploaded(tableName: tableName, start: nil, end: nil)
+        dbLog.debug("data upload: updating upload flag for \(tableName) between \(start.timestamp()) and \(end.timestamp())")
+        
+        try await FlexiBLE
+            .shared
+            .dbAccess?
+            .dataStream
+            .updateUploaded(
+                tableName: tableName,
+                start: start,
+                end: end
+            )
     }
 
     func purgeUploadedRecords() async throws {
