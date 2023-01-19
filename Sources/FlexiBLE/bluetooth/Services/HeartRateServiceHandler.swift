@@ -28,10 +28,6 @@ internal class HeartRateServiceHandler: ServiceHandler {
             default: break
             }
         }
-        
-        Task {
-            await FXBDBManager.shared.createTable(for: .heartRate)
-        }
     }
     
     func didWrite(peripheral: CBPeripheral, uuid: CBUUID) {
@@ -56,18 +52,23 @@ internal class HeartRateServiceHandler: ServiceHandler {
             
             bleLog.debug("heart rate: \(hr)")
             Task { [hr] in
-                await FXBDBManager.shared.insert(
+                
+                var rec = FXBHeartRate(
                     bpm: hr,
                     sensorLocation: sensorLocation,
-                    specId: FlexiBLE.shared.specId
+                    ts: Date.now,
+                    deviceName: device.deviceName
                 )
                 
-                try? await FXBWrite().recordThroughput(
-                    deviceName: self.device.deviceName,
-                    dataStreamName: "heart_rate",
-                    byteCount: data.count,
-                    specId: FlexiBLE.shared.specId
-                 )
+                try FlexiBLE.shared.dbAccess?.heartRate.record(&rec)
+                
+                var throughput = FXBThroughput(
+                    dataStream: "heart_rate",
+                    bytes: data.count,
+                    deviceName: device.deviceName
+                )
+                
+                try FlexiBLE.shared.dbAccess?.throughput.record(&throughput)
             }
         case bodyLocationUuid:
             if let byte = data.first {

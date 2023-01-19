@@ -8,7 +8,7 @@
 import Foundation
 import GRDB
 
-public struct FXBLocation: Codable {
+public struct FXBLocation: Codable, FXBTimeSeriesRecord {
     public var id: Int64?
     public var latitude: Double
     public var longitude: Double
@@ -16,9 +16,10 @@ public struct FXBLocation: Codable {
     public var horizontalAccuracy: Double
     public var verticalAccuracy: Double
     public var ts: Date
+    public var deviceName: String
     public var createdAt: Date
     public var uploaded: Bool = false
-    internal var specId: Int64
+//    internal var specId: Int64
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -29,19 +30,20 @@ public struct FXBLocation: Codable {
         case horizontalAccuracy = "horizontal_acc"
         case verticalAccuracy = "vertical_acc"
         case ts
+        case deviceName = "device_name"
         case uploaded
-        case specId = "spec_id"
+//        case specId = "spec_id"
 
     }
     
-    init(
+    public init(
         latitude: Double,
         longitude: Double,
         altitude: Double,
         horizontalAccuracy: Double,
         verticalAccuracy: Double,
         ts: Date,
-        specId: Int64
+        deviceName: String
     ) {
         self.latitude = latitude
         self.longitude = longitude
@@ -49,8 +51,9 @@ public struct FXBLocation: Codable {
         self.horizontalAccuracy = horizontalAccuracy
         self.verticalAccuracy = verticalAccuracy
         self.ts = ts
+        self.deviceName = deviceName
         self.createdAt = Date.now
-        self.specId = specId
+//        self.specId = specId
     }
 }
 
@@ -64,9 +67,10 @@ extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
         static let horiztalAccuracy = Column(CodingKeys.horizontalAccuracy)
         static let verticalAccuracy = Column(CodingKeys.verticalAccuracy)
         static let ts = Column(CodingKeys.ts)
+        static let deviceName = Column(CodingKeys.deviceName)
         static let createdAt = Column(CodingKeys.createdAt)
         static let uploaded = Column(CodingKeys.uploaded)
-        static let specId = Column(CodingKeys.specId)
+//        static let specId = Column(CodingKeys.specId)
     }
     
     mutating public func didInsert(_ inserted: InsertionSuccess) {
@@ -83,9 +87,10 @@ extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.horizontalAccuracy.stringValue, .double)
         table.column(CodingKeys.verticalAccuracy.stringValue, .double)
         table.column(CodingKeys.ts.stringValue, .datetime).notNull().indexed()
+        table.column(CodingKeys.deviceName.stringValue, .text)
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
         table.column(CodingKeys.uploaded.stringValue, .boolean)
-        table.column(CodingKeys.specId.stringValue, .integer)
-            .references(FXBSpecTable.databaseTableName)
+//        table.column(CodingKeys.specId.stringValue, .integer)
+//            .references(FXBSpecTable.databaseTableName)
     }
 }

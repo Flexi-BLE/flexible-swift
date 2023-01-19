@@ -8,7 +8,7 @@
 import Foundation
 import GRDB
 
-enum FXBTimeSeriesTable {
+enum FXBUploadableTable {
     case experiment
     case heartRate
     case location
@@ -22,13 +22,13 @@ enum FXBTimeSeriesTable {
         case .timestamp: return FXBTimestamp.databaseTableName
         case .heartRate: return FXBHeartRate.databaseTableName
         case .location: return FXBLocation.databaseTableName
-        case .dynamicData(let name): return name
-        case .dynamicConfig(let name): return name
+        case .dynamicData(let name): return "\(name)_data"
+        case .dynamicConfig(let name): return "\(name)_config"
         }
     }
 }
 
-extension FXBTimeSeriesTable {
+extension FXBUploadableTable {
     func ILPQuery(from start: Date?=nil, to end: Date?=nil, uploaded: Bool=false, limit: Int, deviceId: String) async throws -> [ILPRecord] {
         switch self {
         case .heartRate: return try await IRPQueryHeartRate(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
@@ -40,26 +40,6 @@ extension FXBTimeSeriesTable {
         }
     }
     
-    private func getSpecs(for specIds: [Int64]) async throws -> [Int64: FXBSpec] {
-        return try await FXBDBManager.shared.dbQueue.read { db -> [Int64:FXBSpec] in
-            var dict: [Int64:FXBSpec] = [:]
-            
-            let specTbls = try FXBSpecTable
-                .filter(specIds.contains(Column("id")))
-                .fetchAll(db)
-            
-            for specTbl in specTbls {
-                let spec = try Data
-                    .sharedJSONDecoder
-                    .decode(FXBSpec.self, from: specTbl.data)
-                    
-                dict[specTbl.id!] = spec
-            }
-            
-            return dict
-        }
-    }
-    
     private func IRPQueryDynamicData(
         name: String,
         from start: Date?=nil,
@@ -68,60 +48,23 @@ extension FXBTimeSeriesTable {
         limit: Int=1000,
         deviceId: String
     ) async throws -> [ILPRecord] {
-        
-        let tableInfo = try await FXBDBManager
-            .shared.dbQueue.read({ db -> [FXBTableInfo] in
-            let result = try Row.fetchAll(db, sql: "PRAGMA table_info(\(name))")
-            return result.map({ FXBTableInfo.make(from: $0) })
-        })
-        
-        let records = try await FXBDBManager.shared
-            .dbQueue.read({ db -> [GenericRow] in
-            var q = "SELECT * FROM \(name)"
-            if uploaded != nil || start != nil || end != nil {
-                q += " WHERE"
-            }
-            if let uploaded = uploaded {
-                q += " uploaded = \(uploaded)"
-                if start != nil || end != nil {
-                    q += " AND"
-                }
-            }
-            if let start = start {
-                q += " ts >= '\(start.SQLiteFormat())'"
-                if end != nil {
-                    q += " AND"
-                }
-            }
-            if let end = end {
-                q += " ts < '\(end.SQLiteFormat())'"
-            }
-            
-            q += " LIMIT \(limit)"
-            
-            return try Row
-                .fetchAll(db, sql: q)
-                .map({ GenericRow(metadata: tableInfo, row: $0) })
-        })
-        
-        
-        
-        let specIds = Array(Set(records.compactMap({ r -> Int64? in
-            return r.getValue(for: "spec_id")
-        })))
-        
-        let specs = try await getSpecs(for: specIds)
+
+        let records = try await FlexiBLE.shared.dbAccess?.dataStream.records(
+            for: tableName,
+            from: start,
+            to: end,
+            deviceName: nil,
+            uploaded: uploaded
+        ) ?? []
         
         var ilps: [ILPRecord] = []
         
         for rec in records {
-            guard let specId: Int64 = rec.getValue(for: "spec_id"),
-                  let id: Int64 = rec.getValue(for: "id"),
+            guard let id: Int64 = rec.getValue(for: "id"),
                   let tsStr: String = rec.getValue(for: "ts"),
                   let ts = Date.fromSQLString(tsStr),
                   let deviceName: String = rec.getValue(for: "device"),
-                  let spec = specs[specId],
-                  let device = spec.devices.first(where: { deviceName.starts(with: $0.name) }),
+                  let device = FlexiBLE.shared.spec?.devices.first(where: { deviceName.starts(with: $0.name) }),
                   let measurement = device.dataStreams.first(where: { $0.name == name.replacingOccurrences(of: "_data", with: "") }) else {
                 continue
             }
@@ -129,16 +72,13 @@ extension FXBTimeSeriesTable {
             let ilp = ILPRecord(
                 staticTable: .dynamicData(name: name),
                 id: id,
-                measurement: name,
+                measurement: tableName,
                 timestamp: ts
             )
             
             ilp.tag("device_id", deviceId)
             
             for dv in measurement.dataValues {
-//                print(device)
-//                print(dv.name)
-//                print(dv.type)
                 if dv.variableType == .value {
                     if let v: Double = rec.getValue(for: dv.name) {
                         ilp.field(dv.name, float: Float(v))
@@ -170,61 +110,22 @@ extension FXBTimeSeriesTable {
         deviceId: String
     ) async throws -> [ILPRecord] {
         
-        let tableInfo = try await FXBDBManager
-            .shared.dbQueue.read({ db -> [FXBTableInfo] in
-            let result = try Row.fetchAll(db, sql: "PRAGMA table_info(\(name))")
-            return result.map({ FXBTableInfo.make(from: $0) })
-        })
-        
-        let records = try await FXBDBManager.shared
-            .dbQueue.read({ db -> [GenericRow] in
-            var q = "SELECT * FROM \(name)"
-            if uploaded != nil || start != nil || end != nil {
-                q += " WHERE"
-            }
-            if let uploaded = uploaded {
-                q += " uploaded = \(uploaded)"
-                if start != nil || end != nil {
-                    q += " AND"
-                }
-            }
-            if let start = start {
-                q += " ts >= '\(start.SQLiteFormat())'"
-                if end != nil {
-                    q += " AND"
-                }
-            }
-            if let end = end {
-                q += " ts < '\(end.SQLiteFormat())'"
-            }
-            
-            q += " LIMIT \(limit)"
-            
-            let recs = try Row
-                .fetchAll(db, sql: q)
-                
-                
-            return recs.map({ GenericRow(metadata: tableInfo, row: $0) })
-        })
-        
-        
-        
-        let specIds = Array(Set(records.compactMap({ r -> Int64? in
-            return r.getValue(for: "spec_id")
-        })))
-        
-        let specs = try await getSpecs(for: specIds)
+        let records = try await FlexiBLE.shared.dbAccess?.dataStreamConfig.get(
+            for: name,
+            from: start,
+            to: end,
+            uploaded: uploaded,
+            limit: limit
+        ) ?? []
         
         var ilps: [ILPRecord] = []
         
         for rec in records {
-            guard let specId: Int64 = rec.getValue(for: "spec_id"),
-                  let id: Int64 = rec.getValue(for: "id"),
+            guard let id: Int64 = rec.getValue(for: "id"),
                   let tsStr: String = rec.getValue(for: "ts"),
                   let ts = Date.fromSQLString(tsStr),
                   let deviceName: String = rec.getValue(for: "device"),
-                  let spec = specs[specId],
-                  let device = spec.devices.first(where: { deviceName.starts(with: $0.name) }),
+                  let device = FlexiBLE.shared.spec?.devices.first(where: { deviceName.starts(with: $0.name) }),
                   let measurement = device.dataStreams.first(where: { $0.name == name.replacingOccurrences(of: "_config", with: "") }) else {
                 continue
             }
@@ -232,7 +133,7 @@ extension FXBTimeSeriesTable {
             let ilp = ILPRecord(
                 staticTable: .dynamicConfig(name: name),
                 id: id,
-                measurement: name,
+                measurement: tableName,
                 timestamp: ts
             )
             
@@ -258,18 +159,13 @@ extension FXBTimeSeriesTable {
     }
     
     private func IRPQueryHeartRate(from start: Date?=nil, to end: Date?=nil, uploaded: Bool?=false, limit: Int=1000, deviceId: String) async throws -> [ILPRecord] {
-        let records = try await FXBDBManager.shared.dbQueue.read { db -> [FXBHeartRate] in
-            let tsCol = Column("ts")
-            let uploadedCol = Column("uploaded")
-            
-            var q = FXBHeartRate.all()
-            if let start = start { q = q.filter(tsCol >= start) }
-            if let end = end { q = q.filter(tsCol < end) }
-            if let uploaded = uploaded { q = q.filter(uploadedCol == uploaded) }
-            q = q.limit(limit, offset: 0)
-            
-            return try q.fetchAll(db)
-        }
+        
+        let records = try await FlexiBLE.shared.dbAccess?.heartRate.get(
+            from: start,
+            to: end,
+            uploaded: uploaded,
+            limit: limit
+        ) ?? []
         
         var ilps: [ILPRecord] = []
         
@@ -293,18 +189,13 @@ extension FXBTimeSeriesTable {
     }
     
     private func IRPQueryLocation(from start: Date?=nil, to end: Date?=nil, uploaded: Bool?=false, limit: Int=1000, deviceId: String) async throws -> [ILPRecord] {
-        let records = try await FXBDBManager.shared.dbQueue.read { db -> [FXBLocation] in
-            let tsCol = Column("ts")
-            let uploadedCol = Column("uploaded")
-            
-            var q = FXBLocation.all()
-            if let start = start { q = q.filter(tsCol >= start) }
-            if let end = end { q = q.filter(tsCol < end) }
-            if let uploaded = uploaded { q = q.filter(uploadedCol == uploaded) }
-            q = q.limit(limit, offset: 0)
-            
-            return try q.fetchAll(db)
-        }
+        
+        let records = try await FlexiBLE.shared.dbAccess?.location.get(
+            from: start,
+            to: end,
+            uploaded: uploaded,
+            limit: limit
+        ) ?? []
         
         var ilps: [ILPRecord] = []
         
@@ -332,19 +223,8 @@ extension FXBTimeSeriesTable {
     }
     
     private func IRPQueryExperiment(from start: Date?=nil, to end: Date?=nil, uploaded: Bool?=false, limit: Int=1000, deviceId: String) async throws -> [ILPRecord] {
-        let records = try await FXBDBManager.shared.dbQueue.read { db -> [FXBExperiment] in
-            let tsCol = Column("ts")
-            let endCol = Column("end")
-            let uploadedCol = Column("uploaded")
-            
-            var q = FXBExperiment.filter(endCol != nil)
-            if let start = start { q = q.filter(tsCol >= start) }
-            if let end = end { q = q.filter(tsCol < end) }
-            if let uploaded = uploaded { q = q.filter(uploadedCol == uploaded) }
-            q = q.limit(limit, offset: 0)
-            
-            return try q.fetchAll(db)
-        }
+        
+        let records: [FXBExperiment] = []
         
         var ilps: [ILPRecord] = []
         
@@ -394,19 +274,8 @@ extension FXBTimeSeriesTable {
     }
     
     private func IRPQueryTimestamp(from start: Date?=nil, to end: Date?=nil, uploaded: Bool?=false, limit: Int=1000, deviceId: String) async throws -> [ILPRecord] {
-        let records = try await FXBDBManager.shared.dbQueue.read { db -> [FXBTimestamp] in
-            let tsCol = Column("ts")
-            let uploadedCol = Column("uploaded")
-            
-            var q = FXBTimestamp.all()
-            if let start = start { q = q.filter(tsCol >= start) }
-            if let end = end { q = q.filter(tsCol < end) }
-            if let uploaded = uploaded { q = q.filter(uploadedCol == uploaded) }
-            q = q.limit(limit, offset: 0)
-            
-            
-            return try q.fetchAll(db)
-        }
+        
+        let records: [FXBTimestamp] = []
         
         var ilps: [ILPRecord] = []
         
@@ -433,29 +302,13 @@ extension FXBTimeSeriesTable {
     }
     
     func updateUpload(lines: [ILPRecord]) async throws {
-        try await FXBDBManager.shared.dbQueue.write { db in
-            let idMax = lines.map({ $0.recordId }).max() ?? 0
-            let idMin = lines.map({ $0.recordId }).min() ?? 0
-            
-            let q = """
-                UPDATE \(tableName)
-                SET uploaded = true
-                WHERE id >= \(idMin) AND id <= \(idMax)
-            """
-            
-            
-            try db.execute(sql: q)
-        }
-    }
-    
-    func purgeUploadedRecords() async throws {
-        try await FXBDBManager.shared.dbQueue.write { db in
-            let q = """
-                DELETE FROM \(tableName)
-                WHERE uploaded = true
-            """
+        let end = lines.map({ $0.timestamp }).max() ?? Date.now
+        let start = lines.map({ $0.timestamp }).min() ?? Date.now
         
-            try db.execute(sql: q)
-        }
+        try await FlexiBLE.shared.dbAccess?.dataStream.updateUploaded(tableName: tableName, start: nil, end: nil)
+    }
+
+    func purgeUploadedRecords() async throws {
+        try await FlexiBLE.shared.dbAccess?.dataStream.purgeUploaded(for: tableName)
     }
 }

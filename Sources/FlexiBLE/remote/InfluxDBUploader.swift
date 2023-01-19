@@ -109,17 +109,21 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
     }
     
     private func addDynamicTableStates() async {
-        let dtns = await FXBRead().dynamicTableNames()
-        for tn in dtns {
+        let dtns = try? FlexiBLE.shared
+            .dbAccess?
+            .dynamicTable
+            .tableNames() ?? []
+        
+        for tn in dtns ?? [] {
             if tableUploaders.first(where: { $0.table.tableName == tn }) == nil {
                 tableUploaders.append(FXBTableUploader(
-                    table: .dynamicData(name: "\(tn)_data"),
+                    table: .dynamicData(name: tn),
                     credentials: credentials,
                     startDate: startDate,
                     endDate: endDate
                 ))
                 tableUploaders.append(FXBTableUploader(
-                    table: .dynamicConfig(name: "\(tn)_config"),
+                    table: .dynamicConfig(name: tn),
                     credentials: credentials,
                     startDate: startDate,
                     endDate: endDate

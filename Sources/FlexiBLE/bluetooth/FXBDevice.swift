@@ -99,9 +99,10 @@ public class FXBDevice: Identifiable, Device {
                             self?.connectionRecord?.latestReferenceDate = referenceDate
                             self?.connectionRecord?.specificationIdString = specId
                             self?.connectionRecord?.specificationVersion = versionId
-                            try await FXBDBManager
-                                .shared
-                                .dbQueue.write({ [weak self] in try self?.connectionRecord?.update($0) })
+                            
+                            if self?.connectionRecord != nil {
+                                try FlexiBLE.shared.dbAccess?.connection.update(&self!.connectionRecord!)
+                            }
                         } catch {
                             pLog.error("unable to update reference date for connection record")
                         }
@@ -111,11 +112,12 @@ public class FXBDevice: Identifiable, Device {
         
         Task {
             do {
-                self.connectionRecord = try await FXBWrite().recordConnection(
+                self.connectionRecord = FXBConnection(
                     deviceType: spec.name,
-                    deviceName: deviceName,
-                    connectedAt: Date.now
+                    deviceName: deviceName
                 )
+                self.connectionRecord?.connectedAt = Date.now
+                try FlexiBLE.shared.dbAccess?.connection.insert(&self.connectionRecord!)
             } catch {
                 pLog.error("unable to record connection")
             }
@@ -131,7 +133,7 @@ public class FXBDevice: Identifiable, Device {
         Task {
             self.connectionRecord?.disconnectedAt = Date()
             do {
-                try await FXBDBManager.shared.dbQueue.write({ try self.connectionRecord?.update($0) })
+                try FlexiBLE.shared.dbAccess?.connection.update(&self.connectionRecord!)
             } catch {
                 pLog.error("unable to update connection record with disconnected date")
             }
@@ -175,11 +177,14 @@ public class FXBRegisteredDevice: ObservableObject, Identifiable, Device {
         
         Task {
             do {
-                self.connectionRecord = try await FXBWrite().recordConnection(
+        
+                connectionRecord = FXBConnection(
                     deviceType: spec.name,
-                    deviceName: deviceName,
-                    connectedAt: Date.now
+                    deviceName: deviceName
                 )
+                connectionRecord?.connectedAt = Date.now
+                try FlexiBLE.shared.dbAccess?.connection.insert(&connectionRecord!)
+                
             } catch {
                 pLog.error("unable to record connection")
             }
@@ -193,7 +198,7 @@ public class FXBRegisteredDevice: ObservableObject, Identifiable, Device {
         Task {
             self.connectionRecord?.disconnectedAt = Date()
             do {
-                try await FXBDBManager.shared.dbQueue.write({ try self.connectionRecord?.update($0) })
+                try FlexiBLE.shared.dbAccess?.connection.update(&connectionRecord!)
             } catch {
                 pLog.error("unable to update connection record with disconnected date")
             }

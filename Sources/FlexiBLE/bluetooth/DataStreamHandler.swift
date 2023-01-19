@@ -31,7 +31,14 @@ public class DataStreamHandler {
     }
     
     private func lastConfig() async -> Data {
-        return await FXBRead().getLatestConfigData(forDataStream: def.name, inDevice: deviceName) ?? defaultConfig
+        do {
+            return try await FlexiBLE.shared
+                .dbAccess?
+                .dataStreamConfig
+                .getLatest(forDataStream: def.name, inDevice: deviceName) ?? defaultConfig
+        } catch {
+            return defaultConfig
+        }
     }
     
     init(uuid: CBUUID, deviceName: String, dataStream: FXBDataStream) {
@@ -41,8 +48,6 @@ public class DataStreamHandler {
     }
     
     func setup(peripheral: CBPeripheral, service: CBService) {
-        FXBDBManager.shared.createTable(from: def)
-        
         if let c = service.characteristics?.first(where: { $0.uuid == def.dataCbuuid }) {
             peripheral.setNotifyValue(true, for: c)
         }
@@ -146,22 +151,25 @@ public class DataStreamHandler {
             }
         }
         
-        await FXBDBManager.shared
-            .dynamicDataRecordInsert(
+        do {
+            try await FlexiBLE.shared.dbAccess?.dataStream.insert(
                 for: def,
                 anchorDate: anchorDate,
                 allValues: allValues,
                 timestamps: timestamps,
-                specId: FlexiBLE.shared.specId,
                 device: deviceName
             )
-        
-        try? await FXBWrite().recordThroughput(
-            deviceName: deviceName,
-            dataStreamName: def.name,
-            byteCount: data.count,
-            specId: FlexiBLE.shared.specId
-        )
+            
+            var throughput = FXBThroughput(
+                dataStream: def.name,
+                bytes: data.count,
+                deviceName: deviceName
+            )
+            
+            try FlexiBLE.shared.dbAccess?.throughput.record(&throughput)
+        } catch {
+            dbLog.error("unable to insert transactional records: \(error.localizedDescription)")
+        }
     }
     
     private func didUpdateConfig(data: Data) async {
@@ -178,13 +186,17 @@ public class DataStreamHandler {
             bleLog.debug("config value loaded: \(cv.name): \(String(describing: unpackedVal))")
         }
         
-        await FXBDBManager.shared
-            .dynamicConfigRecordInsert(
-                for: def,
-                values: values,
-                specId: FlexiBLE.shared.specId,
-                device: deviceName
-            )
+        do {
+            try await FlexiBLE.shared.dbAccess?
+                .dataStreamConfig
+                .insert(
+                    for: def,
+                    values: values,
+                    device: deviceName
+                )
+        } catch {
+            dbLog.error("unable to insert data stream config record: \(error.localizedDescription)")
+        }
     }
     
     internal func writeConfig(peripheral: CBPeripheral, data: Data) {

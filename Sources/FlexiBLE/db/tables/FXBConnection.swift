@@ -13,7 +13,7 @@ public struct FXBConnection: Codable {
     public var deviceType: String
     public var deviceName: String
     
-    public var specId: Int64
+//    public var specId: Int64
     
     public var specificationIdString: String?
     public var specificationVersion: String?
@@ -29,7 +29,7 @@ public struct FXBConnection: Codable {
         case id
         case deviceType = "device_type"
         case deviceName = "device_name"
-        case specId = "spec_id"
+//        case specId = "spec_id"
         case specificationIdString = "specification_id_string"
         case specificationVersion = "specification_version"
         case latestReferenceDate = "latest_reference_date"
@@ -39,10 +39,10 @@ public struct FXBConnection: Codable {
         case uploaded
     }
     
-    init(deviceType: String, deviceName: String, specId: Int64) {
+    init(deviceType: String, deviceName: String) {
         self.deviceType = deviceType
         self.deviceName = deviceName
-        self.specId = specId
+//        self.specId = specId
 
         self.ts = Date()
     }
@@ -54,7 +54,7 @@ extension FXBConnection: TableRecord, FetchableRecord, MutablePersistableRecord 
         static let id = Column(CodingKeys.id)
         static let deviceType = Column(CodingKeys.deviceType)
         static let deviceName = Column(CodingKeys.deviceName)
-        static let specId = Column(CodingKeys.specId)
+//        static let specId = Column(CodingKeys.specId)
         static let specificationIdString = Column(CodingKeys.specificationIdString)
         static let specificationVersion = Column(CodingKeys.specificationVersion)
         static let latestReferenceDate = Column(CodingKeys.latestReferenceDate)
@@ -74,8 +74,8 @@ extension FXBConnection: TableRecord, FetchableRecord, MutablePersistableRecord 
         table.autoIncrementedPrimaryKey(CodingKeys.id.stringValue)
         table.column(CodingKeys.deviceType.stringValue, .text)
         table.column(CodingKeys.deviceName.stringValue, .text)
-        table.column(CodingKeys.specId.stringValue, .integer)
-            .references(FXBSpecTable.databaseTableName)
+//        table.column(CodingKeys.specId.stringValue, .integer)
+//            .references(FXBSpecTable.databaseTableName)
         table.column(CodingKeys.specificationIdString.stringValue, .text)
         table.column(CodingKeys.specificationVersion.stringValue, .text)
         table.column(CodingKeys.latestReferenceDate.stringValue, .date)

@@ -23,12 +23,10 @@ public class FXBConnectionManager: NSObject, ObservableObject {
     
     private var spec: FXBSpec?
     private var scanOnPoweredOn: Bool = true
-    private let db: FXBDBManager
     
     private var autoConnectDevices: [String] = []
     
-    required init(db: FXBDBManager) {
-        self.db = db
+    required override init() {
         super.init()
         
         self.centralManager = CBCentralManager(

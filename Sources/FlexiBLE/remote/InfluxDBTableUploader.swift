@@ -8,7 +8,7 @@
 import Foundation
 
 public class FXBTableUploader {
-    var table: FXBTimeSeriesTable
+    var table: FXBUploadableTable
     var startDate: Date?
     var endDate: Date
     
@@ -26,7 +26,7 @@ public class FXBTableUploader {
     private var totalBytes: Int = 0
     
     init(
-        table: FXBTimeSeriesTable,
+        table: FXBUploadableTable,
         credentials: InfluxDBCredentials,
         startDate: Date?,
         endDate: Date
@@ -117,12 +117,12 @@ public class FXBTableUploader {
     
     private func calculateRecordCount() async {
         do {
-            let st = try await FXBRead().getTotalRecords(
+            let st = try await FlexiBLE.shared.dbAccess?.dataStream.count(
                 for: table.tableName,
                 from: startDate,
                 to: endDate,
                 uploaded: false
-            )
+            ) ?? 0
             if st == 0 { complete = true }
             totalRemaining = st
             calculatedUploadCount = st
@@ -137,25 +137,21 @@ public class FXBTableUploader {
     
     private func save() async {
         do {
-            try await FXBDBManager.shared.dbQueue.write { [weak self] db in
-                guard let self = self else { return }
-                
-                var record = FXBDataUpload(
-                    ts: Date.now,
-                    tableName: self.table.tableName,
-                    database: "influxDB",
-                    APIURL: self.credentials.url.absoluteString,
-                    startDate: self.startDate,
-                    endDate: self.endDate,
-                    expectedUploadCount: self.calculatedUploadCount,
-                    uploadCount: self.uploaded,
-                    uploadTimeSeconds: self.uploadTime,
-                    numberOfAPICalls: self.numberOfAPICalls,
-                    totalBytes: self.totalBytes
-                )
-                
-                try record.insert(db)
-            }
+            var record = FXBDataUpload(
+                ts: Date.now,
+                tableName: self.table.tableName,
+                database: "influxDB",
+                APIURL: self.credentials.url.absoluteString,
+                startDate: self.startDate,
+                endDate: self.endDate,
+                expectedUploadCount: self.calculatedUploadCount,
+                uploadCount: self.uploaded,
+                uploadTimeSeconds: self.uploadTime,
+                numberOfAPICalls: self.numberOfAPICalls,
+                totalBytes: self.totalBytes
+            )
+            
+            try FlexiBLE.shared.dbAccess?.dataUpload.record(&record)
         } catch {
             uploadLog.error("error inserting upload record: \(error.localizedDescription)")
         }

@@ -8,7 +8,7 @@
 import Foundation
 
 internal class ILPRecord {
-    let staticTable: FXBTimeSeriesTable
+    let staticTable: FXBUploadableTable
     let recordId: Int64
     
     let measurement: String
@@ -17,7 +17,7 @@ internal class ILPRecord {
     var tags: [String:String] = [:]
     var fields: [String:String] = [:]
     
-    init(staticTable: FXBTimeSeriesTable, id: Int64, measurement: String, timestamp: Date) {
+    init(staticTable: FXBUploadableTable, id: Int64, measurement: String, timestamp: Date) {
         self.staticTable = staticTable
         self.recordId = id
         self.measurement = measurement
