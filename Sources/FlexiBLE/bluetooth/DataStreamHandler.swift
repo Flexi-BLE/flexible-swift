@@ -247,7 +247,7 @@ extension FXBDataStreamConfig {
         case .float:
             switch self.size {
             case 2:
-                var val = Float16(value) ?? Float16(defaultValue) ?? Float16(0)
+                var val = Float(value) ?? Float(defaultValue) ?? Float(0)
                 withUnsafePointer(to: &val) {
                     data.append(UnsafeBufferPointer(start: $0, count: 1))
                 }
