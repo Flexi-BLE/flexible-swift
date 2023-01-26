@@ -242,7 +242,10 @@ extension FXBTimeSeriesTable {
                 if let v: String = rec.getValue(for: cv.name) {
                     if let options = cv.options {
                         guard let idx = Int(v) else { continue }
-                        ilp.field(cv.name, str: options[idx].name)
+                        ilp.field(
+                            cv.name,
+                            str: options[optional: idx]?.name ?? "--unknown--"
+                        )
                     } else {
                         guard let vInt = Int(v) else { continue }
                         ilp.field(cv.name, int: vInt)
