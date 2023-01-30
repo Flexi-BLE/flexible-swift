@@ -21,12 +21,13 @@ public extension FXBLocalDataAccessor {
             self.spec = spec
         }
         
-        public func config(for ds: FXBDataStream) async -> GenericRow? {
+        public func config(for ds: FXBDataStream, deviceName: String) async -> GenericRow? {
             let tableName = "\(FXBDatabaseDirectory.tableName(from: ds.name))_config"
             
             let sql = """
                 SELECT \(ds.configValues.map({ $0.name }).joined(separator: ", "))
                 FROM \(tableName)
+                WHERE device = :deviceName
                 ORDER BY ts DESC
                 LIMIT 1;
             """
@@ -36,7 +37,7 @@ public extension FXBLocalDataAccessor {
                     let pragma = try Row.fetchAll(db, sql: "PRAGMA table_info(\(tableName));")
                     let info = pragma.map({ FXBTableInfo.make(from: $0) })
                         
-                    let result = try Row.fetchOne(db, sql: sql)
+                    let result = try Row.fetchOne(db, sql: sql, arguments: ["deviceName": deviceName])
                     return result.map({ GenericRow(metadata: info, row: $0) })
                 }
             } catch {

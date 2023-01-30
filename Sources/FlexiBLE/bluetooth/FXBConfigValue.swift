@@ -15,7 +15,7 @@ public class FXBConfigValue: ObservableObject {
     var readableValue: String {
         if let options = def.options,
            let i = Int(value) {
-            return options[i].name
+            return options[optional: i]?.name ?? "--unknown--"
         }
         
         return value
