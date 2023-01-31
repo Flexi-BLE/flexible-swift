@@ -11,7 +11,7 @@ import GRDB
 public class TransactionalDatabase: Codable {
     public var id: Int64?
     public private(set) var createdAt: Date
-    public private(set) var path: URL
+    public private(set) var fileName: String
     public private(set) var startDate: Date
     public private(set) var endDate: Date?
     public private(set) var isLocked: Bool = false
@@ -19,15 +19,15 @@ public class TransactionalDatabase: Codable {
     enum CodingKeys: String, CodingKey {
         case id
         case createdAt = "created_at"
-        case path = "path"
+        case fileName = "file_name"
         case startDate = "start_date"
         case endDate = "end_date"
         case isLocked = "is_locked"
     }
     
-    init(path: URL, startDate: Date) {
+    init(startDate: Date) {
         self.createdAt = Date.now
-        self.path = path
+        self.fileName = "\(startDate.timestamp()).db"
         self.startDate = startDate
     }
     
@@ -49,7 +49,7 @@ extension TransactionalDatabase: TableRecord, FetchableRecord, MutablePersistabl
     enum Columns {
         static let id = Column(CodingKeys.id)
         static let createdAt = Column(CodingKeys.createdAt)
-        static let path = Column(CodingKeys.path)
+        static let fileName = Column(CodingKeys.fileName)
         static let startDate = Column(CodingKeys.startDate)
         static let endDate = Column(CodingKeys.endDate)
         static let isLocked = Column(CodingKeys.isLocked)
@@ -63,7 +63,7 @@ extension TransactionalDatabase: TableRecord, FetchableRecord, MutablePersistabl
     
     internal static func create(_ table: TableDefinition) {
         table.autoIncrementedPrimaryKey(CodingKeys.id.stringValue)
-        table.column(CodingKeys.path.stringValue, .text).notNull()
+        table.column(CodingKeys.fileName.stringValue, .text).notNull()
         table.column(CodingKeys.createdAt.stringValue, .date).defaults(to: Date.now)
         table.column(CodingKeys.startDate.stringValue, .date)
         table.column(CodingKeys.endDate.stringValue, .date)

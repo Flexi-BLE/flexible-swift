@@ -14,7 +14,7 @@ final internal class TransactionalDBConnectionManager {
     private var spec: FXBSpec
     private var dbPath: URL
     
-    private var connections: [URL:DatabasePool] = [:]
+    private var connections: [String:DatabasePool] = [:]
     
     private var maxDBSize = 1024 * 1024 * 500
     private var lastDBSizeCheck: Date = Date.now
@@ -59,7 +59,7 @@ final internal class TransactionalDBConnectionManager {
     }
     
     internal func connection(for db: TransactionalDatabase) throws -> DatabasePool {
-        if let connection = connections[db.path] {
+        if let connection = connections[db.fileName] {
             return connection
         }
         
@@ -71,19 +71,16 @@ final internal class TransactionalDBConnectionManager {
         }
         
         let connection = try DatabasePool(
-            path: db.path.path,
+            path: dbPath.appendingPathComponent(db.fileName).absoluteString,
             configuration: configuration
         )
         
-        connections[db.path] = connection
+        connections[db.fileName] = connection
         return connection
     }
     
     private func createTransactionalDB() throws -> TransactionalDatabase {
-        var dbRec = TransactionalDatabase(
-            path: dbPath.appendingPathComponent("\(Date.now.timestamp()).db"),
-            startDate: Date.now
-        )
+        var dbRec = TransactionalDatabase(startDate: Date.now)
         
         try mainConnection.write { db in
             try dbRec.insert(db)

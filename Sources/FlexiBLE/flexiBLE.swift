@@ -18,8 +18,12 @@ public final class FlexiBLE: ObservableObject {
         self.profile = FlexiBLEAppData.shared.lastProfile()
     }
     
-    public func createProfile(with spec: FXBSpec) {
-        let profile = FlexiBLEProfile(name: spec.id, spec: spec)
+    public func createProfile(with spec: FXBSpec, name: String?=nil) {
+        let profile = FlexiBLEProfile(
+            name: name == nil ? spec.id : name!,
+            spec: spec
+        )
+        
         FlexiBLEAppData.shared.add(profile)
         switchProfile(to: profile.id)
     }
