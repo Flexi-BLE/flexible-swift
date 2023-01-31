@@ -18,14 +18,17 @@ public final class FlexiBLE: ObservableObject {
         self.profile = FlexiBLEAppData.shared.lastProfile()
     }
     
-    public func createProfile(with spec: FXBSpec, name: String?=nil) {
+    public func createProfile(with spec: FXBSpec, name: String?=nil, setActive: Bool=true) {
         let profile = FlexiBLEProfile(
             name: name == nil ? spec.id : name!,
             spec: spec
         )
         
         FlexiBLEAppData.shared.add(profile)
-        switchProfile(to: profile.id)
+        
+        if setActive {
+            switchProfile(to: profile.id)
+        }
     }
     
     public func switchProfile(to id: UUID) {
