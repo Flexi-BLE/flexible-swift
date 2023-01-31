@@ -62,4 +62,8 @@ internal enum DBUtility {
             return pageSize * pageCount
         })
     }
+    
+    internal static func tableName(from unformattedName: String) -> String {
+        return unformattedName.replacingOccurrences(of: " ", with: "_").lowercased()
+    }
 }

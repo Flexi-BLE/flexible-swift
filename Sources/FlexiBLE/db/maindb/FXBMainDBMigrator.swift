@@ -72,7 +72,7 @@ internal class FXBMainDBMigrator{
         forceNew: Bool=false
     ) throws {
         
-        let tableName = "\(FXBDatabaseDirectory.tableName(from: metadata.name))_config"
+        let tableName = "\(DBUtility.tableName(from: metadata.name))_config"
         
         try writer.write { db in
             try? db.drop(table: tableName)

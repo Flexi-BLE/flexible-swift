@@ -18,7 +18,7 @@ internal struct FXBDataStreamTable: Codable {
     
     init(spec: FXBDataStream, deviceName: String) {
         self.name = spec.name
-        self.tableName = FXBDatabaseDirectory.tableName(from: spec.name)
+        self.tableName = DBUtility.tableName(from: spec.name)
         self.spec = try? Data.sharedJSONEncoder.encode(spec)
         self.deviceName = deviceName
         self.createdAt = Date.now

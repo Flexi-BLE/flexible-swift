@@ -12,6 +12,7 @@ final internal class TransactionalDBConnectionManager {
     
     private var mainConnection: DatabaseWriter
     private var spec: FXBSpec
+    private var dbPath: URL
     
     private var connections: [URL:DatabasePool] = [:]
     
@@ -19,9 +20,10 @@ final internal class TransactionalDBConnectionManager {
     private var lastDBSizeCheck: Date = Date.now
     private var DBSizeCheckInterval: TimeInterval = 15
     
-    internal init(withMainConnection conn: DatabaseWriter, spec: FXBSpec) {
+    internal init(withMainConnection conn: DatabaseWriter, spec: FXBSpec, dbPath: URL) {
         self.mainConnection = conn
         self.spec = spec
+        self.dbPath = dbPath
     }
     
     internal func latestDB() throws -> TransactionalDatabase {
@@ -39,7 +41,6 @@ final internal class TransactionalDBConnectionManager {
                     if size > maxDBSize {
                         
                         conn.releaseMemoryEventually()
-//                        try conn.close()
                         
                         try mainConnection.write { db in
                             transactionalDb.setEndDate(Date.now)
@@ -80,7 +81,7 @@ final internal class TransactionalDBConnectionManager {
     
     private func createTransactionalDB() throws -> TransactionalDatabase {
         var dbRec = TransactionalDatabase(
-            path: FXBDatabaseDirectory.transactionalDBPath(specId: spec.id),
+            path: dbPath.appendingPathComponent("\(Date.now.timestamp()).db"),
             startDate: Date.now
         )
         

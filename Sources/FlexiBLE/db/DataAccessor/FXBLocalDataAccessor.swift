@@ -38,4 +38,3 @@ final public class FXBLocalDataAccessor {
         dataUpload = DataUploadAccess(transactionalManager: db.transactionalDBMgr)
     }
 }
-

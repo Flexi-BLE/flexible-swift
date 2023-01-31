@@ -186,7 +186,7 @@ internal extension FXBLocalDataAccessor.DataStreamAccess {
         timestamps: [Double],
         device: String
     ) async throws {
-        let tableName = "\(FXBDatabaseDirectory.tableName(from: ds.name))_data"
+        let tableName = "\(DBUtility.tableName(from: ds.name))_data"
         
         let varColsString = "\(ds.dataValues.map({ $0.name }).joined(separator: ", "))"
         var sysCols = ["created_at", "ts", "device"]

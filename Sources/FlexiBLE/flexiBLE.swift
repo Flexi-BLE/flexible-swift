@@ -5,20 +5,37 @@ public final class FlexiBLE: ObservableObject {
     public static var shared = FlexiBLE()
     
     public let conn: FXBConnectionManager
-    @Published public var spec: FXBSpec? = nil
+    @Published public var profile: FlexiBLEProfile? = nil
     
-    private var newDB: FXBDatabase?
+    private var localDatabase: FXBDatabase?
     public var dbAccess: FXBLocalDataAccessor?
     
     private init() {
         self.conn = FXBConnectionManager()
     }
     
-    public func setSpec(_ spec: FXBSpec) async throws {
-        self.spec = spec
+    public func setLastProfile() {
+        self.profile = FlexiBLEAppData.shared.lastProfile()
+    }
+    
+    public func createProfile(with spec: FXBSpec) {
+        let profile = FlexiBLEProfile(name: spec.id, spec: spec)
+        FlexiBLEAppData.shared.add(profile)
+        switchProfile(to: profile.id)
+    }
+    
+    public func switchProfile(to id: UUID) {
+        guard let profile = FlexiBLEAppData.shared.get(id: id) else {
+            return
+        }
         
-        newDB = FXBDatabase(for: spec)
-        dbAccess = FXBLocalDataAccessor(db: newDB!)
+        self.profile = profile
+        localDatabase = FXBDatabase(for: profile)
+        dbAccess = FXBLocalDataAccessor(db: localDatabase!)
+    }
+    
+    public func profiles() -> [FlexiBLEProfile] {
+        return FlexiBLEAppData.shared.profiles
     }
     
     public func startScan(with spec: FXBSpec) {
@@ -33,4 +50,3 @@ public final class FlexiBLE: ObservableObject {
         }
     }
 }
-        

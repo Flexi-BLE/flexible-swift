@@ -47,7 +47,7 @@ internal enum FXBTransactionalDBCreator {
         with connection: DatabaseWriter,
         forceNew: Bool=false
     ) throws {
-        let name = FXBDatabaseDirectory.tableName(from: def.name)
+        let name = DBUtility.tableName(from: def.name)
         let dataTableName = "\(name)_data"
         
         try connection.write { db in

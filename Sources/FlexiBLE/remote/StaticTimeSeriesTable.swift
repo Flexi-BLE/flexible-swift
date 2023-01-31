@@ -66,7 +66,7 @@ extension FXBUploadableTable {
                   let tsStr: String = rec.getValue(for: "ts"),
                   let ts = Date.fromSQLString(tsStr),
                   let deviceName: String = rec.getValue(for: "device"),
-                  let device = FlexiBLE.shared.spec?.devices.first(where: { deviceName.starts(with: $0.name) }),
+                  let device = FlexiBLE.shared.profile?.specification.devices.first(where: { deviceName.starts(with: $0.name) }),
                   let measurement = device.dataStreams.first(where: { $0.name == name.replacingOccurrences(of: "_data", with: "") }) else {
                 continue
             }
@@ -78,7 +78,8 @@ extension FXBUploadableTable {
                 timestamp: ts
             )
             
-            ilp.tag("device_id", deviceId)
+            ilp.tag("app_id", deviceId)
+            ilp.tag("device_name", deviceName)
             
             for dv in measurement.dataValues {
                 if dv.variableType == .value {
@@ -127,7 +128,7 @@ extension FXBUploadableTable {
                   let tsStr: String = rec.getValue(for: "ts"),
                   let ts = Date.fromSQLString(tsStr),
                   let deviceName: String = rec.getValue(for: "device"),
-                  let device = FlexiBLE.shared.spec?.devices.first(where: { deviceName.starts(with: $0.name) }),
+                  let device = FlexiBLE.shared.profile?.specification.devices.first(where: { deviceName.starts(with: $0.name) }),
                   let measurement = device.dataStreams.first(where: { $0.name == name.replacingOccurrences(of: "_config", with: "") }) else {
                 continue
             }
@@ -139,7 +140,8 @@ extension FXBUploadableTable {
                 timestamp: ts
             )
             
-            ilp.tag("device_id", deviceId)
+            ilp.tag("app_id", deviceId)
+            ilp.tag("device_name", deviceName)
             
             for cv in measurement.configValues {
                 if let v: String = rec.getValue(for: cv.name) {

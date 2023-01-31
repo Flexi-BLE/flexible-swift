@@ -22,7 +22,7 @@ public extension FXBLocalDataAccessor {
         }
         
         public func config(for ds: FXBDataStream, deviceName: String) async -> GenericRow? {
-            let tableName = "\(FXBDatabaseDirectory.tableName(from: ds.name))_config"
+            let tableName = "\(DBUtility.tableName(from: ds.name))_config"
             
             let sql = """
                 SELECT \(ds.configValues.map({ $0.name }).joined(separator: ", "))
@@ -154,7 +154,7 @@ internal extension  FXBLocalDataAccessor.DataStreamConfigAccess {
         device: String
     ) async throws{
         
-        let tableName = "\(FXBDatabaseDirectory.tableName(from: ds.name))_config"
+        let tableName = "\(DBUtility.tableName(from: ds.name))_config"
         
         let cols = "\(ds.configValues.map({ $0.name }).joined(separator: ", "))"
         let placeholders = "\(ds.configValues.map({ _ in "?" }).joined(separator: ", "))"

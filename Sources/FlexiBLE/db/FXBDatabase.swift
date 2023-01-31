@@ -20,10 +20,10 @@ final class FXBDatabase {
     internal var transactionalDB: TransactionalDatabase
     internal var transactionalConnection: DatabaseWriter
     
-    init(for spec: FXBSpec) {
-        self.spec = spec
+    init(for profile: FlexiBLEProfile) {
+        self.spec = profile.specification
         
-        dbLog.info("starting database for \(spec.id) @ \(FXBDatabaseDirectory.mainDatabasePath(specId: spec.id).path)")
+        dbLog.info("starting database for \(self.spec.id) @ \(profile.mainDatabasePath.absoluteString)")
          
         var configuration = Configuration()
         configuration.qos = DispatchQoS.userInitiated
@@ -32,25 +32,20 @@ final class FXBDatabase {
             
             // create the main connection
             mainConnection = try DatabaseQueue(
-                path: FXBDatabaseDirectory
-                    .mainDatabasePath(specId: spec.id)
-                    .path,
+                path: profile.mainDatabasePath.absoluteString,
                 configuration: configuration
             )
             
             transactionalDBMgr = TransactionalDBConnectionManager(
                 withMainConnection: mainConnection,
-                spec: spec
-            
+                spec: spec,
+                dbPath: profile.transactionalDatabasesBasePath
             )
             dbLog.info("established main database connection")
             
             // migrate or create the database
             mainMigrator.migrate(mainConnection, spec: spec)
-            
-            // save the specfication file in the database directory
-            try FXBDatabaseDirectory.save(spec)
-            
+        
             // find or create the transactional database, create connection
             transactionalDB = try transactionalDBMgr.latestDB()
             transactionalConnection = try transactionalDBMgr.connection(for: transactionalDB)
