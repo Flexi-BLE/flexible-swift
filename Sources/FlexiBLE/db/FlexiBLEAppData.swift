@@ -107,7 +107,7 @@ public class FlexiBLEProfile: Codable {
     internal var basePath: URL {
         do {
             let path = FlexiBLEAppData.FlexiBLEBasePath
-                .appendingPathComponent("db_\(id)", isDirectory: true)
+                .appendingPathComponent("\(name)_\(id)", isDirectory: true)
             
             if !FileManager.default.fileExists(atPath: path.absoluteString){
                 do {

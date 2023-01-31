@@ -33,6 +33,10 @@ public final class FlexiBLE: ObservableObject {
             return
         }
         
+        stopScan()
+        conn.disconnectAll()
+        startScan(with: profile.specification)
+        
         self.profile = profile
         localDatabase = FXBDatabase(for: profile)
         dbAccess = FXBLocalDataAccessor(db: localDatabase!)
@@ -43,14 +47,10 @@ public final class FlexiBLE: ObservableObject {
     }
     
     public func startScan(with spec: FXBSpec) {
-        Task {
-            conn.scan(with: spec)
-        }
+        conn.scan(with: spec)
     }
     
     public func stopScan() {
-        Task {
-            conn.stopScan()
-        }
+        conn.stopScan()
     }
 }
