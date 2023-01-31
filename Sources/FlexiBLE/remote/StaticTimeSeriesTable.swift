@@ -133,12 +133,10 @@ extension FXBTimeSeriesTable {
                 timestamp: ts
             )
             
-            ilp.tag("device_id", deviceId)
+            ilp.tag("app_id", deviceId.replacingOccurrences(of: " ", with: "_"))
+            ilp.tag("device_name", deviceName.replacingOccurrences(of: " ", with: "_"))
             
             for dv in measurement.dataValues {
-//                print(device)
-//                print(dv.name)
-//                print(dv.type)
                 if dv.variableType == .value {
                     if let v: Double = rec.getValue(for: dv.name) {
                         ilp.field(dv.name, float: Float(v))
@@ -236,7 +234,8 @@ extension FXBTimeSeriesTable {
                 timestamp: ts
             )
             
-            ilp.tag("device_id", deviceId)
+            ilp.tag("app_id", deviceId.replacingOccurrences(of: " ", with: "_"))
+            ilp.tag("device_name", deviceName.replacingOccurrences(of: " ", with: "_"))
             
             for cv in measurement.configValues {
                 if let v: String = rec.getValue(for: cv.name) {
