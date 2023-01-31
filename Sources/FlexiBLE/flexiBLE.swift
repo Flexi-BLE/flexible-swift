@@ -10,6 +10,10 @@ public final class FlexiBLE: ObservableObject {
     private var localDatabase: FXBDatabase?
     public var dbAccess: FXBLocalDataAccessor?
     
+    public var appDataPath: URL {
+        return FlexiBLEAppData.FlexiBLEBasePath
+    }
+    
     private init() {
         self.conn = FXBConnectionManager()
     }
