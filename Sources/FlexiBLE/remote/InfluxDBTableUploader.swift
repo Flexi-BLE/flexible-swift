@@ -63,7 +63,7 @@ public class FXBTableUploader {
     func upload() async -> Result<Bool, Error> {
         let start = Date.now
         
-        dbLog.debug("data upload: starting upload for \(self.table.tableName) (\(self.totalRemaining)")
+        dbLog.debug("data upload: starting upload for \(self.table.tableName) (\(self.totalRemaining))")
         
         var records = await nextRecords()
         

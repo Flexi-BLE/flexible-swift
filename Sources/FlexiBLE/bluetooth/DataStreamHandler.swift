@@ -173,6 +173,10 @@ public class DataStreamHandler {
     }
     
     private func didUpdateConfig(data: Data) async {
+        guard !def.configValues.isEmpty else {
+            return
+        }
+        
         self.lastestConfig = data
         
         bleLog.debug("config read")

@@ -19,7 +19,9 @@ public final class FlexiBLE: ObservableObject {
     }
     
     public func setLastProfile() {
-        self.profile = FlexiBLEAppData.shared.lastProfile()
+        if let profile = FlexiBLEAppData.shared.lastProfile() {
+            switchProfile(to: profile.id)
+        }
     }
     
     public func createProfile(with spec: FXBSpec, name: String?=nil, setActive: Bool=true) {

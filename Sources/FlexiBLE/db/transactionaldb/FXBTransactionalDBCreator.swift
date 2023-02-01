@@ -48,24 +48,18 @@ internal enum FXBTransactionalDBCreator {
         forceNew: Bool=false
     ) throws {
         let name = DBUtility.tableName(from: def.name)
-        let dataTableName = "\(name)_data"
+        let dataTableName = "\(name)"
         
         try connection.write { db in
             try? db.drop(table: dataTableName)
             try db.create(table: dataTableName) { t in
-                t.autoIncrementedPrimaryKey("id")
+                t.autoIncrementedPrimaryKey("ts")
                 t.column("created_at", .datetime).defaults(to: Date())
                 t.column("uploaded", .boolean).defaults(to: false)
                 t.column("device", .text)
                 
                 for dv in def.dataValues {
                     t.column(dv.name, .double)
-                }
-                
-                t.column("ts", .date).notNull().indexed()
-                switch def.precision {
-                case .ms: break
-                case .us: t.column("ts_precision", .integer).notNull().indexed()
                 }
             }
         }

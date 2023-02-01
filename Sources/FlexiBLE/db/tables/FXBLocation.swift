@@ -9,27 +9,24 @@ import Foundation
 import GRDB
 
 public struct FXBLocation: Codable, FXBTimeSeriesRecord {
-    public var id: Int64?
+    public var ts: Int64
     public var latitude: Double
     public var longitude: Double
     public var altitude: Double
     public var horizontalAccuracy: Double
     public var verticalAccuracy: Double
-    public var ts: Date
     public var deviceName: String
     public var createdAt: Date
     public var uploaded: Bool = false
-//    internal var specId: Int64
     
     enum CodingKeys: String, CodingKey {
-        case id
+        case ts
         case latitude
         case longitude
         case createdAt = "created_at"
         case altitude
         case horizontalAccuracy = "horizontal_acc"
         case verticalAccuracy = "vertical_acc"
-        case ts
         case deviceName = "device_name"
         case uploaded
 //        case specId = "spec_id"
@@ -37,20 +34,20 @@ public struct FXBLocation: Codable, FXBTimeSeriesRecord {
     }
     
     public init(
+        ts: Date,
         latitude: Double,
         longitude: Double,
         altitude: Double,
         horizontalAccuracy: Double,
         verticalAccuracy: Double,
-        ts: Date,
         deviceName: String
     ) {
+        self.ts = ts.dbPrimaryKey
         self.latitude = latitude
         self.longitude = longitude
         self.altitude = altitude
         self.horizontalAccuracy = horizontalAccuracy
         self.verticalAccuracy = verticalAccuracy
-        self.ts = ts
         self.deviceName = deviceName
         self.createdAt = Date.now
 //        self.specId = specId
@@ -60,13 +57,12 @@ public struct FXBLocation: Codable, FXBTimeSeriesRecord {
 extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
     
     enum Columns {
-        static let id = Column(CodingKeys.id)
+        static let id = Column(CodingKeys.ts)
         static let latitude = Column(CodingKeys.latitude)
         static let longitude = Column(CodingKeys.longitude)
         static let altitude = Column(CodingKeys.altitude)
         static let horiztalAccuracy = Column(CodingKeys.horizontalAccuracy)
         static let verticalAccuracy = Column(CodingKeys.verticalAccuracy)
-        static let ts = Column(CodingKeys.ts)
         static let deviceName = Column(CodingKeys.deviceName)
         static let createdAt = Column(CodingKeys.createdAt)
         static let uploaded = Column(CodingKeys.uploaded)
@@ -74,23 +70,20 @@ extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
     }
     
     mutating public func didInsert(_ inserted: InsertionSuccess) {
-        id = inserted.rowID
+        ts = inserted.rowID
     }
     
     public static var databaseTableName: String = "location"
     
     internal static func create(_ table: TableDefinition) {
-        table.autoIncrementedPrimaryKey(CodingKeys.id.stringValue)
+        table.autoIncrementedPrimaryKey(CodingKeys.ts.stringValue)
         table.column(CodingKeys.latitude.stringValue, .double)
         table.column(CodingKeys.longitude.stringValue, .double)
         table.column(CodingKeys.altitude.stringValue, .double)
         table.column(CodingKeys.horizontalAccuracy.stringValue, .double)
         table.column(CodingKeys.verticalAccuracy.stringValue, .double)
-        table.column(CodingKeys.ts.stringValue, .datetime).notNull().indexed()
         table.column(CodingKeys.deviceName.stringValue, .text)
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
         table.column(CodingKeys.uploaded.stringValue, .boolean)
-//        table.column(CodingKeys.specId.stringValue, .integer)
-//            .references(FXBSpecTable.databaseTableName)
     }
 }

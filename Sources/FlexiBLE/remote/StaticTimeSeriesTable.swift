@@ -22,7 +22,7 @@ enum FXBUploadableTable {
         case .timestamp: return FXBTimestamp.databaseTableName
         case .heartRate: return FXBHeartRate.databaseTableName
         case .location: return FXBLocation.databaseTableName
-        case .dynamicData(let name): return "\(name)_data"
+        case .dynamicData(let name): return name
         case .dynamicConfig(let name): return "\(name)_config"
         }
     }
@@ -62,24 +62,24 @@ extension FXBUploadableTable {
         var ilps: [ILPRecord] = []
         
         for rec in records {
-            guard let id: Int64 = rec.getValue(for: "id"),
-                  let tsStr: String = rec.getValue(for: "ts"),
-                  let ts = Date.fromSQLString(tsStr),
+            guard let tsInt: Int64 = rec.getValue(for: "ts"),
                   let deviceName: String = rec.getValue(for: "device"),
                   let device = FlexiBLE.shared.profile?.specification.devices.first(where: { deviceName.starts(with: $0.name) }),
                   let measurement = device.dataStreams.first(where: { $0.name == name.replacingOccurrences(of: "_data", with: "") }) else {
                 continue
             }
             
+            let ts = Date(timeIntervalSince1970: Double(tsInt) / 1_000_000.0)
+            
             let ilp = ILPRecord(
                 staticTable: .dynamicData(name: name),
-                id: id,
+                id: tsInt,
                 measurement: tableName,
                 timestamp: ts
             )
             
-            ilp.tag("app_id", deviceId)
-            ilp.tag("device_name", deviceName)
+            ilp.tag("app_id", deviceId.replacingOccurrences(of: " ", with: "_"))
+            ilp.tag("device_name", deviceName.replacingOccurrences(of: " ", with: "_"))
             
             for dv in measurement.dataValues {
                 if dv.variableType == .value {
@@ -114,7 +114,7 @@ extension FXBUploadableTable {
     ) async throws -> [ILPRecord] {
         
         let records = try await FlexiBLE.shared.dbAccess?.dataStreamConfig.get(
-            for: name,
+            for: tableName,
             from: start,
             to: end,
             uploaded: uploaded,
@@ -124,24 +124,24 @@ extension FXBUploadableTable {
         var ilps: [ILPRecord] = []
         
         for rec in records {
-            guard let id: Int64 = rec.getValue(for: "id"),
-                  let tsStr: String = rec.getValue(for: "ts"),
-                  let ts = Date.fromSQLString(tsStr),
+            guard let tsInt: Int64 = rec.getValue(for: "ts"),
                   let deviceName: String = rec.getValue(for: "device"),
                   let device = FlexiBLE.shared.profile?.specification.devices.first(where: { deviceName.starts(with: $0.name) }),
                   let measurement = device.dataStreams.first(where: { $0.name == name.replacingOccurrences(of: "_config", with: "") }) else {
                 continue
             }
             
+            let ts = Date(timeIntervalSince1970: Double(tsInt) / 1_000_000.0)
+            
             let ilp = ILPRecord(
                 staticTable: .dynamicConfig(name: name),
-                id: id,
+                id: tsInt,
                 measurement: tableName,
                 timestamp: ts
             )
             
-            ilp.tag("app_id", deviceId)
-            ilp.tag("device_name", deviceName)
+            ilp.tag("app_id", deviceId.replacingOccurrences(of: " ", with: "_"))
+            ilp.tag("device_name", deviceName.replacingOccurrences(of: " ", with: "_"))
             
             for cv in measurement.configValues {
                 if let v: String = rec.getValue(for: cv.name) {
@@ -177,16 +177,14 @@ extension FXBUploadableTable {
         var ilps: [ILPRecord] = []
         
         for rec in records {
-            guard let id = rec.id else { continue }
-            
             let ilp = ILPRecord(
                 staticTable: self,
-                id: id,
+                id: rec.ts,
                 measurement: FXBHeartRate.databaseTableName,
-                timestamp: rec.ts
+                timestamp: rec.tsDate
             )
             
-            ilp.tag("deviceId", deviceId)
+            ilp.tag("app_id", deviceId.replacingOccurrences(of: " ", with: "_"))
             ilp.field("bpm", int: rec.bpm)
             
             ilps.append(ilp)
@@ -207,16 +205,14 @@ extension FXBUploadableTable {
         var ilps: [ILPRecord] = []
         
         for rec in records {
-            guard let id = rec.id else { continue }
-            
             let ilp = ILPRecord(
                 staticTable: self,
-                id: id,
+                id: rec.ts,
                 measurement: FXBLocation.databaseTableName,
-                timestamp: rec.ts
+                timestamp: rec.tsDate
             )
             
-            ilp.tag("deviceId", deviceId)
+            ilp.tag("app_id", deviceId.replacingOccurrences(of: " ", with: "_"))
             ilp.field("lat", float: Float(rec.latitude))
             ilp.field("long", float: Float(rec.longitude))
             ilp.field("alt", float: Float(rec.altitude))
@@ -245,7 +241,7 @@ extension FXBUploadableTable {
                 timestamp: rec.start
             )
             
-            ilp_st.tag("deviceId", deviceId)
+            ilp_st.tag("app_id", deviceId.replacingOccurrences(of: " ", with: "_"))
             ilp_st.tag("name", rec.name)
             ilp_st.tag("uuid", rec.uuid)
             ilp_st.tag("type", "start")
@@ -264,7 +260,7 @@ extension FXBUploadableTable {
                 timestamp: rec.end!
             )
             
-            ilp_end.tag("deviceId", deviceId)
+            ilp_end.tag("app_id", deviceId.replacingOccurrences(of: " ", with: "_"))
             ilp_end.tag("name", rec.name)
             ilp_end.tag("uuid", rec.uuid)
             ilp_end.tag("type", "stop")
@@ -296,7 +292,7 @@ extension FXBUploadableTable {
                 timestamp: rec.ts
             )
             
-            ilp.tag("deviceId", deviceId)
+            ilp.tag("app_id", deviceId.replacingOccurrences(of: " ", with: "_"))
             ilp.field("existanceValue", int: 1)
             if let des = rec.description {
                 ilp.field("description", str: des)

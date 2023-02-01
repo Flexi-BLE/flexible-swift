@@ -10,8 +10,13 @@ import GRDB
 
 public protocol FXBTimeSeriesRecord: FetchableRecord & TableRecord {
     
-    var ts: Date { get }
+    var ts: Int64 { get }
     var deviceName: String { get }
     var uploaded: Bool { get }
-    
+}
+
+extension FXBTimeSeriesRecord {
+    var tsDate: Date {
+        return Date(timeIntervalSince1970: Double(self.ts) / 1_000_000.0)
+    }
 }

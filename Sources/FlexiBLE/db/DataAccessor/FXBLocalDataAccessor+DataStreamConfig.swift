@@ -117,29 +117,38 @@ internal extension  FXBLocalDataAccessor.DataStreamConfigAccess {
         
         let records = try await connection.read({ db -> [GenericRow] in
             var q = "SELECT * FROM \(name)"
+            var arguments: [String: (any DatabaseValueConvertible)?] = [:]
+            
             if uploaded != nil || start != nil || end != nil {
                 q += " WHERE"
             }
             if let uploaded = uploaded {
-                q += " uploaded = \(uploaded)"
+                q += " uploaded = :uploaded"
                 if start != nil || end != nil {
                     q += " AND"
                 }
+                arguments["uploaded"] = uploaded
             }
             if let start = start {
-                q += " ts >= '\(start.SQLiteFormat())'"
+                q += " ts >= :start_ts"
                 if end != nil {
                     q += " AND"
                 }
+                arguments["start_ts"] = start
             }
             if let end = end {
-                q += " ts < '\(end.SQLiteFormat())'"
+                q += " ts < :end_ts"
+                arguments["end_ts"] = end
             }
             
-            q += " LIMIT \(limit)"
+            q += " LIMIT :limit"
             
             let recs = try Row
-                .fetchAll(db, sql: q)
+                .fetchAll(
+                    db,
+                    sql: q,
+                    arguments: StatementArguments(arguments)
+                )
                 
                 
             return recs.map({ GenericRow(metadata: tableInfo, row: $0) })

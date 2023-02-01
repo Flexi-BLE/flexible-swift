@@ -60,7 +60,9 @@ internal class FXBMainDBMigrator{
         
         for device in spec.devices {
             for dataStream in device.dataStreams {
-                try? createDynamicConfigurationTable(from: dataStream, with: writer)
+                if !dataStream.configValues.isEmpty {
+                    try? createDynamicConfigurationTable(from: dataStream, with: writer)
+                }
                 try? createDynamicTableRecord(from: dataStream, with: writer, deviceName: device.name)
             }
         }
@@ -78,8 +80,8 @@ internal class FXBMainDBMigrator{
             try? db.drop(table: tableName)
             try db.create(table: tableName) { t in
                 
-                t.autoIncrementedPrimaryKey("id")
-                t.column("ts", .datetime).defaults(to: Date()).indexed()
+                t.autoIncrementedPrimaryKey("ts")
+//                t.column("ts", .datetime).defaults(to: Date()).indexed()
                 t.column("uploaded", .boolean).defaults(to: false)
 //                t.column("spec_id", .integer)
 //                    .references(FXBSpecTable.databaseTableName)

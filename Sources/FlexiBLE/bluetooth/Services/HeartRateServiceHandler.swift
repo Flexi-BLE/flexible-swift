@@ -51,12 +51,12 @@ internal class HeartRateServiceHandler: ServiceHandler {
             }
             
             bleLog.debug("heart rate: \(hr)")
-            Task { [hr] in
+            Task { [self, hr] in
                 
                 var rec = FXBHeartRate(
+                    ts: Date.now,
                     bpm: hr,
                     sensorLocation: sensorLocation,
-                    ts: Date.now,
                     deviceName: device.deviceName
                 )
                 

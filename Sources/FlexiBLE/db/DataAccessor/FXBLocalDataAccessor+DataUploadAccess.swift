@@ -32,11 +32,11 @@ public extension FXBLocalDataAccessor {
                     var q: QueryInterfaceRequest = FXBDataUpload.all()
                     
                     if let startDate = start {
-                        q = q.filter(Column("ts") >= startDate)
+                        q = q.filter(Column("ts") >= startDate.dbPrimaryKey)
                     }
         
                     if let endDate = end {
-                        q = q.filter(Column("ts") <= endDate)
+                        q = q.filter(Column("ts") <= endDate.dbPrimaryKey)
                     }
                     
                     return try q.fetchAll(db)

@@ -138,7 +138,7 @@ final internal class TransactionalDBConnectionManager {
                 var q: QueryInterfaceRequest<T> = T.all()
                 
                 if let startDate = startDate {
-                    q = q.filter(Column("ts") >= startDate)
+                    q = q.filter(Column("ts") >= startDate.dbPrimaryKey)
                 }
                 
                 if let deviceName = deviceName {
@@ -150,7 +150,7 @@ final internal class TransactionalDBConnectionManager {
                 }
                 
                 if let endDate = endDate {
-                    q = q.filter(Column("ts") <= endDate)
+                    q = q.filter(Column("ts") <= endDate.dbPrimaryKey)
                 }
                 
                 q = q.limit(limit)

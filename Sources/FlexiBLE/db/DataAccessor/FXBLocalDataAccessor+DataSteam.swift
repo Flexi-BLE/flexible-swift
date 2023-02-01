@@ -27,7 +27,7 @@ extension FXBLocalDataAccessor {
         ) async throws -> Int {
             
             // build the SQL query which will be used on all transactional databases
-            let sql = dataCountQueryBuilder(
+            let (sql, arguments) = dataCountQueryBuilder(
                 tableName: tableName,
                 start: start,
                 end: end,
@@ -42,7 +42,7 @@ extension FXBLocalDataAccessor {
             for db in dbs {
                 let conn = try transactionalManager.connection(for: db)
                 await count += try conn.read({ db in
-                    return try Int.fetchOne(db, sql: sql) ?? 0
+                    return try Int.fetchOne(db, sql: sql, arguments: arguments) ?? 0
                 })
             }
             
@@ -59,7 +59,7 @@ extension FXBLocalDataAccessor {
         ) async throws -> [GenericRow] {
             
             // build sql
-            let sql = dataFetchQueryBuilder(
+            let (sql, arguments) = dataFetchQueryBuilder(
                 tableName: tableName,
                 start: start,
                 end: end,
@@ -81,7 +81,7 @@ extension FXBLocalDataAccessor {
             for db in dbs {
                 let conn = try transactionalManager.connection(for: db)
                 let rows = try await conn.read({ db in
-                    return try Row.fetchAll(db, sql: sql)
+                    return try Row.fetchAll(db, sql: sql, arguments: arguments)
                 })
                 records += rows.map({ GenericRow(metadata: tableInfos, row: $0) })
             
@@ -117,7 +117,7 @@ extension FXBLocalDataAccessor {
                         sqlData += "\nWHERE \(dateClause)"
                     }
                     
-                    try db.execute(sql: sqlData, arguments: ["start": start, "end": end])
+                    try db.execute(sql: sqlData, arguments: ["start": start?.dbPrimaryKey, "end": end?.dbPrimaryKey])
                     
                     
                     var sqlThroughput = """
@@ -186,14 +186,10 @@ internal extension FXBLocalDataAccessor.DataStreamAccess {
         timestamps: [Double],
         device: String
     ) async throws {
-        let tableName = "\(DBUtility.tableName(from: ds.name))_data"
+        let tableName = "\(DBUtility.tableName(from: ds.name))"
         
         let varColsString = "\(ds.dataValues.map({ $0.name }).joined(separator: ", "))"
-        var sysCols = ["created_at", "ts", "device"]
-        switch ds.precision {
-        case .ms: break
-        case .us: sysCols.insert("ts_precision", at: 2)
-        }
+        let sysCols = ["created_at", "ts", "device"]
         let sysColsString = sysCols.joined(separator: ", ")
         let placeholders = "\(ds.dataValues.map({ _ in "?" }).joined(separator: ", "))"
         
@@ -208,18 +204,14 @@ internal extension FXBLocalDataAccessor.DataStreamAccess {
         for (i, values) in allValues.enumerated() {
             args.append(contentsOf: values)
             args.append(Date())
+            
             switch ds.precision {
             case .ms: sql += "(\(placeholders), ?, ?, ?), "
             case .us: sql += "(\(placeholders), ?, ?, ?, ?), "
             }
             
             if ds.offsetDataValue != nil {
-                args.append(Date(timeIntervalSince1970: timestamps[i]))
-                switch ds.precision {
-                case .ms: break
-                case .us: args.append(Int((timestamps[i] - Double(Int(timestamps[i]))) * 1_000_000))
-                }
-
+                args.append(Int64(timestamps[i]*1_000_000.0))
             } else {
                 args.append(Date())
             }
@@ -247,11 +239,14 @@ internal extension FXBLocalDataAccessor.DataStreamAccess {
         end: Date? = nil,
         deviceName: String?=nil,
         uploaded: Bool? = false
-    ) -> String {
+    ) -> (String, StatementArguments) {
         var sql = """
-                SELECT COUNT(id)
+                SELECT COUNT(ts)
                 FROM \(tableName)
             """
+        
+        var arguments: [String: (any DatabaseValueConvertible)?] = [:]
+        
         if !(start == nil && end == nil && deviceName == nil && uploaded == nil) {
             sql += "\nWHERE "
         }
@@ -264,21 +259,28 @@ internal extension FXBLocalDataAccessor.DataStreamAccess {
         }
         
         if let start = start, let end = end {
-            sql += "\nts BETWEEN '\(start.SQLiteFormat())' AND '\(end.SQLiteFormat())'"
+            sql += "\nts BETWEEN :start_ts AND :end_ts"
+            
+            arguments["start_ts"] = start.dbPrimaryKey
+            arguments["end_ts"] = end.dbPrimaryKey
+            
             if (uploaded != nil) { sql += " AND" }
         } else if let start = start {
-            sql += "\nts >= '\(start.SQLiteFormat())'"
+            sql += "\nts >= :start_ts"
+            arguments["start_ts"] = start.dbPrimaryKey
             if (uploaded != nil) { sql += " AND" }
         } else if let end = end {
-            sql += "\nts < '\(end.SQLiteFormat())'"
+            sql += "\nts < :end_ts"
+            arguments["end_ts"] = end.dbPrimaryKey
             if (uploaded != nil) { sql += " AND" }
         }
         
         if let uploaded = uploaded {
-            sql += "\nuploaded == \(uploaded);"
+            sql += "\nuploaded == :uploaded"
+            arguments["uploaded"] = uploaded
         }
         
-        return sql
+        return (sql, StatementArguments(arguments))
     }
     
     private func dataFetchQueryBuilder(
@@ -288,41 +290,54 @@ internal extension FXBLocalDataAccessor.DataStreamAccess {
         deviceName: String?=nil,
         uploaded: Bool?=false,
         limit: Int?=nil
-    ) -> String {
+    ) -> (String, StatementArguments) {
         var sql = """
             SELECT *
             FROM \(tableName)
         """
+        
+        var arguments: [String: (any DatabaseValueConvertible)?] = [:]
+        
         if !(start == nil && end == nil && deviceName == nil && uploaded == nil) {
             sql += "\nWHERE "
         }
         
         if let deviceName = deviceName {
-            sql += "\ndevice = '\(deviceName)'"
+            sql += "\ndevice = :deviceName"
+            arguments["deviceName"] = deviceName
             if (uploaded != nil || start != nil || end != nil) {
                 sql += " AND"
             }
         }
         
         if let start = start, let end = end {
-            sql += "\nts BETWEEN '\(start.SQLiteFormat())' AND '\(end.SQLiteFormat())'"
+            sql += "\nts BETWEEN :start_ts AND :end_ts"
+            arguments["start_ts"] = start.dbPrimaryKey
+            arguments["end_ts"] = end.dbPrimaryKey
+            
             if (uploaded != nil) { sql += " AND" }
         } else if let start = start {
-            sql += "\nts >= '\(start.SQLiteFormat())'"
+            sql += "\nts >= :start_ts"
+            arguments["start_ts"] = start.dbPrimaryKey
+            
             if (uploaded != nil) { sql += " AND" }
         } else if let end = end {
-            sql += "\nts < '\(end.SQLiteFormat())'"
+            sql += "\nts < :end_ts"
+            arguments["end_ts"] = end.dbPrimaryKey
+            
             if (uploaded != nil) { sql += " AND" }
         }
         
         if let uploaded = uploaded {
-            sql += "\nuploaded == \(uploaded)"
+            sql += "\nuploaded == :uploaded"
+            arguments["uploaded"] = uploaded
         }
         
         if let limit = limit {
-            sql += "\nlimit \(limit)"
+            sql += "\nlimit :limit"
+            arguments["limit"] = limit
         }
         
-        return sql
+        return (sql, StatementArguments(arguments))
     }
 }
