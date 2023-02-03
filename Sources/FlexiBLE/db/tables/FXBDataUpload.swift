@@ -8,20 +8,20 @@
 import Foundation
 import GRDB
 
-internal struct FXBDataUpload: Codable {
-    var id: Int64?
-    var ts: Date
-    var tableName: String
-    var database: String
-    var APIURL: String
-    var startDate: Date?
-    var endDate: Date
-    var expectedUploadCount: Int
-    var uploadCount: Int
-    var errorMessage: String?
-    var uploadTimeSeconds: TimeInterval
-    var numberOfAPICalls: Int
-    var totalBytes: Int
+public struct FXBDataUpload: Codable {
+    public var id: Int64?
+    public var ts: Date
+    public var tableName: String
+    public var database: String
+    public var APIURL: String
+    public var startDate: Date?
+    public var endDate: Date
+    public var expectedUploadCount: Int
+    public var uploadCount: Int
+    public var errorMessage: String?
+    public var uploadTimeSeconds: TimeInterval
+    public var numberOfAPICalls: Int
+    public var totalBytes: Int
     
     enum CodingKeys: String, CodingKey {
         case id, ts
@@ -56,9 +56,9 @@ extension FXBDataUpload: FetchableRecord, MutablePersistableRecord {
         static let totalBytes = Column(CodingKeys.totalBytes)
     }
     
-    static var databaseTableName: String = "data_upload"
+    public static var databaseTableName: String = "data_upload"
 
-    mutating func didInsert(_ inserted: InsertionSuccess) {
+    public mutating func didInsert(_ inserted: InsertionSuccess) {
         id = inserted.rowID
     }
     
@@ -76,5 +76,23 @@ extension FXBDataUpload: FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.uploadTimeSeconds.stringValue, .double)
         table.column(CodingKeys.numberOfAPICalls.stringValue, .integer)
         table.column(CodingKeys.totalBytes.stringValue, .integer)
+    }
+}
+
+public extension FXBDataUpload {
+    static func mock() -> FXBDataUpload {
+        return FXBDataUpload(
+            ts: Date.now,
+            tableName: "A Table",
+            database: "influxDB",
+            APIURL: "https://google.com",
+            startDate: Date.now.addingTimeInterval(-100),
+            endDate: Date.now.addingTimeInterval(-30),
+            expectedUploadCount: 100,
+            uploadCount: 100,
+            uploadTimeSeconds: 0.001,
+            numberOfAPICalls: 1,
+            totalBytes: 101
+        )
     }
 }

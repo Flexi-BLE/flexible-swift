@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 import GRDB
 
 // MARK: - Public
@@ -16,6 +17,29 @@ public extension FXBLocalDataAccessor {
         
         internal init(transactionalManager: TransactionalDBConnectionManager) {
             self.transactionalManager = transactionalManager
+        }
+        
+        public func publisher(limit: Int=25, table: String?=nil) throws -> AnyPublisher<[FXBDataUpload], Error> {
+            return ValueObservation
+                .tracking { db in
+                    if let table = table {
+                        return try FXBDataUpload
+                            .filter(FXBDataUpload.Columns.tableName == table)
+                            .order(FXBDataUpload.Columns.ts.desc)
+                            .limit(limit)
+                            .fetchAll(db)
+                    } else {
+                        return try FXBDataUpload
+                            .limit(limit)
+                            .order(FXBDataUpload.Columns.ts.desc)
+                            .fetchAll(db)
+                    }
+                }
+                .publisher(
+                    in: try transactionalManager.connection(for: transactionalManager.latestDB()),
+                    scheduling: .immediate
+                )
+                .eraseToAnyPublisher()
         }
         
         func get(

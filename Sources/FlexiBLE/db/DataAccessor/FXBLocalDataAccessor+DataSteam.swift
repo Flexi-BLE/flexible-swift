@@ -18,37 +18,6 @@ extension FXBLocalDataAccessor {
             self.transactionalManager = transactionalManager
         }
         
-        public func count(
-            for tableName: String,
-            from start: Date?=nil,
-            to end: Date?=nil,
-            deviceName: String?=nil,
-            uploaded: Bool? = false
-        ) async throws -> Int {
-            
-            // build the SQL query which will be used on all transactional databases
-            let (sql, arguments) = dataCountQueryBuilder(
-                tableName: tableName,
-                start: start,
-                end: end,
-                deviceName: deviceName,
-                uploaded: false
-            )
-            
-            // retrieve all database records from main
-            let dbs = try transactionalManager.getDbs(between: start, and: end)
-            
-            var count = 0
-            for db in dbs {
-                let conn = try transactionalManager.connection(for: db)
-                await count += try conn.read({ db in
-                    return try Int.fetchOne(db, sql: sql, arguments: arguments) ?? 0
-                })
-            }
-            
-            return count
-        }
-        
         public func records(
             for tableName: String,
             from start: Date?=nil,
@@ -231,56 +200,6 @@ internal extension FXBLocalDataAccessor.DataStreamAccess {
                 arguments: StatementArguments(args) ?? StatementArguments()
             )
         }
-    }
-    
-    private func dataCountQueryBuilder(
-        tableName: String,
-        start: Date? = nil,
-        end: Date? = nil,
-        deviceName: String?=nil,
-        uploaded: Bool? = false
-    ) -> (String, StatementArguments) {
-        var sql = """
-                SELECT COUNT(ts)
-                FROM \(tableName)
-            """
-        
-        var arguments: [String: (any DatabaseValueConvertible)?] = [:]
-        
-        if !(start == nil && end == nil && deviceName == nil && uploaded == nil) {
-            sql += "\nWHERE "
-        }
-        
-        if let deviceName = deviceName {
-            sql += "\ndevice = '\(deviceName)'"
-            if (uploaded != nil || start != nil || end != nil) {
-                sql += " AND"
-            }
-        }
-        
-        if let start = start, let end = end {
-            sql += "\nts BETWEEN :start_ts AND :end_ts"
-            
-            arguments["start_ts"] = start.dbPrimaryKey
-            arguments["end_ts"] = end.dbPrimaryKey
-            
-            if (uploaded != nil) { sql += " AND" }
-        } else if let start = start {
-            sql += "\nts >= :start_ts"
-            arguments["start_ts"] = start.dbPrimaryKey
-            if (uploaded != nil) { sql += " AND" }
-        } else if let end = end {
-            sql += "\nts < :end_ts"
-            arguments["end_ts"] = end.dbPrimaryKey
-            if (uploaded != nil) { sql += " AND" }
-        }
-        
-        if let uploaded = uploaded {
-            sql += "\nuploaded == :uploaded"
-            arguments["uploaded"] = uploaded
-        }
-        
-        return (sql, StatementArguments(arguments))
     }
     
     private func dataFetchQueryBuilder(

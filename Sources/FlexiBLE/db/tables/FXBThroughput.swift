@@ -9,6 +9,7 @@ import Foundation
 import GRDB
 
 public struct FXBThroughput: Codable, FXBTimeSeriesRecord {
+    public var id: Int64?
     public var ts: Int64
     public var dataStream: String
     public var bytes: Int
@@ -16,7 +17,7 @@ public struct FXBThroughput: Codable, FXBTimeSeriesRecord {
     public var uploaded: Bool = false
     
     enum CodingKeys: String, CodingKey {
-        case ts
+        case id, ts
         case dataStream = "data_stream"
         case bytes
         case deviceName = "device_name"
@@ -24,6 +25,7 @@ public struct FXBThroughput: Codable, FXBTimeSeriesRecord {
     }
     
     init(dataStream: String, bytes: Int, deviceName: String) {
+        self.id = nil
         self.ts = Date().dbPrimaryKey
         self.dataStream = dataStream
         self.bytes = bytes
@@ -34,6 +36,7 @@ public struct FXBThroughput: Codable, FXBTimeSeriesRecord {
 extension FXBThroughput: TableRecord, FetchableRecord, MutablePersistableRecord {
     
     enum Columns {
+        static let id = Column(CodingKeys.id)
         static let ts = Column(CodingKeys.ts)
         static let dataStream = Column(CodingKeys.dataStream)
         static let bytes = Column(CodingKeys.bytes)
@@ -42,13 +45,14 @@ extension FXBThroughput: TableRecord, FetchableRecord, MutablePersistableRecord 
     }
     
     mutating public func didInsert(_ inserted: InsertionSuccess) {
-        ts = inserted.rowID
+        id = inserted.rowID
     }
     
     public static var databaseTableName: String = "throughput"
     
     internal static func create(_ table: TableDefinition) {
-        table.autoIncrementedPrimaryKey(CodingKeys.ts.stringValue)
+        table.autoIncrementedPrimaryKey(CodingKeys.id.stringValue)
+        table.column(CodingKeys.ts.stringValue, .integer).notNull().indexed()
         table.column(CodingKeys.dataStream.stringValue, .text)
         table.column(CodingKeys.bytes.stringValue, .integer)
         table.column(CodingKeys.deviceName.stringValue, .text)

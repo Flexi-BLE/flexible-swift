@@ -16,7 +16,7 @@ final internal class TransactionalDBConnectionManager {
     
     private var connections: [String:DatabasePool] = [:]
     
-    private var maxDBSize = 1024 * 1024 * 500
+    private var maxDBSize = 1024 * 1024 * 1024 * 5 // 5Gb
     private var lastDBSizeCheck: Date = Date.now
     private var DBSizeCheckInterval: TimeInterval = 15
     
@@ -152,7 +152,7 @@ final internal class TransactionalDBConnectionManager {
                 if let endDate = endDate {
                     q = q.filter(Column("ts") <= endDate.dbPrimaryKey)
                 }
-                
+                q = q.order(Column("ts").desc)
                 q = q.limit(limit)
                 
                 return try q.fetchAll(db)

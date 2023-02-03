@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GRDB
 
 final public class FXBLocalDataAccessor {
     
@@ -24,6 +25,8 @@ final public class FXBLocalDataAccessor {
     
     public let dataUpload: DataUploadAccess
     
+    public let timeseries: TimeSeries
+    
     internal init(db: FXBDatabase) {
         self.db = db
         
@@ -36,5 +39,6 @@ final public class FXBLocalDataAccessor {
         location = LocationAccess(transactionalManager: db.transactionalDBMgr)
         throughput = ThroughputAccess(transactionalManager: db.transactionalDBMgr)
         dataUpload = DataUploadAccess(transactionalManager: db.transactionalDBMgr)
+        timeseries = TimeSeries(transactionManager: db.transactionalDBMgr, mainConnection: db.mainConnection)
     }
 }

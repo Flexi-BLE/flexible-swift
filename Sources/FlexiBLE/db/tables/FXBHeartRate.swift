@@ -9,6 +9,7 @@ import Foundation
 import GRDB
 
 public struct FXBHeartRate: Codable, FXBTimeSeriesRecord {
+    public var id: Int64?
     public var ts: Int64
     public var sensorLocation: String
     public var bpm: Int
@@ -18,7 +19,7 @@ public struct FXBHeartRate: Codable, FXBTimeSeriesRecord {
 //    internal var specId: Int64
     
     enum CodingKeys: String, CodingKey {
-        case ts
+        case id, ts
         case sensorLocation = "sensor_location"
         case bpm
         case deviceName = "device_name"
@@ -28,6 +29,7 @@ public struct FXBHeartRate: Codable, FXBTimeSeriesRecord {
     }
     
     init(ts: Date, bpm: Int, sensorLocation: String, deviceName: String) {
+        self.id = nil
         self.ts = ts.dbPrimaryKey
         self.bpm = bpm
         self.sensorLocation = sensorLocation
@@ -39,6 +41,7 @@ public struct FXBHeartRate: Codable, FXBTimeSeriesRecord {
 extension FXBHeartRate: TableRecord, FetchableRecord, MutablePersistableRecord {
     
     enum Columns {
+        static let id = Column(CodingKeys.id)
         static let ts = Column(CodingKeys.ts)
         static let sensorLocation = Column(CodingKeys.sensorLocation)
         static let bpm = Column(CodingKeys.bpm)
@@ -48,19 +51,18 @@ extension FXBHeartRate: TableRecord, FetchableRecord, MutablePersistableRecord {
     }
     
     mutating public func didInsert(_ inserted: InsertionSuccess) {
-        ts = inserted.rowID
+        id = inserted.rowID
     }
     
     public static var databaseTableName: String = "heart_rate"
     
     internal static func create(_ table: TableDefinition) {
-        table.autoIncrementedPrimaryKey(CodingKeys.ts.stringValue)
+        table.autoIncrementedPrimaryKey(CodingKeys.id.stringValue)
+        table.column(CodingKeys.ts.stringValue, .integer).notNull().indexed()
         table.column(CodingKeys.sensorLocation.stringValue, .text)
         table.column(CodingKeys.bpm.stringValue, .integer).notNull()
         table.column(CodingKeys.deviceName.stringValue, .text)
         table.column(CodingKeys.createdAt.stringValue, .datetime).defaults(to: Date())
         table.column(CodingKeys.uploaded.stringValue, .boolean).defaults(to: false)
-//        table.column(CodingKeys.specId.stringValue, .integer)
-//            .references(FXBSpecTable.databaseTableName)
     }
 }

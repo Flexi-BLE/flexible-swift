@@ -77,14 +77,11 @@ internal class FXBMainDBMigrator{
         let tableName = "\(DBUtility.tableName(from: metadata.name))_config"
         
         try writer.write { db in
-            try? db.drop(table: tableName)
-            try db.create(table: tableName) { t in
+            try db.create(table: tableName, ifNotExists: true) { t in
                 
-                t.autoIncrementedPrimaryKey("ts")
-//                t.column("ts", .datetime).defaults(to: Date()).indexed()
+                t.autoIncrementedPrimaryKey("id")
+                t.column("ts", .integer).notNull().indexed()
                 t.column("uploaded", .boolean).defaults(to: false)
-//                t.column("spec_id", .integer)
-//                    .references(FXBSpecTable.databaseTableName)
                 t.column("device", .text)
                 
                 for cv in metadata.configValues {

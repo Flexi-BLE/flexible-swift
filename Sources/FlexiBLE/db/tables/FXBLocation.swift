@@ -9,6 +9,7 @@ import Foundation
 import GRDB
 
 public struct FXBLocation: Codable, FXBTimeSeriesRecord {
+    public var id: Int64?
     public var ts: Int64
     public var latitude: Double
     public var longitude: Double
@@ -20,7 +21,7 @@ public struct FXBLocation: Codable, FXBTimeSeriesRecord {
     public var uploaded: Bool = false
     
     enum CodingKeys: String, CodingKey {
-        case ts
+        case id, ts
         case latitude
         case longitude
         case createdAt = "created_at"
@@ -42,6 +43,7 @@ public struct FXBLocation: Codable, FXBTimeSeriesRecord {
         verticalAccuracy: Double,
         deviceName: String
     ) {
+        self.id = nil
         self.ts = ts.dbPrimaryKey
         self.latitude = latitude
         self.longitude = longitude
@@ -57,7 +59,8 @@ public struct FXBLocation: Codable, FXBTimeSeriesRecord {
 extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
     
     enum Columns {
-        static let id = Column(CodingKeys.ts)
+        static let id = Column(CodingKeys.id)
+        static let ts = Column(CodingKeys.ts)
         static let latitude = Column(CodingKeys.latitude)
         static let longitude = Column(CodingKeys.longitude)
         static let altitude = Column(CodingKeys.altitude)
@@ -70,13 +73,14 @@ extension FXBLocation: TableRecord, FetchableRecord, MutablePersistableRecord {
     }
     
     mutating public func didInsert(_ inserted: InsertionSuccess) {
-        ts = inserted.rowID
+        id = inserted.rowID
     }
     
     public static var databaseTableName: String = "location"
     
     internal static func create(_ table: TableDefinition) {
-        table.autoIncrementedPrimaryKey(CodingKeys.ts.stringValue)
+        table.autoIncrementedPrimaryKey(CodingKeys.id.stringValue)
+        table.column(CodingKeys.ts.stringValue, .integer).notNull().indexed()
         table.column(CodingKeys.latitude.stringValue, .double)
         table.column(CodingKeys.longitude.stringValue, .double)
         table.column(CodingKeys.altitude.stringValue, .double)

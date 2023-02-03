@@ -67,6 +67,11 @@ public class FXBTableUploader {
         
         var records = await nextRecords()
         
+        guard !records.isEmpty else {
+            complete = true
+            return .success(true)
+        }
+        
         while !records.isEmpty {
             let res = await records.ship(with: credentials)
             numberOfAPICalls += 1
@@ -121,20 +126,31 @@ public class FXBTableUploader {
     
     private func calculateRecordCount() async {
         do {
-            let st = try await FlexiBLE.shared.dbAccess?.dataStream.count(
-                for: table.tableName,
-                from: startDate,
-                to: endDate,
-                uploaded: false
-            ) ?? 0
-            if st == 0 { complete = true }
-            totalRemaining = st
-            calculatedUploadCount = st
+            var recordCount: Int = try await FlexiBLE.shared
+                .dbAccess?
+                .timeseries
+                .count(
+                    for: table,
+                    start: startDate,
+                    end: endDate,
+                    deviceName: nil,
+                    uploaded: false
+                ) ?? 0
+            
+            
+            
+            if recordCount == 0 {
+                complete = true
+                return
+            }
+            totalRemaining = recordCount
+            calculatedUploadCount = recordCount
             uploaded = 0
         } catch {
             totalRemaining = 0
             uploaded = 0
             complete = true
+            errorMessage = "unable to obtain record count, \(error.localizedDescription)"
             await save()
         }
     }
@@ -150,6 +166,7 @@ public class FXBTableUploader {
                 endDate: self.endDate,
                 expectedUploadCount: self.calculatedUploadCount,
                 uploadCount: self.uploaded,
+                errorMessage: errorMessage,
                 uploadTimeSeconds: self.uploadTime,
                 numberOfAPICalls: self.numberOfAPICalls,
                 totalBytes: self.totalBytes

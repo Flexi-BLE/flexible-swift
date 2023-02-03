@@ -10,6 +10,7 @@ import GRDB
 
 public protocol FXBTimeSeriesRecord: FetchableRecord & TableRecord {
     
+    var id: Int64? { get }
     var ts: Int64 { get }
     var deviceName: String { get }
     var uploaded: Bool { get }

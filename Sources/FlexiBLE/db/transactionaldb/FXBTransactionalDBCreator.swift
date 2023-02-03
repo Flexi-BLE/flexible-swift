@@ -51,9 +51,9 @@ internal enum FXBTransactionalDBCreator {
         let dataTableName = "\(name)"
         
         try connection.write { db in
-            try? db.drop(table: dataTableName)
-            try db.create(table: dataTableName) { t in
-                t.autoIncrementedPrimaryKey("ts")
+            try db.create(table: dataTableName, ifNotExists: true) { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("ts", .integer).notNull().indexed()
                 t.column("created_at", .datetime).defaults(to: Date())
                 t.column("uploaded", .boolean).defaults(to: false)
                 t.column("device", .text)

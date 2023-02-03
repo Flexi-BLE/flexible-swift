@@ -8,7 +8,7 @@
 import Foundation
 import GRDB
 
-enum FXBUploadableTable {
+public enum FXBUploadableTable {
     case experiment
     case heartRate
     case location
@@ -28,7 +28,7 @@ enum FXBUploadableTable {
     }
 }
 
-extension FXBUploadableTable {
+internal extension FXBUploadableTable {
     func ILPQuery(from start: Date?=nil, to end: Date?=nil, uploaded: Bool=false, limit: Int, deviceId: String) async throws -> [ILPRecord] {
         switch self {
         case .heartRate: return try await IRPQueryHeartRate(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
