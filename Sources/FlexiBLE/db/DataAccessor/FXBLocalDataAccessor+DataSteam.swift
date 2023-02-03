@@ -165,7 +165,7 @@ internal extension FXBLocalDataAccessor.DataStreamAccess {
         var sql = """
             INSERT INTO \(tableName)
         """
-        let colsSql = "(\(varColsString), \(sysColsString)) VALUES"
+        let colsSql = " (\(varColsString), \(sysColsString)) VALUES"
         sql += colsSql
         
         var args: [Any] = []
@@ -174,10 +174,7 @@ internal extension FXBLocalDataAccessor.DataStreamAccess {
             args.append(contentsOf: values)
             args.append(Date())
             
-            switch ds.precision {
-            case .ms: sql += "(\(placeholders), ?, ?, ?), "
-            case .us: sql += "(\(placeholders), ?, ?, ?, ?), "
-            }
+            sql += "(\(placeholders), ?, ?, ?), "
             
             if ds.offsetDataValue != nil {
                 args.append(Int64(timestamps[i]*1_000_000.0))
