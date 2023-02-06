@@ -27,15 +27,9 @@ public class FXBDeviceConnectionManager: NSObject {
     internal var serviceHandlers: [DataStreamHandler] = []
     internal let infoServiceHandler: InfoServiceHandler
     
-    /// Reference to database
-    /// - Remark:
-    ///  Holding reference to the database is not ideal, this should be reworked to require database dependency.
-    private let db: FXBDBManager
-    
     internal init(spec: FXBDeviceSpec, peripheral: CBPeripheral) {
         self.spec = spec
         self.peripheral = peripheral
-        self.db = FXBDBManager.shared
         
         self.infoServiceHandler = InfoServiceHandler(
             spec: self.spec

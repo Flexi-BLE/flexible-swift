@@ -17,7 +17,7 @@ public struct FXBTimestamp: Codable {
     var createdAt: Date
     public var ts: Date
     var uploaded: Bool = false
-    internal var specId: Int64
+//    internal var specId: Int64
         
     enum CodingKeys: String, CodingKey {
         case id
@@ -27,22 +27,21 @@ public struct FXBTimestamp: Codable {
         case createdAt = "created_at"
         case ts
         case uploaded
-        case specId = "spec_id"
+//        case specId = "spec_id"
     }
     
     init(
         name: String?,
         description: String?=nil,
         ts:Date=Date.now,
-        experimentId: Int64?=nil,
-        specId: Int64
+        experimentId: Int64?=nil
     ) {
         self.name = name
         self.description = description
         self.ts = ts
         self.createdAt = Date.now
         self.experimentId = experimentId
-        self.specId = specId
+//        self.specId = specId
     }
     
     public static func dummy() -> FXBTimestamp {
@@ -50,8 +49,8 @@ public struct FXBTimestamp: Codable {
             name: "test",
             description: "test123",
             ts: Date(),
-            experimentId: 123,
-            specId: 1
+            experimentId: 123
+//            specId: 1
         )
     }
 }
@@ -65,7 +64,7 @@ extension FXBTimestamp: FetchableRecord, MutablePersistableRecord {
         static let createdAt = Column(CodingKeys.createdAt)
         static let datetime = Column(CodingKeys.ts)
         static let uploaded = Column(CodingKeys.uploaded)
-        static let specId = Column(CodingKeys.specId)
+//        static let specId = Column(CodingKeys.specId)
     }
     
     mutating public func didInsert(_ inserted: InsertionSuccess) {
@@ -84,7 +83,7 @@ extension FXBTimestamp: FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.createdAt.stringValue, .datetime).notNull(onConflict: .fail)
         table.column(CodingKeys.ts.stringValue, .datetime).notNull().indexed()
         table.column(CodingKeys.uploaded.stringValue, .boolean)
-        table.column(CodingKeys.specId.stringValue, .integer)
-            .references(FXBSpecTable.databaseTableName)
+//        table.column(CodingKeys.specId.stringValue, .integer)
+//            .references(FXBSpecTable.databaseTableName)
     }
 }

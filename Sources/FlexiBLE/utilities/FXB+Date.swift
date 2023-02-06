@@ -24,16 +24,36 @@ extension Date {
         return formatter.date(from: str)
     }
     
-    
-    var unixEpochMilliseconds: TimeInterval {
-        return (self.timeIntervalSince1970 * 1000.0).rounded()
+    func timestamp() -> String {
+        let formatter = DateFormatter()
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyyMMdd_HHmmss"
+        
+        return formatter.string(from: self)
     }
     
-    var unixEpochNanoseconds: Int {
-        let nano = (self.timeIntervalSince1970 * 1000000000).rounded()
+    
+    var unixEpochMilliseconds: TimeInterval {
+        return (self.timeIntervalSince1970 * 1_000.0).rounded()
+    }
+    
+    var unixEpochMicroSeconds: Int64 {
+        let micro = (self.timeIntervalSince1970 * 1_000_000.0).rounded()
         
         let numberFormatter = NumberFormatter()
         numberFormatter.numberStyle = NumberFormatter.Style.decimal
-        return Int(numberFormatter.number(from: "\(nano)")!)
+        return Int64(truncating: numberFormatter.number(from: "\(micro)")!)
+    }
+    
+    var unixEpochNanoseconds: Int64 {
+        let nano = (self.timeIntervalSince1970 * 1_000_000_000.0).rounded()
+        
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = NumberFormatter.Style.decimal
+        return Int64(truncating: numberFormatter.number(from: "\(nano)")!)
+    }
+    
+    var dbPrimaryKey: Int64 {
+        return Int64(self.unixEpochMicroSeconds)
     }
 }

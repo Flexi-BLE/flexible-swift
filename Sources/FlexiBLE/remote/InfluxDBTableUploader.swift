@@ -8,7 +8,7 @@
 import Foundation
 
 public class FXBTableUploader {
-    var table: FXBTimeSeriesTable
+    var table: FXBUploadableTable
     var startDate: Date?
     var endDate: Date
     
@@ -26,7 +26,7 @@ public class FXBTableUploader {
     private var totalBytes: Int = 0
     
     init(
-        table: FXBTimeSeriesTable,
+        table: FXBUploadableTable,
         credentials: InfluxDBCredentials,
         startDate: Date?,
         endDate: Date
@@ -63,13 +63,22 @@ public class FXBTableUploader {
     func upload() async -> Result<Bool, Error> {
         let start = Date.now
         
+        dbLog.debug("data upload: starting upload for \(self.table.tableName) (\(self.totalRemaining))")
+        
         var records = await nextRecords()
+        
+        guard !records.isEmpty else {
+            complete = true
+            return .success(true)
+        }
         
         while !records.isEmpty {
             let res = await records.ship(with: credentials)
             numberOfAPICalls += 1
             switch res {
             case .success(_):
+                
+                dbLog.error("data upload: successfully upload \(records.count) records")
                 
                 totalRemaining -= records.count
                 uploaded += records.count
@@ -103,7 +112,7 @@ public class FXBTableUploader {
             uploadLog.info("updated database records")
         } catch {
             errorMessage = "error updating uploaded flag: error \(error.localizedDescription)"
-            uploadLog.error("failed to update database records")
+            uploadLog.error("failed to update database records uploaded = true")
         }
     }
     
@@ -117,45 +126,53 @@ public class FXBTableUploader {
     
     private func calculateRecordCount() async {
         do {
-            let st = try await FXBRead().getTotalRecords(
-                for: table.tableName,
-                from: startDate,
-                to: endDate,
-                uploaded: false
-            )
-            if st == 0 { complete = true }
-            totalRemaining = st
-            calculatedUploadCount = st
+            var recordCount: Int = try await FlexiBLE.shared
+                .dbAccess?
+                .timeseries
+                .count(
+                    for: table,
+                    start: startDate,
+                    end: endDate,
+                    deviceName: nil,
+                    uploaded: false
+                ) ?? 0
+            
+            
+            
+            if recordCount == 0 {
+                complete = true
+                return
+            }
+            totalRemaining = recordCount
+            calculatedUploadCount = recordCount
             uploaded = 0
         } catch {
             totalRemaining = 0
             uploaded = 0
             complete = true
+            errorMessage = "unable to obtain record count, \(error.localizedDescription)"
             await save()
         }
     }
     
     private func save() async {
         do {
-            try await FXBDBManager.shared.dbQueue.write { [weak self] db in
-                guard let self = self else { return }
-                
-                var record = FXBDataUpload(
-                    ts: Date.now,
-                    tableName: self.table.tableName,
-                    database: "influxDB",
-                    APIURL: self.credentials.url.absoluteString,
-                    startDate: self.startDate,
-                    endDate: self.endDate,
-                    expectedUploadCount: self.calculatedUploadCount,
-                    uploadCount: self.uploaded,
-                    uploadTimeSeconds: self.uploadTime,
-                    numberOfAPICalls: self.numberOfAPICalls,
-                    totalBytes: self.totalBytes
-                )
-                
-                try record.insert(db)
-            }
+            var record = FXBDataUpload(
+                ts: Date.now,
+                tableName: self.table.tableName,
+                database: "influxDB",
+                APIURL: self.credentials.url.absoluteString,
+                startDate: self.startDate,
+                endDate: self.endDate,
+                expectedUploadCount: self.calculatedUploadCount,
+                uploadCount: self.uploaded,
+                errorMessage: errorMessage,
+                uploadTimeSeconds: self.uploadTime,
+                numberOfAPICalls: self.numberOfAPICalls,
+                totalBytes: self.totalBytes
+            )
+            
+            try FlexiBLE.shared.dbAccess?.dataUpload.record(&record)
         } catch {
             uploadLog.error("error inserting upload record: \(error.localizedDescription)")
         }

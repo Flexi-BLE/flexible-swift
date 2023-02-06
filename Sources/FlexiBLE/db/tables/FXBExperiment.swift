@@ -21,7 +21,7 @@ public struct FXBExperiment: Codable {
     public var active: Bool = false
     internal var uploaded: Bool = false
     internal var createdAt: Date
-    internal var specId: Int64?
+//    internal var specId: Int64?
         
     enum CodingKeys: String, CodingKey {
         case id
@@ -35,7 +35,7 @@ public struct FXBExperiment: Codable {
         case uploaded
         case active
         case trackGPS = "track_gps"
-        case specId = "spec_id"
+//        case specId = "spec_id"
     }
     
     init(
@@ -44,8 +44,7 @@ public struct FXBExperiment: Codable {
         start:Date=Date.now,
         end:Date?=nil,
         active: Bool,
-        trackGPS: Bool=false,
-        specId: Int64
+        trackGPS: Bool=false
     ) {
         self.name = name
         self.uuid = UUID().uuidString
@@ -56,7 +55,7 @@ public struct FXBExperiment: Codable {
         self.ts = start
         self.active = active
         self.trackGPS = trackGPS
-        self.specId = specId
+//        self.specId = specId
     }
 }
 
@@ -81,7 +80,7 @@ extension FXBExperiment: FetchableRecord, MutablePersistableRecord {
         static let active = Column(CodingKeys.active)
         static let uploaded = Column(CodingKeys.uploaded)
         static let trackGPS = Column(CodingKeys.trackGPS)
-        static let specId = Column(CodingKeys.specId)
+//        static let specId = Column(CodingKeys.specId)
     }
         
     mutating public func didInsert(_ inserted: InsertionSuccess) {
@@ -102,8 +101,8 @@ extension FXBExperiment: FetchableRecord, MutablePersistableRecord {
         table.column(CodingKeys.uploaded.stringValue, .boolean)
         table.column(CodingKeys.active.stringValue, .boolean)
         table.column(CodingKeys.trackGPS.stringValue, .boolean)
-        table.column(CodingKeys.specId.stringValue, .integer)
-            .references(FXBSpecTable.databaseTableName)
+//        table.column(CodingKeys.specId.stringValue, .integer)
+//            .references(FXBSpecTable.databaseTableName)
     }
 }
 
@@ -114,8 +113,7 @@ extension FXBExperiment {
             start: Date.now.addingTimeInterval(-3600),
             end: nil,
             active: true,
-            trackGPS: true,
-            specId: 0
+            trackGPS: true
         )
         exp.id = 1000
         return exp

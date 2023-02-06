@@ -4,41 +4,62 @@ import GRDB
 public final class FlexiBLE: ObservableObject {
     public static var shared = FlexiBLE()
     
-    
     public let conn: FXBConnectionManager
-    public let db: FXBDBManager
-    public let exp: FXBExp
+    @Published public var profile: FlexiBLEProfile? = nil
     
-    public let read: FXBRead
-    public let write: FXBWrite
+    private var localDatabase: FXBDatabase?
+    public var dbAccess: FXBLocalDataAccessor?
     
-    @Published public var specId: Int64 = -1
-    @Published public var spec: FXBSpec? = nil
-    
-    private init() {
-        self.db = FXBDBManager.shared
-        self.conn = FXBConnectionManager(db: db)
-        self.exp = FXBExp(db: db)
-        
-        self.read = FXBRead()
-        self.write = FXBWrite()
+    public var appDataPath: URL {
+        return FlexiBLEAppData.FlexiBLEBasePath
     }
     
-    public func setSpec(_ spec: FXBSpec) async throws {
-        self.specId = try await self.write.recordSpec(spec)
-        self.spec = spec
+    private init() {
+        self.conn = FXBConnectionManager()
+    }
+    
+    public func setLastProfile() {
+        if let profile = FlexiBLEAppData.shared.lastProfile() {
+            switchProfile(to: profile.id)
+        }
+    }
+    
+    public func createProfile(with spec: FXBSpec, name: String?=nil, setActive: Bool=true) {
+        let profile = FlexiBLEProfile(
+            name: name == nil ? spec.id : name!,
+            spec: spec
+        )
+        
+        FlexiBLEAppData.shared.add(profile)
+        
+        if setActive {
+            switchProfile(to: profile.id)
+        }
+    }
+    
+    public func switchProfile(to id: UUID) {
+        guard let profile = FlexiBLEAppData.shared.get(id: id) else {
+            return
+        }
+        
+        stopScan()
+        conn.disconnectAll()
+        startScan(with: profile.specification)
+        
+        self.profile = profile
+        localDatabase = FXBDatabase(for: profile)
+        dbAccess = FXBLocalDataAccessor(db: localDatabase!)
+    }
+    
+    public func profiles() -> [FlexiBLEProfile] {
+        return FlexiBLEAppData.shared.profiles
     }
     
     public func startScan(with spec: FXBSpec) {
-        Task {
-            conn.scan(with: spec)
-        }
+        conn.scan(with: spec)
     }
     
     public func stopScan() {
-        Task {
-            conn.stopScan()
-        }
+        conn.stopScan()
     }
 }
-        

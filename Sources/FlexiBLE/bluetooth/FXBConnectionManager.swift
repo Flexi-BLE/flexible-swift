@@ -23,12 +23,10 @@ public class FXBConnectionManager: NSObject, ObservableObject {
     
     private var spec: FXBSpec?
     private var scanOnPoweredOn: Bool = true
-    private let db: FXBDBManager
     
     private var autoConnectDevices: [String] = []
     
-    required init(db: FXBDBManager) {
-        self.db = db
+    required override init() {
         super.init()
         
         self.centralManager = CBCentralManager(
@@ -49,6 +47,16 @@ public class FXBConnectionManager: NSObject, ObservableObject {
     
     public func disable(device: FXBDevice) {
         centralManager.cancelPeripheralConnection(device.cbPeripheral)
+    }
+    
+    internal func disconnectAll() {
+        fxbConnectedDevices.forEach({
+            centralManager.cancelPeripheralConnection($0.cbPeripheral)
+        })
+        
+        connectedRegisteredDevices.forEach({
+            centralManager.cancelPeripheralConnection($0.cbPeripheral)
+        })
     }
     
     public func enable(device: FXBRegisteredDevice) {

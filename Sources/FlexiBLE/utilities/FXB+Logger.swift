@@ -17,6 +17,9 @@ internal let bleLog = Logger(subsystem: "com.blainerothrock.flexible", category:
 /// Persistence (Data) Logging
 internal let pLog = Logger(subsystem: "com.blainerothrock.flexible", category: "persistence")
 
+/// Persistence (Data) Logging
+internal let dbLog = Logger(subsystem: "com.blainerothrock.flexible", category: "local-db")
+
 /// Remote Upload Logger
 internal let webLog = Logger(subsystem: "com.blainerothrock.flexible", category: "outbound-web")
 
