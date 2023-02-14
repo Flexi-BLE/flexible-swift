@@ -14,8 +14,7 @@ public struct FXBDeviceSpec: Codable, Equatable {
     public let tags: [String]
     public let globalConfigValues: [String]
     public let dataStreams: [FXBDataStream]
-    
-    internal let ble: FXBDeviceBLE
+    internal let bleRegisteredServices: [BLERegisteredService]
     
     public static func ==(lhs: FXBDeviceSpec, rhs: FXBDeviceSpec) -> Bool {
         return lhs.id == rhs.id

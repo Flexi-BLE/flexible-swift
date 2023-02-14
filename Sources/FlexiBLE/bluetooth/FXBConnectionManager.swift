@@ -21,6 +21,8 @@ public class FXBConnectionManager: NSObject, ObservableObject {
     @Published public private(set) var foundRegisteredDevices: [FXBRegisteredDevice] = []
     @Published public private(set) var connectedRegisteredDevices: [FXBRegisteredDevice] = []
     
+    @Published public private(set) var foundUnknownFlexiBLEDevices: [CBAdvertisementData] = []
+    
     private var database: FXBLocalDataAccessor
     private var flexiBLEDevices: [FXBDeviceSpec] = []
     private var bleRegisteredDevices: [FXBRegisteredDeviceSpec] = []
@@ -40,6 +42,10 @@ public class FXBConnectionManager: NSObject, ObservableObject {
             queue: nil,
             options: [CBCentralManagerOptionRestoreIdentifierKey: "FlexiBLE"]
         )
+    }
+    
+    deinit {
+        centralManager.delegate = nil
     }
     
     public func enable(device: FXBDevice) {
@@ -112,7 +118,10 @@ public class FXBConnectionManager: NSObject, ObservableObject {
     }
     
     internal func scan() {
-        guard centralManager.state == .poweredOn else { return }
+        guard centralManager.state == .poweredOn else {
+            stopScan()
+            return
+        }
         
         if isScanning { stopScan() }
         startScan()
@@ -124,20 +133,12 @@ public class FXBConnectionManager: NSObject, ObservableObject {
             return
         }
         
-        var services: [CBUUID] = []
-        for device in flexiBLEDevices {
-            services.append(device.infoServiceUuid)
-        }
+        var services: [CBUUID] = [FlexiBLEServiceHandler.FlexiBLEServiceUUID]
         
         for device in bleRegisteredDevices {
             services.append(contentsOf: device.serviceIds)
         }
-
-        guard services.count > 0 else {
-            bleLog.info("scanning enabled, but no services, not starting scan.")
-            return
-        }
-
+        
         bleLog.info("started scan")
         bleLog.info("scanning for devices with services: \(services)")
 
@@ -190,37 +191,51 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
         bleLog.debug("peripheral found: \(peripheral.name ?? "--none--"), (\(peripheral.identifier))")
         bleLog.debug("advertisement data \(advertisementData)")
         
-        guard let peripheralName = advertisementData["kCBAdvDataLocalName"] as? String else {
-            return
+        let advData = CBAdvertisementData(data: advertisementData)
+        
+        guard let peripheralName = advData.name,
+              advData.isConnectable else {
+                  
+                  bleLog.info("device found, but is not connectable")
+                  return
         }
         
-        if let deviceDef = flexiBLEDevices.first(where: { peripheralName.starts(with: $0.name) }) {
+        if advData.serviceIds.contains(where: { $0 == FlexiBLEServiceHandler.FlexiBLEServiceUUID }) {
+            bleLog.info("Found FlexiBLE device: \(peripheralName)")
             
-            if let connectedDevice = fxbConnectedDevices.first(where: { peripheralName == $0.deviceName }) {
-                if autoConnectDevices.contains(peripheralName) {
-                    self.enable(device: connectedDevice)
+            if let deviceDef = flexiBLEDevices.first(where: { peripheralName.starts(with: $0.name) }) {
+                
+                if let connectedDevice = fxbConnectedDevices.first(where: { peripheralName == $0.deviceName }) {
+                    if autoConnectDevices.contains(peripheralName) {
+                        self.enable(device: connectedDevice)
+                    }
+                    return
                 }
-                return
-            }
-            
-            if let foundDevice = fxbFoundDevices.first(where: { peripheralName == $0.deviceName }) {
-                if autoConnectDevices.contains(peripheralName) {
-                    self.enable(device: foundDevice)
+                
+                if let foundDevice = fxbFoundDevices.first(where: { peripheralName == $0.deviceName }) {
+                    if autoConnectDevices.contains(peripheralName) {
+                        self.enable(device: foundDevice)
+                    }
+                    return
                 }
-                return
-            }
-            
-            let device = FXBDevice(
-                database: database,
-                deviceSpec: deviceDef,
-                cbPeripheral: peripheral,
-                deviceName: peripheralName
-            )
-            
-            fxbFoundDevices.append(device)
-            
-            if autoConnectDevices.contains(peripheralName) {
-                self.enable(device: device)
+                
+                let device = FXBDevice(
+                    database: database,
+                    deviceSpec: deviceDef,
+                    cbPeripheral: peripheral,
+                    deviceName: peripheralName
+                )
+                
+                fxbFoundDevices.append(device)
+                
+                if autoConnectDevices.contains(peripheralName) {
+                    self.enable(device: device)
+                }
+            } else {
+                if !foundUnknownFlexiBLEDevices.contains(where: { $0.name == peripheralName }) {
+                    bleLog.info("\(peripheralName) is not part of current spec")
+                    foundUnknownFlexiBLEDevices.append(advData)
+                }
             }
         }
         

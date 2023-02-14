@@ -84,10 +84,18 @@ class FlexiBLEAppData: Codable {
         }
     }
     
-    internal static func createBasePath(name: String, id: UUID) -> URL {
+    internal static func createBasePath(name: String?, id: UUID) -> URL {
         do {
+            
+            var dir: String
+            if let name = name {
+                dir = "\(name)_\(id)"
+            } else {
+                dir = id.uuidString
+            }
+            
             let path = FlexiBLEAppData.FlexiBLEBasePath
-                .appendingPathComponent("\(name)_\(id)", isDirectory: true)
+                .appendingPathComponent(dir, isDirectory: true)
             
             if !FileManager.default.fileExists(atPath: path.absoluteString){
                 do {

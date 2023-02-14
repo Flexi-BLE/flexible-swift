@@ -26,14 +26,14 @@ public class FXBDeviceConnectionManager: NSObject {
     internal var observers = Set<AnyCancellable>()
     
     internal var serviceHandlers: [DataStreamHandler] = []
-    internal let infoServiceHandler: InfoServiceHandler
+    internal let infoServiceHandler: FlexiBLEServiceHandler
     
     internal init(database: FXBLocalDataAccessor, spec: FXBDeviceSpec, peripheral: CBPeripheral) {
         self.database = database
         self.spec = spec
         self.peripheral = peripheral
         
-        self.infoServiceHandler = InfoServiceHandler(
+        self.infoServiceHandler = FlexiBLEServiceHandler(
             spec: self.spec,
             database: database
         )
@@ -60,7 +60,8 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
             
             if let ds = spec.dataStreams.first(where: { $0.serviceCbuuid == service.uuid }) {
                 let handler = DataStreamHandler(
-                    database: database, uuid: service.uuid,
+                    database: database,
+                    uuid: service.uuid,
                     deviceName: peripheral.name ?? spec.name,
                     dataStream: ds
                 )
@@ -81,7 +82,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
             handleRegisteredServiceDiscovery(peripheral: peripheral, service: service)
         } else if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.setup(peripheral: peripheral, service: service)
-        } else if service.uuid == spec.infoServiceUuid {
+        } else if service.uuid == FlexiBLEServiceHandler.FlexiBLEServiceUUID {
             infoServiceHandler.setup(peripheral: peripheral, service: service)
         }
         
@@ -107,7 +108,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
                 data: characteristic.value,
                 referenceDate: referenceDate
             )
-        } else if service.uuid == spec.infoServiceUuid {
+        } else if service.uuid == FlexiBLEServiceHandler.FlexiBLEServiceUUID {
             infoServiceHandler.didUpdate(peripheral: peripheral, characteristic: characteristic)
         }
     }
@@ -124,7 +125,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
         
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.didWrite(uuid: characteristic.uuid)
-        } else if service.uuid == spec.infoServiceUuid {
+        } else if service.uuid == FlexiBLEServiceHandler.FlexiBLEServiceUUID {
             infoServiceHandler.didWrite(peripheral: peripheral, uuid: characteristic.uuid)
         }
         
@@ -134,11 +135,6 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
     public func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
         self.rssi = Int(truncating: RSSI)
     }
-}
-
-// MARK: - Core Bluetooth Delegate Helpers
-extension FXBDeviceConnectionManager {
-    // TODO: A place for this sort of thing
 }
 
 

@@ -17,7 +17,7 @@ public class FlexiBLEProfile: Codable, ObservableObject {
     
     private var db: FXBDatabase
     private var dbAccessor: FXBLocalDataAccessor
-    public let conn: FXBConnectionManager
+    @Published public var conn: FXBConnectionManager?
     
     internal var basePath: URL
     internal var mainDatabasePath: URL
@@ -26,9 +26,13 @@ public class FlexiBLEProfile: Codable, ObservableObject {
     
     public var specification: FXBSpec
     
-    public init(name: String, spec: FXBSpec) {
+    public init(name: String?, spec: FXBSpec?) {
         self.id = UUID()
-        self.name = name
+        if let name = name {
+            self.name = name
+        } else {
+            self.name = id.uuidString
+        }
         self.createdAt = Date.now
         self.updatedAt = Date.now
         
@@ -38,19 +42,27 @@ public class FlexiBLEProfile: Codable, ObservableObject {
         self.transactionalDatabasesBasePath = FlexiBLEAppData.createTransactionalDatabasesBasePath(basePath: basePath)
         self.specificationPath = basePath.appendingPathComponent("spec.json")
         
+        if let spec = spec {
+            self.specification = spec
+        } else {
+            self.specification = FXBSpec(
+                id: id.uuidString,
+                schemaVersion: FXBSpec.schemaVersion,
+                createdAt: Date.now,
+                updatedAt: Date.now,
+                tags: [],
+                bleRegisteredDevices: [],
+                devices: []
+            )
+        }
+        
         self.db = FXBDatabase(
-            specification: spec,
+            specification: specification,
             mainDBPath: mainDatabasePath,
             transactionalDBPath: transactionalDatabasesBasePath
         )
         self.dbAccessor = FXBLocalDataAccessor(db: db)
-        self.conn = FXBConnectionManager(
-            database: dbAccessor,
-            flexibBLEDevices: spec.devices,
-            bleDevices: spec.bleRegisteredDevices
-        )
-        self.specification = spec
-        
+
         self.saveSpecification()
     }
     
@@ -77,11 +89,6 @@ public class FlexiBLEProfile: Codable, ObservableObject {
             transactionalDBPath: transactionalDatabasesBasePath
         )
         self.dbAccessor = FXBLocalDataAccessor(db: db)
-        self.conn = FXBConnectionManager(
-            database: dbAccessor,
-            flexibBLEDevices: specification.devices,
-            bleDevices: specification.bleRegisteredDevices
-        )
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -102,13 +109,22 @@ public class FlexiBLEProfile: Codable, ObservableObject {
     }
     
     public func startScan() {
-        if !conn.isScanning {
-            conn.scan()
+        if conn == nil {
+            self.conn = FXBConnectionManager(
+                database: dbAccessor,
+                flexibBLEDevices: specification.devices,
+                bleDevices: specification.bleRegisteredDevices
+            )
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.conn?.scan()
+            }
         }
     }
     
     public func stopScan() {
-        conn.stopScan()
+        conn?.stopScan()
+        conn = nil
     }
     
     private func saveSpecification() {

@@ -15,6 +15,8 @@ public struct FXBSpec: Codable {
     public let tags: [String]
     public let bleRegisteredDevices: [FXBRegisteredDeviceSpec]
     public let devices: [FXBDeviceSpec]
+    
+    public static let schemaVersion = "0.3.7"
 }
 
 extension FXBSpec {

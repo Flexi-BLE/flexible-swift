@@ -21,9 +21,9 @@ public final class FlexiBLE: ObservableObject {
         }
     }
     
-    public func createProfile(with spec: FXBSpec, name: String?=nil, setActive: Bool=true) {
+    public func createProfile(with spec: FXBSpec?, name: String?=nil, setActive: Bool=true) {
         let profile = FlexiBLEProfile(
-            name: name == nil ? spec.id : name!,
+            name: name,
             spec: spec
         )
         
@@ -38,7 +38,9 @@ public final class FlexiBLE: ObservableObject {
         guard let profile = FlexiBLEAppData.shared.get(id: id) else {
             return
         }
-    
-        self.profile = profile
+        
+        DispatchQueue.main.async {
+            self.profile = profile
+        }
     }
 }

@@ -11,8 +11,8 @@ import CoreBluetooth
 internal extension FXBDeviceSpec {
     var serviceIds: [CBUUID] {
         let serviceIds = self.dataStreams.map({ $0.serviceCbuuid })
-        let registeredId = self.ble.bleRegisteredServices.map({ $0.uuid })
-        return serviceIds + registeredId + [infoServiceUuid]
+        let registeredId = self.bleRegisteredServices.map({ $0.uuid })
+        return serviceIds + registeredId + [FlexiBLEServiceHandler.FlexiBLEServiceUUID]
     }
     
     func charMetadata(by uuid: CBUUID) -> FXBDataStream? {
@@ -28,22 +28,6 @@ internal extension FXBDeviceSpec {
         }
         
         return uuids
-    }
-    
-    var infoServiceUuid: CBUUID {
-        return CBUUID(string: ble.infoServiceUuid)
-    }
-    
-    var epochTimeUuid: CBUUID {
-        return CBUUID(string: ble.epochCharUuid)
-    }
-    
-    var specURLUuid: CBUUID {
-        return CBUUID(string: ble.specUrlCharUuid)
-    }
-    
-    var refreshEpochUuid: CBUUID {
-        return CBUUID(string: ble.refreshEpochCharUuid)
     }
     
     func dataStreams(from uuid: CBUUID) -> [FXBDataStream] {

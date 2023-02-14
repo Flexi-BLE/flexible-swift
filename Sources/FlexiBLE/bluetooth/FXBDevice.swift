@@ -58,55 +58,13 @@ public class FXBDevice: Identifiable, Device {
         self.connectionState = .initializing
         self.connectionManager = connectionManager
         
-//        self.connectionManager?.infoServiceHandler
-//            .$infoData
-//            .receive(on: DispatchQueue.main)
-//            .sink(
-//                receiveValue: { [weak self] infoData in
-//                    guard let self = self, let infoData = infoData else { return }
-//
-//                    guard let specId = infoData.specId,
-//                          let versionId = infoData.versionId,
-//                          let referenceDate = infoData.referenceDate else { return }
-//
-//                    if self.connectionState != .connected {
-//                        bleLog.info("\(self.deviceName) Initialized: (\(referenceDate)")
-//
-//                        self.connectionManager?.serviceHandlers.forEach {
-//                            $0.writeLastConfig(peripheral: self.cbPeripheral)
-////                            $0.writeDefaultConfig(peripheral: self.cbPeripheral)
-//                        }
-//
-//                        DispatchQueue.main.asyncAfter(
-//                            deadline: .now() + .milliseconds(500),
-//                            execute: {
-//                                self.connectionState = .connected
-//                            }
-//                        )
-//                    }
-//
-//                    if specId == self.loadedSpecId,
-//                       versionId == self.loadedSpecVersion {
-//                        self.isSpecVersionMatched = true
-//                    } else {
-//                        self.isSpecVersionMatched = false
-//                    }
-//
-//                    Task(priority: .background) { [weak self] in
-//                        do {
-//                            self?.connectionRecord?.latestReferenceDate = referenceDate
-//                            self?.connectionRecord?.specificationIdString = specId
-//                            self?.connectionRecord?.specificationVersion = versionId
-//
-//                            if self?.connectionRecord != nil {
-//                                try self?.profile.database.connection.update(&self!.connectionRecord!)
-//                            }
-//                        } catch {
-//                            pLog.error("unable to update reference date for connection record")
-//                        }
-//                    }
-//                }
-//            ).store(in: &cancellables)
+        self.connectionManager?.infoServiceHandler.$specURL.sink(receiveValue: { url in
+            if let _ = url {
+                self.connectionState = .connected
+            } else {
+                self.connectionState = .disconnected
+            }
+        }).store(in: &cancellables)
         
         Task {
             do {
