@@ -21,12 +21,18 @@ public class FXBConnectionManager: NSObject, ObservableObject {
     @Published public private(set) var foundRegisteredDevices: [FXBRegisteredDevice] = []
     @Published public private(set) var connectedRegisteredDevices: [FXBRegisteredDevice] = []
     
-    private var spec: FXBSpec?
+    private var database: FXBLocalDataAccessor
+    private var flexiBLEDevices: [FXBDeviceSpec] = []
+    private var bleRegisteredDevices: [FXBRegisteredDeviceSpec] = []
+    
     private var scanOnPoweredOn: Bool = true
     
     private var autoConnectDevices: [String] = []
     
-    required override init() {
+    init(database: FXBLocalDataAccessor, flexibBLEDevices: [FXBDeviceSpec], bleDevices: [FXBRegisteredDeviceSpec]) {
+        self.database = database
+        self.flexiBLEDevices = flexibBLEDevices
+        self.bleRegisteredDevices = bleDevices
         super.init()
         
         self.centralManager = CBCentralManager(
@@ -105,9 +111,7 @@ public class FXBConnectionManager: NSObject, ObservableObject {
         }
     }
     
-    internal func scan(with spec: FXBSpec) {
-        self.spec = spec
-        
+    internal func scan() {
         guard centralManager.state == .poweredOn else { return }
         
         if isScanning { stopScan() }
@@ -115,18 +119,17 @@ public class FXBConnectionManager: NSObject, ObservableObject {
     }
     
     private func startScan(allowDuplicates: Bool = false) {
-        guard centralManager.state == .poweredOn,
-              let spec = self.spec else {
+        guard centralManager.state == .poweredOn else {
             bleLog.fault("central manager state is not on: \(self.centralManager.state.rawValue)")
             return
         }
         
         var services: [CBUUID] = []
-        for device in spec.devices {
+        for device in flexiBLEDevices {
             services.append(device.infoServiceUuid)
         }
         
-        for device in spec.bleRegisteredDevices {
+        for device in bleRegisteredDevices {
             services.append(contentsOf: device.serviceIds)
         }
 
@@ -187,9 +190,11 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
         bleLog.debug("peripheral found: \(peripheral.name ?? "--none--"), (\(peripheral.identifier))")
         bleLog.debug("advertisement data \(advertisementData)")
         
-        guard let peripheralName = advertisementData["kCBAdvDataLocalName"] as? String, let spec = self.spec else { return }
+        guard let peripheralName = advertisementData["kCBAdvDataLocalName"] as? String else {
+            return
+        }
         
-        if let deviceDef = spec.devices.first(where: { peripheralName.starts(with: $0.name) }) {
+        if let deviceDef = flexiBLEDevices.first(where: { peripheralName.starts(with: $0.name) }) {
             
             if let connectedDevice = fxbConnectedDevices.first(where: { peripheralName == $0.deviceName }) {
                 if autoConnectDevices.contains(peripheralName) {
@@ -206,11 +211,10 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
             }
             
             let device = FXBDevice(
-                spec: deviceDef,
-                specVersion: spec.schemaVersion,
-                specId: spec.id,
-                deviceName: peripheralName,
-                cbPeripheral: peripheral
+                database: database,
+                deviceSpec: deviceDef,
+                cbPeripheral: peripheral,
+                deviceName: peripheralName
             )
             
             fxbFoundDevices.append(device)
@@ -220,7 +224,7 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
             }
         }
         
-        if let registeredDeviceSpec = spec.bleRegisteredDevices.first(where: { peripheralName.starts(with: $0.name) }) {
+        if let registeredDeviceSpec = bleRegisteredDevices.first(where: { peripheralName.starts(with: $0.name) }) {
             if let connectedDevice = connectedRegisteredDevices.first(where: { peripheralName == $0.deviceName }) {
                 if autoConnectDevices.contains(peripheralName) {
                     self.enable(device: connectedDevice)
@@ -235,10 +239,10 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
             }
             
             let device = FXBRegisteredDevice(
-                spec: registeredDeviceSpec,
-                specVersion: spec.schemaVersion,
-                deviceName: peripheralName,
-                cbPeripheral: peripheral
+                database: database,
+                deviceSpec: registeredDeviceSpec,
+                cbPeripheral: peripheral,
+                deviceName: peripheralName
             )
             
             foundRegisteredDevices.append(device)
@@ -256,7 +260,13 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
             
             bleLog.info("connceted to: \(device.spec.name)")
             
-            device.connect(with: FXBDeviceConnectionManager(spec: device.spec, peripheral: peripheral))
+            device.connect(
+                with: FXBDeviceConnectionManager(
+                    database: database,
+                    spec: device.spec,
+                    peripheral: peripheral
+                )
+            )
             
             fxbFoundDevices.remove(at: i)
             fxbConnectedDevices.append(device)
@@ -265,7 +275,7 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
             
             bleLog.info("connceted to: \(device.deviceName)")
             
-            device.connect(with: FXBRegisteredDeviceConnectionManager(device: device))
+            device.connect(with: FXBRegisteredDeviceConnectionManager(database: database, device: device))
             foundRegisteredDevices.remove(at: i)
             connectedRegisteredDevices.append(device)
         

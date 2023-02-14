@@ -33,11 +33,11 @@ enum BLERegisteredService: String, Codable {
         }
     }
     
-    func handler(device: Device) -> ServiceHandler {
+    func handler(device: Device, database: FXBLocalDataAccessor) -> ServiceHandler {
         switch self {
-        case .heartRate: return HeartRateServiceHandler(device: device)
-        case .currentTime: return CurrentTimeServiceHandler(device: device)
-        case .battery: return BatteryServiceHandler(device: device)
+        case .heartRate: return HeartRateServiceHandler(device: device, database: database)
+        case .currentTime: return CurrentTimeServiceHandler(device: device, database: database)
+        case .battery: return BatteryServiceHandler(device: device, database: database)
         }
     }
 }

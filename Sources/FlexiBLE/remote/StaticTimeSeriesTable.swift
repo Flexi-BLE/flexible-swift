@@ -29,14 +29,14 @@ public enum FXBUploadableTable {
 }
 
 internal extension FXBUploadableTable {
-    func ILPQuery(from start: Date?=nil, to end: Date?=nil, uploaded: Bool=false, limit: Int, deviceId: String) async throws -> [ILPRecord] {
+    func ILPQuery(from start: Date?=nil, to end: Date?=nil, with profile: FlexiBLEProfile, uploaded: Bool=false, limit: Int, deviceId: String) async throws -> [ILPRecord] {
         switch self {
-        case .heartRate: return try await IRPQueryHeartRate(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
-        case .location: return try await IRPQueryLocation(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
-        case .experiment: return try await IRPQueryExperiment(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
-        case .timestamp: return try await IRPQueryTimestamp(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
-        case .dynamicData(let name): return try await IRPQueryDynamicData(name: name, from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
-        case .dynamicConfig(let name): return try await IRPQueryDynamicConfig(name: name, from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .heartRate: return try await IRPQueryHeartRate(from: start, to: end, with: profile.database, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .location: return try await IRPQueryLocation(from: start, to: end, with: profile.database, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .experiment: return try await IRPQueryExperiment(from: start, to: end, with: profile.database, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .timestamp: return try await IRPQueryTimestamp(from: start, to: end, with: profile.database, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .dynamicData(let name): return try await IRPQueryDynamicData(name: name, from: start, to: end, with: profile, uploaded: uploaded, limit: limit, deviceId: deviceId)
+        case .dynamicConfig(let name): return try await IRPQueryDynamicConfig(name: name, from: start, to: end, with: profile, uploaded: uploaded, limit: limit, deviceId: deviceId)
         }
     }
     
@@ -44,6 +44,7 @@ internal extension FXBUploadableTable {
         name: String,
         from start: Date?=nil,
         to end: Date?=nil,
+        with profile: FlexiBLEProfile,
         uploaded: Bool?=false,
         limit: Int=1000,
         deviceId: String
@@ -51,20 +52,20 @@ internal extension FXBUploadableTable {
         
         dbLog.debug("data upload: querying records for \(tableName) from \(start?.timestamp() ?? "--none--") to \(end?.timestamp() ?? "--none--")")
 
-        let records = try await FlexiBLE.shared.dbAccess?.dataStream.records(
+        let records = try await profile.database.dataStream.records(
             for: tableName,
             from: start,
             to: end,
             deviceName: nil,
             uploaded: uploaded
-        ) ?? []
+        )
         
         var ilps: [ILPRecord] = []
         
         for rec in records {
             guard let tsInt: Int64 = rec.getValue(for: "ts"),
                   let deviceName: String = rec.getValue(for: "device"),
-                  let device = FlexiBLE.shared.profile?.specification.devices.first(where: { deviceName.starts(with: $0.name) }),
+                  let device = profile.specification.devices.first(where: { deviceName.starts(with: $0.name) }),
                   let measurement = device.dataStreams.first(where: { $0.name == name.replacingOccurrences(of: "_data", with: "") }) else {
                 continue
             }
@@ -108,25 +109,26 @@ internal extension FXBUploadableTable {
         name: String,
         from start: Date?=nil,
         to end: Date?=nil,
+        with profile: FlexiBLEProfile,
         uploaded: Bool?=false,
         limit: Int=1000,
         deviceId: String
     ) async throws -> [ILPRecord] {
         
-        let records = try await FlexiBLE.shared.dbAccess?.dataStreamConfig.get(
+        let records = try await profile.database.dataStreamConfig.get(
             for: tableName,
             from: start,
             to: end,
             uploaded: uploaded,
             limit: limit
-        ) ?? []
+        )
         
         var ilps: [ILPRecord] = []
         
         for rec in records {
             guard let tsInt: Int64 = rec.getValue(for: "ts"),
                   let deviceName: String = rec.getValue(for: "device"),
-                  let device = FlexiBLE.shared.profile?.specification.devices.first(where: { deviceName.starts(with: $0.name) }),
+                  let device = profile.specification.devices.first(where: { deviceName.starts(with: $0.name) }),
                   let measurement = device.dataStreams.first(where: { $0.name == name.replacingOccurrences(of: "_config", with: "") }) else {
                 continue
             }
@@ -165,14 +167,21 @@ internal extension FXBUploadableTable {
         return ilps
     }
     
-    private func IRPQueryHeartRate(from start: Date?=nil, to end: Date?=nil, uploaded: Bool?=false, limit: Int=1000, deviceId: String) async throws -> [ILPRecord] {
+    private func IRPQueryHeartRate(
+        from start: Date?=nil,
+        to end: Date?=nil,
+        with database: FXBLocalDataAccessor,
+        uploaded: Bool?=false,
+        limit: Int=1000,
+        deviceId: String
+    ) async throws -> [ILPRecord] {
         
-        let records = try await FlexiBLE.shared.dbAccess?.heartRate.get(
+        let records = try await database.heartRate.get(
             from: start,
             to: end,
             uploaded: uploaded,
             limit: limit
-        ) ?? []
+        )
         
         var ilps: [ILPRecord] = []
         
@@ -193,14 +202,20 @@ internal extension FXBUploadableTable {
         return ilps
     }
     
-    private func IRPQueryLocation(from start: Date?=nil, to end: Date?=nil, uploaded: Bool?=false, limit: Int=1000, deviceId: String) async throws -> [ILPRecord] {
+    private func IRPQueryLocation(
+        from start: Date?=nil,
+        to end: Date?=nil,
+        with database: FXBLocalDataAccessor,uploaded: Bool?=false,
+        limit: Int=1000,
+        deviceId: String
+    ) async throws -> [ILPRecord] {
         
-        let records = try await FlexiBLE.shared.dbAccess?.location.get(
+        let records = try await database.location.get(
             from: start,
             to: end,
             uploaded: uploaded,
             limit: limit
-        ) ?? []
+        )
         
         var ilps: [ILPRecord] = []
         
@@ -225,7 +240,14 @@ internal extension FXBUploadableTable {
         return ilps
     }
     
-    private func IRPQueryExperiment(from start: Date?=nil, to end: Date?=nil, uploaded: Bool?=false, limit: Int=1000, deviceId: String) async throws -> [ILPRecord] {
+    private func IRPQueryExperiment(
+        from start: Date?=nil,
+        to end: Date?=nil,
+        with database: FXBLocalDataAccessor,
+        uploaded: Bool?=false,
+        limit: Int=1000,
+        deviceId: String
+    ) async throws -> [ILPRecord] {
         
         let records: [FXBExperiment] = []
         
@@ -276,7 +298,14 @@ internal extension FXBUploadableTable {
         return ilps
     }
     
-    private func IRPQueryTimestamp(from start: Date?=nil, to end: Date?=nil, uploaded: Bool?=false, limit: Int=1000, deviceId: String) async throws -> [ILPRecord] {
+    private func IRPQueryTimestamp(
+        from start: Date?=nil,
+        to end: Date?=nil,
+        with database: FXBLocalDataAccessor,
+        uploaded: Bool?=false,
+        limit: Int=1000,
+        deviceId: String
+    ) async throws -> [ILPRecord] {
         
         let records: [FXBTimestamp] = []
         
@@ -304,15 +333,13 @@ internal extension FXBUploadableTable {
         return ilps
     }
     
-    func updateUpload(lines: [ILPRecord]) async throws {
+    func updateUpload(lines: [ILPRecord], with database: FXBLocalDataAccessor) async throws {
         let end = lines.map({ $0.timestamp }).max() ?? Date.now
         let start = lines.map({ $0.timestamp }).min() ?? Date.now
         
         dbLog.debug("data upload: updating upload flag for \(tableName) between \(start.timestamp()) and \(end.timestamp())")
         
-        try await FlexiBLE
-            .shared
-            .dbAccess?
+        try await database
             .dataStream
             .updateUploaded(
                 tableName: tableName,
@@ -321,7 +348,7 @@ internal extension FXBUploadableTable {
             )
     }
 
-    func purgeUploadedRecords() async throws {
-        try await FlexiBLE.shared.dbAccess?.dataStream.purgeUploaded(for: tableName)
+    func purgeUploadedRecords(database: FXBLocalDataAccessor) async throws {
+        try await database.dataStream.purgeUploaded(for: tableName)
     }
 }

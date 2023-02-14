@@ -9,6 +9,8 @@ import Foundation
 import CoreBluetooth
 
 protocol ServiceHandler {
+    var database: FXBLocalDataAccessor { get }
+    
     var serviceUuid: CBUUID { get }
     
     func setup(peripheral: CBPeripheral, service: CBService)

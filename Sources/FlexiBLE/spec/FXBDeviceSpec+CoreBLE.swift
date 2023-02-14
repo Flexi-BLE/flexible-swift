@@ -38,12 +38,8 @@ internal extension FXBDeviceSpec {
         return CBUUID(string: ble.epochCharUuid)
     }
     
-    var specVersionUuid: CBUUID {
-        return CBUUID(string: ble.specVersionCharUuid)
-    }
-    
-    var specIdUuid: CBUUID {
-        return CBUUID(string: ble.specIdCharUuid)
+    var specURLUuid: CBUUID {
+        return CBUUID(string: ble.specUrlCharUuid)
     }
     
     var refreshEpochUuid: CBUUID {

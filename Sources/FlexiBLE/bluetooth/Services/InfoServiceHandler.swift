@@ -13,25 +13,18 @@ import GRDB
 public class InfoServiceHandler: ServiceHandler, ObservableObject {
     var serviceUuid: CBUUID
 
+    internal var database: FXBLocalDataAccessor
+    
     private let spec: FXBDeviceSpec
-    
-    public struct InfoData {
-        public let referenceDate: Date?
-        public let specId: String?
-        public let versionId: String?
-    }
 
-    private var versionId: String?
-    private var specId: String?
-    private var referenceDate: Date?
-    
+    private var specURL: URL?
+    internal var referenceDate: Date?
     private var tempRefDate: Date?
-    
-    @Published public var infoData: InfoData?
     
     private var dataObserver: AnyCancellable?
     
-    init(spec: FXBDeviceSpec) {
+    init(spec: FXBDeviceSpec, database: FXBLocalDataAccessor) {
+        self.database = database
         self.spec = spec
         self.serviceUuid = spec.infoServiceUuid
     }
@@ -56,13 +49,6 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         self.tempRefDate = now // wait to commit until written
     }
     
-    private func updateInfoData() {
-        infoData = InfoData(
-            referenceDate: referenceDate,
-            specId: specId,
-            versionId: versionId
-        )
-    }
     
     func setup(peripheral: CBPeripheral, service: CBService) {
         
@@ -74,14 +60,6 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         if let epochResetChar = service.characteristics?.first(where: { $0.uuid == spec.refreshEpochUuid }) {
             peripheral.setNotifyValue(true, for: epochResetChar)
         }
-        
-        if let versionChar = service.characteristics?.first(where: { $0.uuid == spec.specVersionUuid }) {
-            peripheral.readValue(for: versionChar)
-        }
-        
-        if let idChar = service.characteristics?.first(where: { $0.uuid == spec.specIdUuid }) {
-            peripheral.readValue(for: idChar)
-        }
     }
     
     func didWrite(peripheral: CBPeripheral, uuid: CBUUID) {
@@ -89,7 +67,6 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             if let temp = tempRefDate {
                 self.referenceDate = temp
                 tempRefDate = nil
-                updateInfoData()
             }
         }
     }
@@ -99,20 +76,12 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             return
         }
             
-        if characteristic.uuid == spec.specVersionUuid {
-            let versionMajor = Int(data[0])
-            let versionMinor = Int(data[1])
-            let versionPatch = Int(data[2])
-            let version = "\(versionMajor).\(versionMinor).\(versionPatch)"
-            bleLog.info("specification version for \(self.spec.name): \(version)")
-            self.versionId = version
-            updateInfoData()
-            
-        } else if characteristic.uuid == spec.specIdUuid {
-            let id = String(data: data, encoding: .ascii)?.replacingOccurrences(of: "\0", with: "")
-            bleLog.info("specification id for \(self.spec.name): \(id ?? "--none--")")
-            self.specId = id ?? "--none--"
-            updateInfoData()
+        if characteristic.uuid == spec.specURLUuid {
+            if let urlString = String(data: data, encoding: .utf8),
+               let url = URL(string: urlString) {
+                
+                self.specURL = url
+            }
             
         } else if characteristic.uuid == spec.refreshEpochUuid {
             if data[0] == 1 {

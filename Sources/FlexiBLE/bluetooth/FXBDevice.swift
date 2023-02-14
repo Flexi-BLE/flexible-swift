@@ -19,7 +19,6 @@ public enum DeviceConnectionState: String, CaseIterable {
 public protocol Device {
     var id: UUID { get }
     var connectionState: DeviceConnectionState { get }
-    var loadedSpecVersion: String { get }
     var deviceName: String { get }
     var cbPeripheral: CBPeripheral { get }
     var connectionRecord: FXBConnection? { get }
@@ -28,14 +27,14 @@ public protocol Device {
 public class FXBDevice: Identifiable, Device {
 
     public let id: UUID = UUID()
+    
+    private var database: FXBLocalDataAccessor
+    
     public let spec: FXBDeviceSpec
     public var connectionManager: FXBDeviceConnectionManager?
     
     @Published public var connectionState: DeviceConnectionState = .disconnected
     @Published public var isSpecVersionMatched: Bool = true
-    
-    public let loadedSpecVersion: String
-    public let loadedSpecId: String
     
     public let deviceName: String
     
@@ -44,12 +43,11 @@ public class FXBDevice: Identifiable, Device {
     
     private var cancellables: [AnyCancellable] = []
     
-    internal init(spec: FXBDeviceSpec, specVersion: String, specId: String, deviceName: String, cbPeripheral: CBPeripheral) {
-        self.spec = spec
-        self.loadedSpecVersion = specVersion
-        self.loadedSpecId = specId
-        self.deviceName = deviceName
+    internal init(database: FXBLocalDataAccessor, deviceSpec: FXBDeviceSpec, cbPeripheral: CBPeripheral, deviceName: String) {
+        self.database = database
+        self.spec = deviceSpec
         self.cbPeripheral = cbPeripheral
+        self.deviceName = deviceName
     }
     
     public func dataHandler(for dataStreamName: String) -> DataStreamHandler? {
@@ -60,55 +58,55 @@ public class FXBDevice: Identifiable, Device {
         self.connectionState = .initializing
         self.connectionManager = connectionManager
         
-        self.connectionManager?.infoServiceHandler
-            .$infoData
-            .receive(on: DispatchQueue.main)
-            .sink(
-                receiveValue: { [weak self] infoData in
-                    guard let self = self, let infoData = infoData else { return }
-                    
-                    guard let specId = infoData.specId,
-                          let versionId = infoData.versionId,
-                          let referenceDate = infoData.referenceDate else { return }
-                    
-                    if self.connectionState != .connected {
-                        bleLog.info("\(self.deviceName) Initialized: (\(referenceDate)")
-                        
-                        self.connectionManager?.serviceHandlers.forEach {
-                            $0.writeLastConfig(peripheral: self.cbPeripheral)
-//                            $0.writeDefaultConfig(peripheral: self.cbPeripheral)
-                        }
-                        
-                        DispatchQueue.main.asyncAfter(
-                            deadline: .now() + .milliseconds(500),
-                            execute: {
-                                self.connectionState = .connected
-                            }
-                        )
-                    }
-                    
-                    if specId == self.loadedSpecId,
-                       versionId == self.loadedSpecVersion {
-                        self.isSpecVersionMatched = true
-                    } else {
-                        self.isSpecVersionMatched = false
-                    }
-                    
-                    Task(priority: .background) { [weak self] in
-                        do {
-                            self?.connectionRecord?.latestReferenceDate = referenceDate
-                            self?.connectionRecord?.specificationIdString = specId
-                            self?.connectionRecord?.specificationVersion = versionId
-                            
-                            if self?.connectionRecord != nil {
-                                try FlexiBLE.shared.dbAccess?.connection.update(&self!.connectionRecord!)
-                            }
-                        } catch {
-                            pLog.error("unable to update reference date for connection record")
-                        }
-                    }
-                }
-            ).store(in: &cancellables)
+//        self.connectionManager?.infoServiceHandler
+//            .$infoData
+//            .receive(on: DispatchQueue.main)
+//            .sink(
+//                receiveValue: { [weak self] infoData in
+//                    guard let self = self, let infoData = infoData else { return }
+//
+//                    guard let specId = infoData.specId,
+//                          let versionId = infoData.versionId,
+//                          let referenceDate = infoData.referenceDate else { return }
+//
+//                    if self.connectionState != .connected {
+//                        bleLog.info("\(self.deviceName) Initialized: (\(referenceDate)")
+//
+//                        self.connectionManager?.serviceHandlers.forEach {
+//                            $0.writeLastConfig(peripheral: self.cbPeripheral)
+////                            $0.writeDefaultConfig(peripheral: self.cbPeripheral)
+//                        }
+//
+//                        DispatchQueue.main.asyncAfter(
+//                            deadline: .now() + .milliseconds(500),
+//                            execute: {
+//                                self.connectionState = .connected
+//                            }
+//                        )
+//                    }
+//
+//                    if specId == self.loadedSpecId,
+//                       versionId == self.loadedSpecVersion {
+//                        self.isSpecVersionMatched = true
+//                    } else {
+//                        self.isSpecVersionMatched = false
+//                    }
+//
+//                    Task(priority: .background) { [weak self] in
+//                        do {
+//                            self?.connectionRecord?.latestReferenceDate = referenceDate
+//                            self?.connectionRecord?.specificationIdString = specId
+//                            self?.connectionRecord?.specificationVersion = versionId
+//
+//                            if self?.connectionRecord != nil {
+//                                try self?.profile.database.connection.update(&self!.connectionRecord!)
+//                            }
+//                        } catch {
+//                            pLog.error("unable to update reference date for connection record")
+//                        }
+//                    }
+//                }
+//            ).store(in: &cancellables)
         
         Task {
             do {
@@ -117,7 +115,7 @@ public class FXBDevice: Identifiable, Device {
                     deviceName: deviceName
                 )
                 self.connectionRecord?.connectedAt = Date.now
-                try FlexiBLE.shared.dbAccess?.connection.insert(&self.connectionRecord!)
+                try database.connection.insert(&self.connectionRecord!)
             } catch {
                 pLog.error("unable to record connection")
             }
@@ -133,7 +131,7 @@ public class FXBDevice: Identifiable, Device {
         Task {
             self.connectionRecord?.disconnectedAt = Date()
             do {
-                try FlexiBLE.shared.dbAccess?.connection.update(&self.connectionRecord!)
+                try database.connection.update(&self.connectionRecord!)
             } catch {
                 pLog.error("unable to update connection record with disconnected date")
             }
@@ -154,8 +152,8 @@ public class FXBRegisteredDevice: ObservableObject, Identifiable, Device {
     }
     
     public let id: UUID = UUID()
+    private var database: FXBLocalDataAccessor
     public let spec: FXBRegisteredDeviceSpec
-    public let loadedSpecVersion: String
     public let deviceName: String
     
     public let cbPeripheral: CBPeripheral
@@ -164,9 +162,14 @@ public class FXBRegisteredDevice: ObservableObject, Identifiable, Device {
     @Published public var connectionManager: FXBRegisteredDeviceConnectionManager?
     @Published public var connectionState: DeviceConnectionState = .disconnected
     
-    internal init(spec: FXBRegisteredDeviceSpec, specVersion: String, deviceName: String, cbPeripheral: CBPeripheral) {
-        self.spec = spec
-        self.loadedSpecVersion = specVersion
+    internal init(
+        database: FXBLocalDataAccessor,
+        deviceSpec: FXBRegisteredDeviceSpec,
+        cbPeripheral: CBPeripheral,
+        deviceName: String
+    ) {
+        self.database = database
+        self.spec = deviceSpec
         self.deviceName = deviceName
         self.cbPeripheral = cbPeripheral
     }
@@ -183,7 +186,7 @@ public class FXBRegisteredDevice: ObservableObject, Identifiable, Device {
                     deviceName: deviceName
                 )
                 connectionRecord?.connectedAt = Date.now
-                try FlexiBLE.shared.dbAccess?.connection.insert(&connectionRecord!)
+                try self.database.connection.insert(&connectionRecord!)
                 
             } catch {
                 pLog.error("unable to record connection")
@@ -198,7 +201,7 @@ public class FXBRegisteredDevice: ObservableObject, Identifiable, Device {
         Task {
             self.connectionRecord?.disconnectedAt = Date()
             do {
-                try FlexiBLE.shared.dbAccess?.connection.update(&connectionRecord!)
+                try self.database.connection.update(&connectionRecord!)
             } catch {
                 pLog.error("unable to update connection record with disconnected date")
             }

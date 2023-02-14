@@ -9,6 +9,7 @@ import Foundation
 import CoreBluetooth
 
 internal class HeartRateServiceHandler: ServiceHandler {
+    internal var database: FXBLocalDataAccessor
     internal var serviceUuid: CBUUID = BLERegisteredService.heartRate.uuid
     
     private var sensorLocation: String = "unknown"
@@ -16,7 +17,8 @@ internal class HeartRateServiceHandler: ServiceHandler {
     private let bodyLocationUuid = CBUUID(string: "2a38")
     internal var device: Device
     
-    init(device: Device) {
+    init(device: Device, database: FXBLocalDataAccessor) {
+        self.database = database
         self.device = device
     }
     
@@ -60,7 +62,7 @@ internal class HeartRateServiceHandler: ServiceHandler {
                     deviceName: device.deviceName
                 )
                 
-                try FlexiBLE.shared.dbAccess?.heartRate.record(&rec)
+                try database.heartRate.record(&rec)
                 
                 var throughput = FXBThroughput(
                     dataStream: "heart_rate",
@@ -68,7 +70,7 @@ internal class HeartRateServiceHandler: ServiceHandler {
                     deviceName: device.deviceName
                 )
                 
-                try FlexiBLE.shared.dbAccess?.throughput.record(&throughput)
+                try database.throughput.record(&throughput)
             }
         case bodyLocationUuid:
             if let byte = data.first {

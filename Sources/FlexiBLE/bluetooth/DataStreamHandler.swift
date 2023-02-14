@@ -13,6 +13,7 @@ import SwiftUI
 
 public class DataStreamHandler {
     
+    let database: FXBLocalDataAccessor
     let serviceUuid: CBUUID
     let deviceName: String
     let def: FXBDataStream
@@ -32,8 +33,7 @@ public class DataStreamHandler {
     
     private func lastConfig() async -> Data {
         do {
-            return try await FlexiBLE.shared
-                .dbAccess?
+            return try await database
                 .dataStreamConfig
                 .getLatest(forDataStream: def.name, inDevice: deviceName) ?? defaultConfig
         } catch {
@@ -41,7 +41,8 @@ public class DataStreamHandler {
         }
     }
     
-    init(uuid: CBUUID, deviceName: String, dataStream: FXBDataStream) {
+    init(database: FXBLocalDataAccessor, uuid: CBUUID, deviceName: String, dataStream: FXBDataStream) {
+        self.database = database
         self.serviceUuid = uuid
         self.deviceName = deviceName
         self.def = dataStream
@@ -152,7 +153,7 @@ public class DataStreamHandler {
         }
         
         do {
-            try await FlexiBLE.shared.dbAccess?.dataStream.insert(
+            try await database.dataStream.insert(
                 for: def,
                 anchorDate: anchorDate,
                 allValues: allValues,
@@ -166,7 +167,7 @@ public class DataStreamHandler {
                 deviceName: deviceName
             )
             
-            try FlexiBLE.shared.dbAccess?.throughput.record(&throughput)
+            try database.throughput.record(&throughput)
         } catch {
             dbLog.error("unable to insert transactional records: \(error.localizedDescription)")
         }
@@ -191,7 +192,7 @@ public class DataStreamHandler {
         }
         
         do {
-            try await FlexiBLE.shared.dbAccess?
+            try await database
                 .dataStreamConfig
                 .insert(
                     for: def,

@@ -18,6 +18,7 @@ public class FXBDeviceConnectionManager: NSObject {
     /// AE Representation of Peripheral
     private let spec: FXBDeviceSpec
     private let peripheral: CBPeripheral
+    private let database: FXBLocalDataAccessor
     
     @Published public var batteryLevel: Int?
     @Published public var rssi: Int = 0
@@ -27,12 +28,14 @@ public class FXBDeviceConnectionManager: NSObject {
     internal var serviceHandlers: [DataStreamHandler] = []
     internal let infoServiceHandler: InfoServiceHandler
     
-    internal init(spec: FXBDeviceSpec, peripheral: CBPeripheral) {
+    internal init(database: FXBLocalDataAccessor, spec: FXBDeviceSpec, peripheral: CBPeripheral) {
+        self.database = database
         self.spec = spec
         self.peripheral = peripheral
         
         self.infoServiceHandler = InfoServiceHandler(
-            spec: self.spec
+            spec: self.spec,
+            database: database
         )
         
         super.init()
@@ -57,7 +60,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
             
             if let ds = spec.dataStreams.first(where: { $0.serviceCbuuid == service.uuid }) {
                 let handler = DataStreamHandler(
-                    uuid: service.uuid,
+                    database: database, uuid: service.uuid,
                     deviceName: peripheral.name ?? spec.name,
                     dataStream: ds
                 )
@@ -98,7 +101,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
         guard let service = characteristic.service else { return }
         
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }),
-           let referenceDate = infoServiceHandler.infoData?.referenceDate {
+           let referenceDate = infoServiceHandler.referenceDate {
             handler.didUpdate(
                 uuid: characteristic.uuid,
                 data: characteristic.value,

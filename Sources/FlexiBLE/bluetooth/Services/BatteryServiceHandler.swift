@@ -11,9 +11,11 @@ import CoreBluetooth
 internal class BatteryServiceHandler: ServiceHandler {
     var device: Device
     
+    internal var database: FXBLocalDataAccessor
     internal var serviceUuid: CBUUID = BLERegisteredService.battery.uuid
     
-    init(device: Device) {
+    init(device: Device, database: FXBLocalDataAccessor) {
+        self.database = database
         self.device = device
     }
     

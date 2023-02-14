@@ -15,12 +15,15 @@ public class FXBRegisteredDeviceConnectionManager: NSObject, ObservableObject {
     /// FlexiBLE device representation
     public let device: FXBRegisteredDevice
     
+    private let database: FXBLocalDataAccessor
+    
     internal var serviceHandlers: [ServiceHandler] = []
     
     @Published public var batteryLevel: Int?
     @Published public var rssi: Int = 0
     
-    internal init(device: FXBRegisteredDevice) {
+    internal init(database: FXBLocalDataAccessor, device: FXBRegisteredDevice) {
+        self.database = database
         self.device = device
         
         super.init()
@@ -45,7 +48,7 @@ extension FXBRegisteredDeviceConnectionManager: CBPeripheralDelegate {
                 
                 if let registeredService = BLERegisteredService.from(service.uuid) {
                     
-                    serviceHandlers.append(registeredService.handler(device: device))
+                    serviceHandlers.append(registeredService.handler(device: device, database: database))
                 }
             }
             

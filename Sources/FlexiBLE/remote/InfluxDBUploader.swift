@@ -43,6 +43,7 @@ public class InfluxDBCredentials {
 public class InfluxDBUploader: FXBRemoteDatabaseUploader {
     
     public var state: FXBDataUploaderState
+    private var profile: FlexiBLEProfile
     
     public private(set) var progress: Float
     
@@ -64,10 +65,12 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
     public let endDate: Date
     
     public init(
+        profile: FlexiBLEProfile,
         credentials: InfluxDBCredentials,
         startDate: Date?=nil,
         endDate: Date=Date.now
     ) {
+        self.profile = profile
         self.credentials = credentials
         self.startDate = startDate
         self.endDate = endDate
@@ -78,10 +81,10 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
         self.statusMessage = ""
         
         tableUploaders = [
-            FXBTableUploader(table: .experiment, credentials: credentials, startDate: startDate, endDate: endDate),
-            FXBTableUploader(table: .timestamp, credentials: credentials, startDate: startDate, endDate: endDate),
-            FXBTableUploader(table: .heartRate, credentials: credentials, startDate: startDate, endDate: endDate),
-            FXBTableUploader(table: .location, credentials: credentials, startDate: startDate, endDate: endDate),
+            FXBTableUploader(profile: profile, table: .experiment, credentials: credentials, startDate: startDate, endDate: endDate),
+            FXBTableUploader(profile: profile, table: .timestamp, credentials: credentials, startDate: startDate, endDate: endDate),
+            FXBTableUploader(profile: profile, table: .heartRate, credentials: credentials, startDate: startDate, endDate: endDate),
+            FXBTableUploader(profile: profile, table: .location, credentials: credentials, startDate: startDate, endDate: endDate),
         ]
     }
     
@@ -109,20 +112,22 @@ public class InfluxDBUploader: FXBRemoteDatabaseUploader {
     }
     
     private func addDynamicTableStates() async {
-        let dtns = try? FlexiBLE.shared
-            .dbAccess?
+        let dtns = try? profile
+            .database
             .dynamicTable
-            .tableNames() ?? []
+            .tableNames()
         
         for tn in dtns ?? [] {
             if tableUploaders.first(where: { $0.table.tableName == tn }) == nil {
                 tableUploaders.append(FXBTableUploader(
+                    profile: profile,
                     table: .dynamicData(name: tn),
                     credentials: credentials,
                     startDate: startDate,
                     endDate: endDate
                 ))
                 tableUploaders.append(FXBTableUploader(
+                    profile: profile,
                     table: .dynamicConfig(name: tn),
                     credentials: credentials,
                     startDate: startDate,

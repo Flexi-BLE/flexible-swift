@@ -1,12 +1,11 @@
 //
-//  FlexiBLEAppData.swift
+//  AppData.swift
 //  
 //
-//  Created by Blaine Rothrock on 1/17/23.
+//  Created by Blaine Rothrock on 2/13/23.
 //
 
 import Foundation
-import GRDB
 
 class FlexiBLEAppData: Codable {
     static var FlexiBLEBasePath: URL {
@@ -84,27 +83,8 @@ class FlexiBLEAppData: Codable {
             pLog.error("Unable to write FlexiBLE Application Data: \(error.localizedDescription)")
         }
     }
-}
-
-public class FlexiBLEProfile: Codable {
-    public let id: UUID
-    public let name: String
-    let specId: String?
     
-    public let createdAt: Date
-    public let updatedAt: Date
-    
-    init(name: String, spec: FXBSpec) {
-        self.id = UUID()
-        self.name = name
-        self.specId = spec.id
-        self.createdAt = Date.now
-        self.updatedAt = Date.now
-        
-        self.save(spec: spec)
-    }
-    
-    internal var basePath: URL {
+    internal static func createBasePath(name: String, id: UUID) -> URL {
         do {
             let path = FlexiBLEAppData.FlexiBLEBasePath
                 .appendingPathComponent("\(name)_\(id)", isDirectory: true)
@@ -124,12 +104,8 @@ public class FlexiBLEProfile: Codable {
         }
     }
     
-    internal var mainDatabasePath: URL {
-        return self.basePath.appendingPathComponent("main.db")
-    }
-    
-    internal var transactionalDatabasesBasePath: URL {
-        let path =  self.basePath.appendingPathComponent(
+    internal static func createTransactionalDatabasesBasePath(basePath: URL) -> URL {
+        let path =  basePath.appendingPathComponent(
             "transactional",
             conformingTo: .directory
         )
@@ -146,27 +122,5 @@ public class FlexiBLEProfile: Codable {
         }
         
         return path
-    }
-    
-    internal var specificationPath: URL {
-        return self.basePath.appendingPathComponent("spec.json")
-    }
-    
-    public lazy var specification: FXBSpec =  {
-        do {
-            return try Data.sharedJSONDecoder.decode(FXBSpec.self, from: Data(contentsOf: specificationPath))
-        } catch {
-            fatalError("FXB Specifcation Corrupt")
-        }
-    }()
-    
-    private func save(spec: FXBSpec) {
-        do {
-            let path = self.specificationPath
-            let data = try Data.sharedJSONEncoder.encode(spec)
-            try data.write(to: path)
-        } catch {
-            pLog.error("unable to save specification: \(error.localizedDescription)")
-        }
     }
 }

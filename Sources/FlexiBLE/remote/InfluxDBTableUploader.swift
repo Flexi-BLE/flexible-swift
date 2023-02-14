@@ -21,16 +21,19 @@ public class FXBTableUploader {
     var complete: Bool = false
     var errorMessage: String? = nil
     
+    private var profile: FlexiBLEProfile
     private var uploadTime: TimeInterval = 0
     private var numberOfAPICalls: Int = 0
     private var totalBytes: Int = 0
     
     init(
+        profile: FlexiBLEProfile,
         table: FXBUploadableTable,
         credentials: InfluxDBCredentials,
         startDate: Date?,
         endDate: Date
     ) {
+        self.profile = profile
         self.table = table
         self.credentials = credentials
         self.startDate = startDate
@@ -46,6 +49,7 @@ public class FXBTableUploader {
             return try await table.ILPQuery(
                 from: startDate,
                 to: endDate,
+                with: profile,
                 uploaded: false,
                 limit: credentials.batchSize,
                 deviceId: credentials.deviceId
@@ -108,7 +112,7 @@ public class FXBTableUploader {
     
     private func updateUploadedFlag(records: [ILPRecord]) async {
         do {
-            try await table.updateUpload(lines: records)
+            try await table.updateUpload(lines: records, with: profile.database)
             uploadLog.info("updated database records")
         } catch {
             errorMessage = "error updating uploaded flag: error \(error.localizedDescription)"
@@ -118,7 +122,7 @@ public class FXBTableUploader {
     
     private func purgeUploaded() async {
         do {
-            try await table.purgeUploadedRecords()
+            try await table.purgeUploadedRecords(database: profile.database)
         } catch {
             errorMessage = "unable to purge records: \(error.localizedDescription)"
         }
@@ -126,8 +130,7 @@ public class FXBTableUploader {
     
     private func calculateRecordCount() async {
         do {
-            var recordCount: Int = try await FlexiBLE.shared
-                .dbAccess?
+            let recordCount: Int = try await profile.database
                 .timeseries
                 .count(
                     for: table,
@@ -135,7 +138,7 @@ public class FXBTableUploader {
                     end: endDate,
                     deviceName: nil,
                     uploaded: false
-                ) ?? 0
+                )
             
             
             
@@ -172,7 +175,7 @@ public class FXBTableUploader {
                 totalBytes: self.totalBytes
             )
             
-            try FlexiBLE.shared.dbAccess?.dataUpload.record(&record)
+            try profile.database.dataUpload.record(&record)
         } catch {
             uploadLog.error("error inserting upload record: \(error.localizedDescription)")
         }
