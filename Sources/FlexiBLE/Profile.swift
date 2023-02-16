@@ -17,7 +17,8 @@ public class FlexiBLEProfile: Codable, ObservableObject {
     
     private var db: FXBDatabase
     private var dbAccessor: FXBLocalDataAccessor
-    @Published public var conn: FXBConnectionManager?
+//    @Published public var conn: FXBConnectionManager?
+    public var devicesManager: FlexiBLEDevicesManager
     
     internal var basePath: URL
     internal var mainDatabasePath: URL
@@ -26,7 +27,7 @@ public class FlexiBLEProfile: Codable, ObservableObject {
     
     public var specification: FXBSpec
     
-    public init(name: String?, spec: FXBSpec?) {
+    internal init(name: String?, spec: FXBSpec?) {
         self.id = UUID()
         if let name = name {
             self.name = name
@@ -50,7 +51,6 @@ public class FlexiBLEProfile: Codable, ObservableObject {
                 schemaVersion: FXBSpec.schemaVersion,
                 createdAt: Date.now,
                 updatedAt: Date.now,
-                tags: [],
                 bleRegisteredDevices: [],
                 devices: []
             )
@@ -62,6 +62,11 @@ public class FlexiBLEProfile: Codable, ObservableObject {
             transactionalDBPath: transactionalDatabasesBasePath
         )
         self.dbAccessor = FXBLocalDataAccessor(db: db)
+        
+        self.devicesManager = .init(
+            devices: specification.devices,
+            database: dbAccessor
+        )
 
         self.saveSpecification()
     }
@@ -89,6 +94,11 @@ public class FlexiBLEProfile: Codable, ObservableObject {
             transactionalDBPath: transactionalDatabasesBasePath
         )
         self.dbAccessor = FXBLocalDataAccessor(db: db)
+        
+        self.devicesManager = .init(
+            devices: specification.devices,
+            database: dbAccessor
+        )
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -109,22 +119,17 @@ public class FlexiBLEProfile: Codable, ObservableObject {
     }
     
     public func startScan() {
-        if conn == nil {
-            self.conn = FXBConnectionManager(
-                database: dbAccessor,
-                flexibBLEDevices: specification.devices,
-                bleDevices: specification.bleRegisteredDevices
-            )
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self.conn?.scan()
-            }
-        }
+        devicesManager.start()
     }
     
     public func stopScan() {
-        conn?.stopScan()
-        conn = nil
+        devicesManager.stop()
+    }
+    
+    internal func close() {
+        try? db.mainConnection.close()
+        try? db.transactionalDBMgr.closeAllConnections()
+        devicesManager.stop()
     }
     
     private func saveSpecification() {

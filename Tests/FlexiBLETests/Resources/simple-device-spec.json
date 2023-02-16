@@ -1,0 +1,151 @@
+{
+    "id": "1abcd123-c2ed-4d11-ad1e-fc06d8a02d37",
+    "name": "FlexiBLE-Arduino",
+    "description": "An example device",
+    "ble_registered_services": [],
+    "global_config_values": [],
+    "data_streams": [
+        {
+            "id": "0xb92c",
+            "name": "random_number",
+            "description": "Just a stream of random numbers",
+            "precision": "ms",
+            "offset_data_value": {
+                "name": "ms_offset",
+                "description": "relative time since the previous reading",
+                "unit": "ms",
+                "byte_start": 2,
+                "byte_end": 3,
+                "size": 1,
+                "type": "uint",
+                "multiplier": null,
+                "variable_type": "none"
+            },
+            "config_values": [
+                {
+                    "name": "sensor_state",
+                    "description": "state of the accelerometer sensor",
+                    "byte_start": 0,
+                    "byte_end": 1,
+                    "size": 1,
+                    "unit": null,
+                    "data_type": "uint",
+                    "selection_type": "single",
+                    "default_value": "0",
+                    "options": [
+                        {
+                            "name": "disabled",
+                            "description": "the sensor will not stream data",
+                            "value": "0"
+                        },
+                        {
+                            "name": "streaming",
+                            "description": "the sensor will stream data",
+                            "value": "1"
+                        }
+                    ],
+                    "range": null
+                },
+                {
+                    "name": "desired_frequency",
+                    "description": "the desired frequency of the sensor",
+                    "byte_start": 1,
+                    "byte_end": 3,
+                    "size": 2,
+                    "data_type": "uint",
+                    "selection_type": "range",
+                    "unit": "Hz",
+                    "options": null,
+                    "default_value": "10",
+                    "range": {
+                        "start": 20,
+                        "end": 500,
+                        "step": 20
+                    }
+                },
+                {
+                    "name": "multiselect_example",
+                    "description": "a dummy parameter for multiselection",
+                    "byte_start": 3,
+                    "byte_end": 4,
+                    "size": 1,
+                    "data_type": "uint",
+                    "selection_type": "bit-encoded-multi",
+                    "unit": "Hz",
+                    "options": [
+                        {
+                            "name": "option1",
+                            "description": "option1",
+                            "value": "1"
+                        },
+                        {
+                            "name": "option2",
+                            "description": "option2",
+                            "value": "2"
+                        },
+                        {
+                            "name": "option3",
+                            "description": "option3",
+                            "value": "4"
+                        },
+                        {
+                            "name": "option4",
+                            "description": "option3",
+                            "value": "8"
+                        },
+                        {
+                            "name": "option5",
+                            "description": "option3",
+                            "value": "16"
+                        },
+                        {
+                            "name": "option6",
+                            "description": "option3",
+                            "value": "32"
+                        }
+                    ],
+                    "default_value": "10",
+                    "range": null
+                }
+            ],
+            "data_values": [
+                {
+                    "name": "val",
+                    "description": "random number between 0 and 254",
+                    "unit": "arb",
+                    "byte_start": 0,
+                    "byte_end": 1,
+                    "size": 1,
+                    "type": "uint",
+                    "multiplier": null,
+                    "variable_type": "value",
+                    "depends_on": [
+                        "_group"
+                    ]
+                },
+                {
+                    "name": "_group",
+                    "description": "a group to a value",
+                    "unit": "",
+                    "byte_start": 1,
+                    "byte_end": 2,
+                    "size": 1,
+                    "type": "uint",
+                    "multiplier": null,
+                    "variable_type": "tag",
+                    "depends_on": null,
+                    "value_options": [
+                        "1",
+                        "2",
+                        "3"
+                    ]
+                }
+            ],
+            "ble": {
+                "service_uuid": "1a230001-c2ed-4d11-ad1e-fc06d8a02d37",
+                "data_char_uuid": "1a230002-c2ed-4d11-ad1e-fc06d8a02d37",
+                "config_char_uuid": "1a230003-c2ed-4d11-ad1e-fc06d8a02d37"
+            }
+        }
+    ]
+}

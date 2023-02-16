@@ -8,7 +8,7 @@
 import Foundation
 
 extension Collection {
-    subscript(optional i: Index) -> Element? {
-        return indices.contains(i) ? self[i] : nil
+    subscript(optional index: Self.Index) -> Iterator.Element? {
+        return indices.contains(index) ? self[index] : nil
     }
 }

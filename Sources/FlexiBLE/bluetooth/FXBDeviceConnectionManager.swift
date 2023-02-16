@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CoreBluetooth
+import CoreBluetoothMock
 import Combine
 import GRDB
 
@@ -82,7 +82,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
             handleRegisteredServiceDiscovery(peripheral: peripheral, service: service)
         } else if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.setup(peripheral: peripheral, service: service)
-        } else if service.uuid == FlexiBLEServiceHandler.FlexiBLEServiceUUID {
+        } else if service.uuid == CBUUID.FlexiBLEServiceUUID {
             infoServiceHandler.setup(peripheral: peripheral, service: service)
         }
         
@@ -108,7 +108,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
                 data: characteristic.value,
                 referenceDate: referenceDate
             )
-        } else if service.uuid == FlexiBLEServiceHandler.FlexiBLEServiceUUID {
+        } else if service.uuid == CBUUID.FlexiBLEServiceUUID {
             infoServiceHandler.didUpdate(peripheral: peripheral, characteristic: characteristic)
         }
     }
@@ -125,7 +125,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
         
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.didWrite(uuid: characteristic.uuid)
-        } else if service.uuid == FlexiBLEServiceHandler.FlexiBLEServiceUUID {
+        } else if service.uuid == CBUUID.FlexiBLEServiceUUID {
             infoServiceHandler.didWrite(peripheral: peripheral, uuid: characteristic.uuid)
         }
         

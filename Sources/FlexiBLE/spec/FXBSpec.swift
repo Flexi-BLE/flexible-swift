@@ -7,16 +7,36 @@
 
 import Foundation
 
-public struct FXBSpec: Codable {
+public class FXBSpec: Codable {
     public let id: String
     public let schemaVersion: String
     public let createdAt: Date
     public let updatedAt: Date
-    public let tags: [String]
-    public let bleRegisteredDevices: [FXBRegisteredDeviceSpec]
-    public let devices: [FXBDeviceSpec]
+    public var bleRegisteredDevices: [FXBRegisteredDeviceSpec]
+    public var devices: [FXBDeviceSpec]
     
     public static let schemaVersion = "0.3.7"
+    
+    init(id: String, schemaVersion: String, createdAt: Date, updatedAt: Date, bleRegisteredDevices: [FXBRegisteredDeviceSpec], devices: [FXBDeviceSpec]) {
+        self.id = id
+        self.schemaVersion = schemaVersion
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.bleRegisteredDevices = bleRegisteredDevices
+        self.devices = devices
+    }
+    
+    @discardableResult
+    public func add(device: FXBDeviceSpec) -> FXBSpec {
+        self.devices.append(device)
+        return self
+    }
+    
+    @discardableResult
+    public func add(device: FXBRegisteredDeviceSpec) -> FXBSpec {
+        self.bleRegisteredDevices.append(device)
+        return self
+    }
 }
 
 extension FXBSpec {

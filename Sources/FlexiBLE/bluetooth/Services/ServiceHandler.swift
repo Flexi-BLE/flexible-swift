@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CoreBluetooth
+import CoreBluetoothMock
 
 protocol ServiceHandler {
     var database: FXBLocalDataAccessor { get }

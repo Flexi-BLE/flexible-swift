@@ -19,6 +19,11 @@ let package = Package(
             name: "GRDB",
             url: "https://github.com/groue/GRDB.swift.git",
             branch: "master"
+        ),
+        .package(
+            name: "CoreBluetoothMock",
+            url: "https://github.com/NordicSemiconductor/IOS-CoreBluetooth-Mock.git",
+            branch: "main"
         )
     ],
     targets: [
@@ -27,12 +32,15 @@ let package = Package(
         .target(
             name: "FlexiBLE",
             dependencies: [
-                .product(name: "GRDB", package: "GRDB")
+                .product(name: "GRDB", package: "GRDB"),
+                "CoreBluetoothMock"
             ],
             resources: [.process("resources")]
         ),
         .testTarget(
             name: "FlexiBLETests",
-            dependencies: ["FlexiBLE"]),
+            dependencies: ["FlexiBLE", "CoreBluetoothMock"],
+            resources: [.process("Resources")]
+        ),
     ]
 )

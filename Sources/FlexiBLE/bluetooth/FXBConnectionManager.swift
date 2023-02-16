@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CoreBluetooth
+import CoreBluetoothMock
 import Combine
 
 public class FXBConnectionManager: NSObject, ObservableObject {
@@ -37,7 +37,7 @@ public class FXBConnectionManager: NSObject, ObservableObject {
         self.bleRegisteredDevices = bleDevices
         super.init()
         
-        self.centralManager = CBCentralManager(
+        self.centralManager = CBCentralManagerFactory.instance(
             delegate: self,
             queue: nil,
             options: [CBCentralManagerOptionRestoreIdentifierKey: "FlexiBLE"]
@@ -133,7 +133,7 @@ public class FXBConnectionManager: NSObject, ObservableObject {
             return
         }
         
-        var services: [CBUUID] = [FlexiBLEServiceHandler.FlexiBLEServiceUUID]
+        var services: [CBUUID] = [CBUUID.FlexiBLEServiceUUID]
         
         for device in bleRegisteredDevices {
             services.append(contentsOf: device.serviceIds)
@@ -200,7 +200,7 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
                   return
         }
         
-        if advData.serviceIds.contains(where: { $0 == FlexiBLEServiceHandler.FlexiBLEServiceUUID }) {
+        if advData.serviceIds.contains(where: { $0 == CBUUID.FlexiBLEServiceUUID }) {
             bleLog.info("Found FlexiBLE device: \(peripheralName)")
             
             if let deviceDef = flexiBLEDevices.first(where: { peripheralName.starts(with: $0.name) }) {

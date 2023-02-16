@@ -131,4 +131,8 @@ class FlexiBLEAppData: Codable {
         
         return path
     }
+    
+    internal func deleteAppData() throws {
+        try FileManager.default.removeItem(at: Self.FlexiBLEBasePath)
+    }
 }

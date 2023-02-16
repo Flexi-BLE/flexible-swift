@@ -1,4 +1,5 @@
-import CoreBluetooth
+import Foundation
+import CoreBluetoothMock
 import GRDB
 
 public final class FlexiBLE: ObservableObject {
@@ -21,7 +22,8 @@ public final class FlexiBLE: ObservableObject {
         }
     }
     
-    public func createProfile(with spec: FXBSpec?, name: String?=nil, setActive: Bool=true) {
+    @discardableResult
+    public func createProfile(with spec: FXBSpec?, name: String?=nil, setActive: Bool=true) -> UUID {
         let profile = FlexiBLEProfile(
             name: name,
             spec: spec
@@ -32,6 +34,8 @@ public final class FlexiBLE: ObservableObject {
         if setActive {
             switchProfile(to: profile.id)
         }
+        
+        return profile.id
     }
     
     public func switchProfile(to id: UUID) {
@@ -39,8 +43,7 @@ public final class FlexiBLE: ObservableObject {
             return
         }
         
-        DispatchQueue.main.async {
-            self.profile = profile
-        }
+        self.profile?.close()
+        self.profile = profile
     }
 }

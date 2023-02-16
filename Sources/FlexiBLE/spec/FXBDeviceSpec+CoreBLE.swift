@@ -6,13 +6,13 @@
 //
 
 import Foundation
-import CoreBluetooth
+import CoreBluetoothMock
 
 internal extension FXBDeviceSpec {
     var serviceIds: [CBUUID] {
         let serviceIds = self.dataStreams.map({ $0.serviceCbuuid })
         let registeredId = self.bleRegisteredServices.map({ $0.uuid })
-        return serviceIds + registeredId + [FlexiBLEServiceHandler.FlexiBLEServiceUUID]
+        return serviceIds + registeredId + [CBUUID.FlexiBLEServiceUUID]
     }
     
     func charMetadata(by uuid: CBUUID) -> FXBDataStream? {

@@ -165,4 +165,12 @@ final internal class TransactionalDBConnectionManager {
         
         return records
     }
+    
+    func closeAllConnections() throws {
+        for (key, conn) in connections {
+            try conn.close()
+            conn.releaseMemory()
+            connections[key] = nil
+        }
+    }
 }

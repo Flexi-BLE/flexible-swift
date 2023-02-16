@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CoreBluetooth
+import CoreBluetoothMock
 
 enum BLERegisteredService: String, Codable {
     case battery

@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CoreBluetooth
+import CoreBluetoothMock
 
 internal class BatteryServiceHandler: ServiceHandler {
     var device: Device

@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CoreBluetooth
+import CoreBluetoothMock
 
 public class FXBRegisteredDeviceConnectionManager: NSObject, ObservableObject {
     

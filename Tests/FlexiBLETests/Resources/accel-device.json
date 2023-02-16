@@ -1,0 +1,112 @@
+{
+   "id": "1abcd124-c2ed-4d11-ad1e-fc06d8a02d37",
+   "name":"Flexible Accel",
+   "description":"so cool.",
+   "ble_registered_services":[],
+   "global_config_values":[],
+   "data_streams":[
+      {
+         "id":"0xb92c",
+         "name":"accel",
+         "description":"accelerometry",
+         "precision": "ms",
+         "offset_data_value":{
+            "name":"ms_offset",
+            "description":"relative time since the previous reading",
+            "unit":"ms",
+            "byte_start":6,
+            "byte_end":7,
+            "size":1,
+            "type":"uint",
+            "multiplier":null,
+            "variable_type":"none"
+         },
+         "config_values":[
+            {
+               "name":"sensor_state",
+               "description":"state of the accelerometer sensor",
+               "byte_start":0,
+               "byte_end":1,
+               "size":1,
+               "unit":null,
+               "data_type":"uint",
+               "selection_type":"single",
+               "default_value":"0",
+               "options":[
+                  {
+                     "name":"disabled",
+                     "description":"the sensor will not stream data",
+                     "value":"0"
+                  },
+                  {
+                     "name":"streaming",
+                     "description":"the sensor will stream data",
+                     "value":"1"
+                  }
+               ],
+               "range":null
+            },
+            {
+               "name":"desired_frequency",
+               "description":"the desired frequency of the sensor",
+               "byte_start":1,
+               "byte_end":3,
+               "size":2,
+               "data_type":"uint",
+               "selection_type":"range",
+               "unit":"Hz",
+               "options":null,
+               "default_value":"10",
+               "range":{
+                  "start":20,
+                  "end":500,
+                  "step":20
+               }
+            }
+         ],
+         "data_values":[
+            {
+               "name":"x",
+               "description":"x value",
+               "unit":"m/s^2",
+               "byte_start":0,
+               "byte_end":2,
+               "size":2,
+               "type":"int",
+               "multiplier":0.01,
+               "variable_type":"value",
+               "depends_on":null
+            },
+            {
+               "name":"y",
+               "description":"y value",
+               "unit":"m/s^2",
+               "byte_start":2,
+               "byte_end":4,
+               "size":2,
+               "type":"int",
+               "multiplier":0.01,
+               "variable_type":"value",
+               "depends_on":null
+            },
+            {
+               "name":"z",
+               "description":"z value",
+               "unit":"m/s^2",
+               "byte_start":4,
+               "byte_end":6,
+               "size":2,
+               "type":"int",
+               "multiplier":0.01,
+               "variable_type":"value",
+               "depends_on":null
+            }
+         ],
+         "ble":{
+            "service_uuid":"1a240001-c2ed-4d11-ad1e-fc06d8a02d37",
+            "data_char_uuid":"1a240002-c2ed-4d11-ad1e-fc06d8a02d37",
+            "config_char_uuid":"1a240003-c2ed-4d11-ad1e-fc06d8a02d37"
+         }
+      }
+   ]
+}

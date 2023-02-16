@@ -6,17 +6,12 @@
 //
 
 import Foundation
-import CoreBluetooth
+import CoreBluetoothMock
 import Combine
 import GRDB
 
 public class FlexiBLEServiceHandler: ServiceHandler, ObservableObject {
-    static var FlexiBLEServiceUUID = CBUUID(string: "1a220001-c2ed-4d11-ad1e-fc06d8a02d37")
-    static var EpochCharUUID = CBUUID(string: "1a220002-c2ed-4d11-ad1e-fc06d8a02d37")
-    static let SpecURLUUID = CBUUID(string: "1a220003-c2ed-4d11-ad1e-fc06d8a02d37")
-    static let RefreshEpochCharUUID = CBUUID(string: "1a220005-c2ed-4d11-ad1e-fc06d8a02d37")
-    
-    let serviceUuid: CBUUID = FlexiBLEServiceHandler.FlexiBLEServiceUUID
+    let serviceUuid: CBUUID = CBUUID.FlexiBLEServiceUUID
 
     internal var database: FXBLocalDataAccessor
     
@@ -34,8 +29,8 @@ public class FlexiBLEServiceHandler: ServiceHandler, ObservableObject {
     }
     
     private func writeEpoch(peripheral: CBPeripheral) {
-        guard let infoService = peripheral.services?.first(where: { $0.uuid == Self.FlexiBLEServiceUUID }),
-              let epochChar = infoService.characteristics?.first(where: { $0.uuid == Self.EpochCharUUID }) else {
+        guard let infoService = peripheral.services?.first(where: { $0.uuid == CBUUID.FlexiBLEServiceUUID }),
+              let epochChar = infoService.characteristics?.first(where: { $0.uuid == CBUUID.EpochCharUUID }) else {
             bleLog.error("unable to write epoch reference time: cannot locate reference time characteristic.")
             return
         }
@@ -56,22 +51,22 @@ public class FlexiBLEServiceHandler: ServiceHandler, ObservableObject {
     
     func setup(peripheral: CBPeripheral, service: CBService) {
         
-        if let _ = service.characteristics?.first(where: { $0.uuid == Self.EpochCharUUID }) {
+        if let _ = service.characteristics?.first(where: { $0.uuid == CBUUID.EpochCharUUID }) {
             writeEpoch(peripheral: peripheral)
         }
         
         // set notify for epoch reset request
-        if let epochResetChar = service.characteristics?.first(where: { $0.uuid == Self.RefreshEpochCharUUID }) {
+        if let epochResetChar = service.characteristics?.first(where: { $0.uuid == CBUUID.RefreshEpochCharUUID }) {
             peripheral.setNotifyValue(true, for: epochResetChar)
         }
         
-        if let urlChar = service.characteristics?.first(where: { $0.uuid == Self.SpecURLUUID }) {
+        if let urlChar = service.characteristics?.first(where: { $0.uuid == CBUUID.SpecURLUUID }) {
             peripheral.readValue(for: urlChar)
         }
     }
     
     func didWrite(peripheral: CBPeripheral, uuid: CBUUID) {
-        if uuid == Self.EpochCharUUID {
+        if uuid == CBUUID.EpochCharUUID {
             if let temp = tempRefDate {
                 self.referenceDate = temp
                 tempRefDate = nil
@@ -84,14 +79,14 @@ public class FlexiBLEServiceHandler: ServiceHandler, ObservableObject {
             return
         }
             
-        if characteristic.uuid == Self.SpecURLUUID {
+        if characteristic.uuid == CBUUID.SpecURLUUID {
             if let urlString = String(data: data, encoding: .utf8),
                let url = URL(string: urlString) {
                 
                 self.specURL = url
             }
             
-        } else if characteristic.uuid == Self.RefreshEpochCharUUID {
+        } else if characteristic.uuid == CBUUID.RefreshEpochCharUUID {
             if data[0] == 1 {
                 writeEpoch(peripheral: peripheral)
             }

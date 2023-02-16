@@ -7,7 +7,7 @@
 
 import Foundation
 import Combine
-import CoreBluetooth
+import CoreBluetoothMock
 
 public enum DeviceConnectionState: String, CaseIterable {
     case disconnected = "Disconnected"
@@ -65,6 +65,8 @@ public class FXBDevice: Identifiable, Device {
                 self.connectionState = .disconnected
             }
         }).store(in: &cancellables)
+        
+        
         
         Task {
             do {

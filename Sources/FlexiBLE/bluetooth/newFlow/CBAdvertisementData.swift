@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CoreBluetooth
+import CoreBluetoothMock
 
 public struct CBAdvertisementData {
     internal let data: [String : Any]

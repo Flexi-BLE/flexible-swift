@@ -8,10 +8,9 @@
 import Foundation
 
 public struct FXBDeviceSpec: Codable, Equatable {
-    public let id: UUID = UUID()
+    public var id: UUID = UUID()
     public let name: String
     public let description: String
-    public let tags: [String]
     public let globalConfigValues: [String]
     public let dataStreams: [FXBDataStream]
     internal let bleRegisteredServices: [BLERegisteredService]

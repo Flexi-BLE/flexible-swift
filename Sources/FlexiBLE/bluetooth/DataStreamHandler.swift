@@ -7,7 +7,7 @@
 
 import Foundation
 import Combine
-import CoreBluetooth
+import CoreBluetoothMock
 import SwiftUI
 
 
@@ -19,6 +19,7 @@ public class DataStreamHandler {
     let def: FXBDataStream
     
     public typealias RawDataStreamRecord = (ts: Date, values: [AEDataValue])
+    
     public var firehose = PassthroughSubject<RawDataStreamRecord, Never>()
     public var firehoseTS = PassthroughSubject<Date, Never>()
     
