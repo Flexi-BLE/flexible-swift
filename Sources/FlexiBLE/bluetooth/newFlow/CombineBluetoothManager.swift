@@ -43,6 +43,7 @@ final class CombineBluetoothManager: NSObject {
     private let log = Logger(subsystem: "com.flexiBLE.ble", category: "bleManager")
     
     private var centralManager: CBCentralManager!
+    private var peripherals: [UUID: CBPeripheral] = .init()
      
     func start() {
         centralManager = CBCentralManagerFactory.instance(
@@ -64,7 +65,6 @@ final class CombineBluetoothManager: NSObject {
     
     func connect(_ peripheral: CBPeripheral) {
         log.info("connect peripheral: \(peripheral.identifier)")
-        peripheral.delegate = self
         centralManager.connect(peripheral)
     }
 }
@@ -89,8 +89,12 @@ extension CombineBluetoothManager: CBCentralManagerDelegate {
     
     func centralManager(_ central: CBMCentralManager, didConnect peripheral: CBMPeripheral) {
         log.info("did connect peripheral \(peripheral.identifier)")
+        
+        peripheral.delegate = self
+        peripheral.discoverServices([CBUUID.FlexiBLEServiceUUID])
+        
         connectSubject.send(peripheral)
-        peripheral.discoverServices(nil)
+        peripherals[peripheral.identifier] = peripheral
     }
 }
 

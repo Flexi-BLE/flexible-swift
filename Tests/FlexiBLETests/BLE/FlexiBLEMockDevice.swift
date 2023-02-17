@@ -54,7 +54,7 @@ extension CBMCharacteristicMock {
 extension CBMServiceMock {
 
     static let FlexiBLEMock = CBMServiceMock(
-        type: CBMUUID(string: CBUUID.FlexiBLEAccelServiceUUID.uuidString),
+        type: CBMUUID(string: CBUUID.FlexiBLEServiceUUID.uuidString),
         primary: true,
         characteristics:
             .FlexiBLEEpochCharUUID,
