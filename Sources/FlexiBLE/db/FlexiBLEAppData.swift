@@ -94,6 +94,8 @@ public class FlexiBLEProfile: Codable {
     public let createdAt: Date
     public let updatedAt: Date
     
+    public var autoConnectDeviceNames: [String] = .init()
+    
     init(name: String, spec: FXBSpec) {
         self.id = UUID()
         self.name = name
