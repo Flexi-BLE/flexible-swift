@@ -94,7 +94,7 @@ public class FlexiBLEProfile: Codable {
     public let createdAt: Date
     public let updatedAt: Date
     
-    public var autoConnectDeviceNames: [String] = .init()
+    public private(set) var autoConnectDeviceNames: [String] = .init()
     
     init(name: String, spec: FXBSpec) {
         self.id = UUID()
@@ -104,6 +104,16 @@ public class FlexiBLEProfile: Codable {
         self.updatedAt = Date.now
         
         self.save(spec: spec)
+    }
+    
+    public func autoConnect(_ deviceName: String) {
+        autoConnectDeviceNames.append(deviceName)
+        FlexiBLEAppData.shared.save()
+    }
+    
+    public func removeAutoConnect(_ deviceName: String) {
+        autoConnectDeviceNames.removeAll(where: { $0 == deviceName })
+        FlexiBLEAppData.shared.save()
     }
     
     internal var basePath: URL {

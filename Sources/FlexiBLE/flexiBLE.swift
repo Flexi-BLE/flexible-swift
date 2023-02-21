@@ -49,6 +49,7 @@ public final class FlexiBLE: ObservableObject {
         self.profile = profile
         localDatabase = FXBDatabase(for: profile)
         dbAccess = FXBLocalDataAccessor(db: localDatabase!)
+        conn.registerAutoConnect(devices: profile.autoConnectDeviceNames)
     }
     
     public func profiles() -> [FlexiBLEProfile] {

@@ -331,6 +331,7 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
             
             device.disconnect()
             fxbConnectedDevices.remove(at: i)
+            
             if isScanning {
                 stopScan()
                 startScan()
