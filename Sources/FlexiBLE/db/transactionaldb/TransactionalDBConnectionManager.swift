@@ -16,9 +16,9 @@ final internal class TransactionalDBConnectionManager {
     
     private var connections: [String:DatabasePool] = [:]
     
-    private var maxDBSize = 1024 * 1024 * 1024 * 5 // 5Gb
+    private var maxDBSize = 1024 * 1024 * 1024 * 1024 // TBb
     private var lastDBSizeCheck: Date = Date.now
-    private var DBSizeCheckInterval: TimeInterval = 15
+    private var DBSizeCheckInterval: TimeInterval = 6_000 // 100 minutes
     
     internal init(withMainConnection conn: DatabaseWriter, spec: FXBSpec, dbPath: URL) {
         self.mainConnection = conn

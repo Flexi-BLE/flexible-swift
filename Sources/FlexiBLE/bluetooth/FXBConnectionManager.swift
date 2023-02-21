@@ -142,6 +142,7 @@ public class FXBConnectionManager: NSObject, ObservableObject {
             CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: allowDuplicates)
         ]
         
+        serachConnectedDevices(with: services)
         centralManager.scanForPeripherals(
             withServices:services,
             options: options
@@ -149,6 +150,85 @@ public class FXBConnectionManager: NSObject, ObservableObject {
         DispatchQueue.main.async {
             self.isScanning = self.centralManager.isScanning
         }
+    }
+    
+    private func serachConnectedDevices(with services: [CBUUID]) {
+        let peripherals = centralManager.retrieveConnectedPeripherals(withServices: services)
+        for peripheral in peripherals {
+            guard
+                let peripheralName = peripheral.name,
+                    let spec = self.spec else {
+                return
+            }
+            
+            let device = handle(peripheral: peripheral, name: peripheralName, spec: spec)
+            if let device = device as? FXBDevice {
+                bleLog.info("connceted to: \(device.spec.name)")
+                device.connect(with: FXBDeviceConnectionManager(spec: device.spec, peripheral: peripheral))
+                
+                fxbConnectedDevices.append(device)
+            } else if let device = device as? FXBRegisteredDevice {
+                bleLog.info("connceted to: \(device.deviceName)")
+                
+                device.connect(with: FXBRegisteredDeviceConnectionManager(device: device))
+                connectedRegisteredDevices.append(device)
+            }
+        }
+    }
+    
+    private func handle(peripheral: CBPeripheral, name: String, spec: FXBSpec) -> Device? {
+        if let deviceDef = spec.devices.first(where: { name.starts(with: $0.name) }) {
+            
+            if let connectedDevice = fxbConnectedDevices.first(where: { name == $0.deviceName }) {
+                if autoConnectDevices.contains(name) {
+                    self.enable(device: connectedDevice)
+                }
+                return nil
+            }
+            
+            if let foundDevice = fxbFoundDevices.first(where: { name == $0.deviceName }) {
+                if autoConnectDevices.contains(name) {
+                    self.enable(device: foundDevice)
+                }
+                return nil
+            }
+            
+            let device = FXBDevice(
+                spec: deviceDef,
+                specVersion: spec.schemaVersion,
+                specId: spec.id,
+                deviceName: name,
+                cbPeripheral: peripheral
+            )
+            
+            return device
+        }
+        
+        if let registeredDeviceSpec = spec.bleRegisteredDevices.first(where: { name.starts(with: $0.name) }) {
+            if let connectedDevice = connectedRegisteredDevices.first(where: { name == $0.deviceName }) {
+                if autoConnectDevices.contains(name) {
+                    self.enable(device: connectedDevice)
+                }
+                return nil
+            }
+            if let foundDevice = foundRegisteredDevices.first(where: { name == $0.deviceName }) {
+                if autoConnectDevices.contains(name) {
+                    self.enable(device: foundDevice)
+                }
+                return nil
+            }
+            
+            let device = FXBRegisteredDevice(
+                spec: registeredDeviceSpec,
+                specVersion: spec.schemaVersion,
+                deviceName: name,
+                cbPeripheral: peripheral
+            )
+            
+            return device
+        }
+        
+        return nil
     }
     
     internal func stopScan() {
@@ -187,64 +267,22 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
         bleLog.debug("peripheral found: \(peripheral.name ?? "--none--"), (\(peripheral.identifier))")
         bleLog.debug("advertisement data \(advertisementData)")
         
-        guard let peripheralName = advertisementData["kCBAdvDataLocalName"] as? String, let spec = self.spec else { return }
-        
-        if let deviceDef = spec.devices.first(where: { peripheralName.starts(with: $0.name) }) {
+        guard
+            let peripheralName = advertisementData["kCBAdvDataLocalName"] as? String,
+            let spec = self.spec else {
             
-            if let connectedDevice = fxbConnectedDevices.first(where: { peripheralName == $0.deviceName }) {
-                if autoConnectDevices.contains(peripheralName) {
-                    self.enable(device: connectedDevice)
-                }
-                return
-            }
-            
-            if let foundDevice = fxbFoundDevices.first(where: { peripheralName == $0.deviceName }) {
-                if autoConnectDevices.contains(peripheralName) {
-                    self.enable(device: foundDevice)
-                }
-                return
-            }
-            
-            let device = FXBDevice(
-                spec: deviceDef,
-                specVersion: spec.schemaVersion,
-                specId: spec.id,
-                deviceName: peripheralName,
-                cbPeripheral: peripheral
-            )
-            
-            fxbFoundDevices.append(device)
-            
-            if autoConnectDevices.contains(peripheralName) {
-                self.enable(device: device)
-            }
+            return
         }
         
-        if let registeredDeviceSpec = spec.bleRegisteredDevices.first(where: { peripheralName.starts(with: $0.name) }) {
-            if let connectedDevice = connectedRegisteredDevices.first(where: { peripheralName == $0.deviceName }) {
-                if autoConnectDevices.contains(peripheralName) {
-                    self.enable(device: connectedDevice)
+        if let device = handle(peripheral: peripheral, name: peripheralName, spec: spec) {
+            if autoConnectDevices.contains(device.deviceName) {
+                if let device = device as? FXBRegisteredDevice {
+                    foundRegisteredDevices.append(device)
+                    enable(device: device)
+                } else if let device = device as? FXBDevice {
+                    fxbFoundDevices.append(device)
+                    enable(device: device)
                 }
-                return
-            }
-            if let foundDevice = foundRegisteredDevices.first(where: { peripheralName == $0.deviceName }) {
-                if autoConnectDevices.contains(peripheralName) {
-                    self.enable(device: foundDevice)
-                }
-                return
-            }
-            
-            let device = FXBRegisteredDevice(
-                spec: registeredDeviceSpec,
-                specVersion: spec.schemaVersion,
-                deviceName: peripheralName,
-                cbPeripheral: peripheral
-            )
-            
-            foundRegisteredDevices.append(device)
-            
-            if autoConnectDevices.contains(peripheralName) {
-                self.enable(device: device)
             }
         }
     }
