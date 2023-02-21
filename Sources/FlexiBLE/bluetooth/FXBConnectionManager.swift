@@ -179,10 +179,7 @@ public class FXBConnectionManager: NSObject, ObservableObject {
     private func handle(peripheral: CBPeripheral, name: String, spec: FXBSpec) -> Device? {
         if let deviceDef = spec.devices.first(where: { name.starts(with: $0.name) }) {
             
-            if let connectedDevice = fxbConnectedDevices.first(where: { name == $0.deviceName }) {
-                if autoConnectDevices.contains(name) {
-                    self.enable(device: connectedDevice)
-                }
+            if fxbConnectedDevices.contains(where: { name == $0.deviceName }) {
                 return nil
             }
             
@@ -275,12 +272,14 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
         }
         
         if let device = handle(peripheral: peripheral, name: peripheralName, spec: spec) {
-            if autoConnectDevices.contains(device.deviceName) {
-                if let device = device as? FXBRegisteredDevice {
-                    foundRegisteredDevices.append(device)
+            if let device = device as? FXBRegisteredDevice {
+                foundRegisteredDevices.append(device)
+                if autoConnectDevices.contains(where: { $0 == peripheralName }) {
                     enable(device: device)
-                } else if let device = device as? FXBDevice {
-                    fxbFoundDevices.append(device)
+                }
+            } else if let device = device as? FXBDevice {
+                fxbFoundDevices.append(device)
+                if autoConnectDevices.contains(where: { $0 == peripheralName }) {
                     enable(device: device)
                 }
             }

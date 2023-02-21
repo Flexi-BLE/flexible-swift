@@ -30,7 +30,7 @@ public final class FlexiBLE: ObservableObject {
             spec: spec
         )
         
-        FlexiBLEAppData.shared.add(profile)
+        FlexiBLEAppData.shared.add(profile.id)
         
         if setActive {
             switchProfile(to: profile.id)
@@ -53,7 +53,8 @@ public final class FlexiBLE: ObservableObject {
     }
     
     public func profiles() -> [FlexiBLEProfile] {
-        return FlexiBLEAppData.shared.profiles
+        return FlexiBLEAppData.shared.profileIds
+            .compactMap({ FlexiBLEAppData.shared.get(id: $0, setLast: false) })
     }
     
     public func startScan(with spec: FXBSpec) {

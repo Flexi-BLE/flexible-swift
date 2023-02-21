@@ -50,27 +50,47 @@ class FlexiBLEAppData: Codable {
     }
     
     private var lastProfileId: UUID? = nil
-    private(set) var profiles: [FlexiBLEProfile] = []
+    private(set) var profileIds: [UUID] = []
     
-    func add(_ profile: FlexiBLEProfile, setLast: Bool = true) {
-        self.profiles.append(profile)
+    func add(_ id: UUID, setLast: Bool = true) {
+        self.profileIds.append(id)
         if setLast {
-            self.lastProfileId = profile.id
+            self.lastProfileId = id
         }
         self.save()
     }
     
+    private func profile(by id: UUID) -> FlexiBLEProfile? {
+        do {
+            if let dir = try FileManager
+                .default.contentsOfDirectory(atPath: Self.FlexiBLEBasePath.relativePath)
+                .first(where: { $0.hasSuffix(id.uuidString) }) {
+                
+                let path = Self.FlexiBLEBasePath
+                    .appendingPathComponent(dir, conformingTo: .directory)
+                    .appendingPathComponent("profile.json", conformingTo: .json)
+                let data = try Data(contentsOf: path)
+                return try Data.sharedJSONDecoder.decode(FlexiBLEProfile.self, from: data)
+            }
+        } catch {
+            return nil
+        }
+        return nil
+    }
+    
     func lastProfile() -> FlexiBLEProfile? {
         if let id = lastProfileId {
-            return profiles.first(where: { $0.id == id })
+            return profile(by: id)
         }
         return nil
     }
     
     func get(id: UUID, setLast: Bool = true) -> FlexiBLEProfile? {
-        if let profile = profiles.first(where: { $0.id == id }) {
-            if setLast { lastProfileId = id }
-            save()
+        if let profile = profile(by: id) {
+            if setLast {
+                lastProfileId = id
+                save()
+            }
             return profile
         }
         return nil
@@ -104,16 +124,17 @@ public class FlexiBLEProfile: Codable {
         self.updatedAt = Date.now
         
         self.save(spec: spec)
+        self.save()
     }
     
     public func autoConnect(_ deviceName: String) {
         autoConnectDeviceNames.append(deviceName)
-        FlexiBLEAppData.shared.save()
+        save()
     }
     
     public func removeAutoConnect(_ deviceName: String) {
         autoConnectDeviceNames.removeAll(where: { $0 == deviceName })
-        FlexiBLEAppData.shared.save()
+        save()
     }
     
     internal var basePath: URL {
@@ -179,6 +200,16 @@ public class FlexiBLEProfile: Codable {
             try data.write(to: path)
         } catch {
             pLog.error("unable to save specification: \(error.localizedDescription)")
+        }
+    }
+    
+    private func save() {
+        do {
+            let path = self.basePath.appendingPathComponent("profile.json")
+            let data = try Data.sharedJSONEncoder.encode(self)
+            try data.write(to: path)
+        } catch {
+            pLog.error("unable to save profile: \(error.localizedDescription)")
         }
     }
 }
