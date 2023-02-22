@@ -76,7 +76,6 @@ public class FXBDevice: Identifiable, Device {
                         
                         self.connectionManager?.serviceHandlers.forEach {
                             $0.writeLastConfig(peripheral: self.cbPeripheral)
-//                            $0.writeDefaultConfig(peripheral: self.cbPeripheral)
                         }
                         
                         DispatchQueue.main.asyncAfter(
