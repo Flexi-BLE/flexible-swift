@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct FXBDeviceSpec: Codable, Equatable {
+public struct FXBDeviceSpec: Codable, Equatable, Hashable {
     public let id: UUID = UUID()
     public let name: String
     public let description: String
@@ -19,5 +19,9 @@ public struct FXBDeviceSpec: Codable, Equatable {
     
     public static func ==(lhs: FXBDeviceSpec, rhs: FXBDeviceSpec) -> Bool {
         return lhs.id == rhs.id
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }

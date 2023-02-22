@@ -46,10 +46,10 @@ public final class FlexiBLE: ObservableObject {
         conn.disconnectAll()
         startScan(with: profile.specification)
         
-        self.profile = profile
         localDatabase = FXBDatabase(for: profile)
         dbAccess = FXBLocalDataAccessor(db: localDatabase!)
         conn.registerAutoConnect(devices: profile.autoConnectDeviceNames)
+        self.profile = profile
     }
     
     public func profiles() -> [FlexiBLEProfile] {

@@ -109,7 +109,7 @@ final internal class TransactionalDBConnectionManager {
                 req = req.filter(endCol >= start || endCol == nil)
             } else {
                 if let start = start {
-                    req = req.filter(endCol >= start)
+                    req = req.filter(endCol >= start || (start >= startCol && endCol == nil))
                 }
                 
                 if let end = end {
