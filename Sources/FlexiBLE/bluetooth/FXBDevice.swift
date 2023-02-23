@@ -63,9 +63,12 @@ public class FXBDevice: Identifiable, Device {
         self.connectionManager?.infoServiceHandler
             .$infoData
             .receive(on: DispatchQueue.main)
+            .timeout(.seconds(5), scheduler: DispatchQueue.main)
             .sink(
                 receiveValue: { [weak self] infoData in
-                    guard let self = self, let infoData = infoData else { return }
+                    guard let self = self, let infoData = infoData else {
+                        return
+                    }
                     
                     guard let specId = infoData.specId,
                           let versionId = infoData.versionId,
@@ -76,7 +79,6 @@ public class FXBDevice: Identifiable, Device {
                         
                         self.connectionManager?.serviceHandlers.forEach {
                             $0.writeLastConfig(peripheral: self.cbPeripheral)
-//                            $0.writeDefaultConfig(peripheral: self.cbPeripheral)
                         }
                         
                         DispatchQueue.main.asyncAfter(
