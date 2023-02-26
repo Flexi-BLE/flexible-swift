@@ -60,6 +60,25 @@ class FlexiBLEAppData: Codable {
         self.save()
     }
     
+    func remove(_ id: UUID) {
+        do {
+            if let dir = try FileManager
+                .default.contentsOfDirectory(atPath: Self.FlexiBLEBasePath.relativePath)
+                .first(where: { $0.hasSuffix(id.uuidString) }) {
+                
+                let path = Self.FlexiBLEBasePath.appendingPathComponent(dir)
+                try FileManager.default.removeItem(atPath: path.relativePath)
+                self.profileIds.removeAll(where: { $0 == id })
+                if lastProfileId == id {
+                    lastProfileId = nil
+                }
+            }
+            
+        } catch {
+            return
+        }
+    }
+    
     private func profile(by id: UUID) -> FlexiBLEProfile? {
         do {
             if let dir = try FileManager

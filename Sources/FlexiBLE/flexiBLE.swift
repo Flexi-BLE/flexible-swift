@@ -57,6 +57,10 @@ public final class FlexiBLE: ObservableObject {
             .compactMap({ FlexiBLEAppData.shared.get(id: $0, setLast: false) })
     }
     
+    public func delete(profile: FlexiBLEProfile) {
+        FlexiBLEAppData.shared.remove(profile.id)
+    }
+    
     public func startScan(with spec: FXBSpec) {
         conn.scan(with: spec)
     }
