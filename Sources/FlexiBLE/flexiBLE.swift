@@ -59,6 +59,9 @@ public final class FlexiBLE: ObservableObject {
     
     public func delete(profile: FlexiBLEProfile) {
         FlexiBLEAppData.shared.remove(profile.id)
+        if self.profile?.id == profile.id {
+            self.profile = nil
+        }
     }
     
     public func startScan(with spec: FXBSpec) {
