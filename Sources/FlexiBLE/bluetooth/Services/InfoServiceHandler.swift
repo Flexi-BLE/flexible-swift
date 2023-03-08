@@ -85,7 +85,7 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         }
         
         let data = Data([FXBCommandHeader.request.rawValue, cmd.commandCode, req.code])
-        peripheral.writeValue(data, for: deviceInChar, type: .withResponse)
+        peripheral.writeValue(data, for: deviceInChar, type: .withoutResponse)
         
     }
     
