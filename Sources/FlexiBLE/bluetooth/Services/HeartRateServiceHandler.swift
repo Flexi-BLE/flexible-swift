@@ -15,12 +15,14 @@ internal class HeartRateServiceHandler: ServiceHandler {
     private let heartRateMeasurementUuid = CBUUID(string: "2a37")
     private let bodyLocationUuid = CBUUID(string: "2a38")
     internal var device: Device
+    internal var peripheral: CBPeripheral
     
-    init(device: Device) {
+    init(device: Device, peripheral: CBPeripheral) {
         self.device = device
+        self.peripheral = peripheral
     }
     
-    func setup(peripheral: CBPeripheral, service: CBService) {
+    func setup(service: CBService) {
         for characteristic in service.characteristics ?? [] {
             switch characteristic.uuid {
             case heartRateMeasurementUuid: peripheral.setNotifyValue(true, for: characteristic)
@@ -30,11 +32,11 @@ internal class HeartRateServiceHandler: ServiceHandler {
         }
     }
     
-    func didWrite(peripheral: CBPeripheral, uuid: CBUUID) {
+    func didWrite(uuid: CBUUID) {
         bleLog.debug("did write value for \(self.serviceUuid)")
     }
     
-    func didUpdate(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+    func didUpdate(characteristic: CBCharacteristic) {
         guard let data = characteristic.value else { return }
         
         switch characteristic.uuid {

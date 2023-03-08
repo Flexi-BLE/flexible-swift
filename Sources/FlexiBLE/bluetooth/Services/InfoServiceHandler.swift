@@ -17,12 +17,8 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
     
     public struct InfoData {
         public let referenceDate: Date?
-        public let specId: String?
-        public let versionId: String?
     }
 
-    private var versionId: String?
-    private var specId: String?
     private var referenceDate: Date?
     
     private var tempRefDate: Date?
@@ -31,12 +27,15 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
     
     private var dataObserver: AnyCancellable?
     
-    init(spec: FXBDeviceSpec) {
+    internal var peripheral: CBPeripheral
+    
+    init(spec: FXBDeviceSpec, peripheral: CBPeripheral) {
         self.spec = spec
+        self.peripheral = peripheral
         self.serviceUuid = spec.infoServiceUuid
     }
     
-    private func writeEpoch(peripheral: CBPeripheral) {
+    private func writeEpoch() {
         guard let infoService = peripheral.services?.first(where: { $0.uuid == spec.infoServiceUuid }),
               let epochChar = infoService.characteristics?.first(where: { $0.uuid == spec.epochTimeUuid }) else {
             bleLog.error("unable to write epoch reference time: cannot locate reference time characteristic.")
@@ -50,7 +49,7 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             data.append(UnsafeBufferPointer(start: $0, count: 1))
         }
         
-        bleLog.info("Writing epoch time to \(peripheral.name ?? "--device--"): \(now) (\(nowMs))")
+        bleLog.info("Writing epoch time to \(self.peripheral.name ?? "--device--"): \(now) (\(nowMs))")
         peripheral.writeValue(data, for: epochChar, type: .withResponse)
     
         self.tempRefDate = now // wait to commit until written
@@ -58,16 +57,14 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
     
     private func updateInfoData() {
         infoData = InfoData(
-            referenceDate: referenceDate,
-            specId: specId,
-            versionId: versionId
+            referenceDate: referenceDate
         )
     }
     
-    func setup(peripheral: CBPeripheral, service: CBService) {
+    func setup(service: CBService) {
         
         if let _ = service.characteristics?.first(where: { $0.uuid == spec.epochTimeUuid }) {
-            writeEpoch(peripheral: peripheral)
+            writeEpoch()
         }
         
         // set notify for epoch reset request
@@ -75,16 +72,24 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             peripheral.setNotifyValue(true, for: epochResetChar)
         }
         
-        if let versionChar = service.characteristics?.first(where: { $0.uuid == spec.specVersionUuid }) {
-            peripheral.readValue(for: versionChar)
-        }
-        
-        if let idChar = service.characteristics?.first(where: { $0.uuid == spec.specIdUuid }) {
-            peripheral.readValue(for: idChar)
+        if let deviceOutChar = service.characteristics?.first(where: { $0.uuid == spec.deviceOutUuid }) {
+            peripheral.setNotifyValue(true, for: deviceOutChar)
         }
     }
     
-    func didWrite(peripheral: CBPeripheral, uuid: CBUUID) {
+    public func send(cmd: FXBCommandSpec, req: FXBCommandSpecRequest) {
+        guard let infoService = peripheral.services?.first(where: { $0.uuid == spec.infoServiceUuid }),
+              let deviceInChar = infoService.characteristics?.first(where: { $0.uuid == spec.deviceInUuid }) else {
+            
+            return
+        }
+        
+        let data = Data([FXBCommandHeader.request.rawValue, cmd.commandCode, req.code])
+        peripheral.writeValue(data, for: deviceInChar, type: .withResponse)
+        
+    }
+    
+    func didWrite(uuid: CBUUID) {
         if uuid == spec.epochTimeUuid {
             if let temp = tempRefDate {
                 self.referenceDate = temp
@@ -94,30 +99,17 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         }
     }
     
-    func didUpdate(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+    func didUpdate(characteristic: CBCharacteristic) {
         guard let data = characteristic.value else {
             return
         }
-            
-        if characteristic.uuid == spec.specVersionUuid {
-            let versionMajor = Int(data[0])
-            let versionMinor = Int(data[1])
-            let versionPatch = Int(data[2])
-            let version = "\(versionMajor).\(versionMinor).\(versionPatch)"
-            bleLog.info("specification version for \(self.spec.name): \(version)")
-            self.versionId = version
-            updateInfoData()
-            
-        } else if characteristic.uuid == spec.specIdUuid {
-            let id = String(data: data, encoding: .ascii)?.replacingOccurrences(of: "\0", with: "")
-            bleLog.info("specification id for \(self.spec.name): \(id ?? "--none--")")
-            self.specId = id ?? "--none--"
-            updateInfoData()
-            
-        } else if characteristic.uuid == spec.refreshEpochUuid {
+                        
+        if characteristic.uuid == spec.refreshEpochUuid {
             if data[0] == 1 {
-                writeEpoch(peripheral: peripheral)
+                writeEpoch()
             }
+        } else if characteristic.uuid == spec.deviceOutUuid {
+            bleLog.debug("Did reviece device out data: \(data)")
         }
     }
 }

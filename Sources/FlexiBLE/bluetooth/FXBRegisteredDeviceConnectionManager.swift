@@ -45,7 +45,7 @@ extension FXBRegisteredDeviceConnectionManager: CBPeripheralDelegate {
                 
                 if let registeredService = BLERegisteredService.from(service.uuid) {
                     
-                    serviceHandlers.append(registeredService.handler(device: device))
+                    serviceHandlers.append(registeredService.handler(device: device, peripheral: peripheral))
                 }
             }
             
@@ -64,7 +64,7 @@ extension FXBRegisteredDeviceConnectionManager: CBPeripheralDelegate {
         
         
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
-            handler.setup(peripheral: peripheral, service: service)
+            handler.setup(service: service)
         }
     }
     
@@ -92,7 +92,6 @@ extension FXBRegisteredDeviceConnectionManager: CBPeripheralDelegate {
         
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.didUpdate(
-                peripheral: peripheral,
                 characteristic: characteristic
             )
         }
@@ -110,7 +109,7 @@ extension FXBRegisteredDeviceConnectionManager: CBPeripheralDelegate {
         guard let service = characteristic.service else { return }
         
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
-            handler.didWrite(peripheral: peripheral, uuid: service.uuid)
+            handler.didWrite(uuid: service.uuid)
         }
     }
     

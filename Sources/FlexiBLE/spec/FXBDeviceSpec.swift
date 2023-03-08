@@ -11,8 +11,8 @@ public struct FXBDeviceSpec: Codable, Equatable, Hashable {
     public let id: UUID = UUID()
     public let name: String
     public let description: String
-    public let tags: [String]
-    public let globalConfigValues: [String]
+    public let configValues: [FXBDataStreamConfig]
+    public let commands: [FXBCommandSpec]
     public let dataStreams: [FXBDataStream]
     
     internal let ble: FXBDeviceBLE
