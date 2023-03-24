@@ -80,7 +80,7 @@ public extension FXBLocalDataAccessor {
                 start: start,
                 end: end,
                 deviceName: deviceName,
-                uploaded: false
+                uploaded: uploaded
             )
             
             // retrieve all database records from main

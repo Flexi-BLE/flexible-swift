@@ -56,6 +56,10 @@ public class FXBDevice: Identifiable, Device {
         return connectionManager?.serviceHandlers.first(where: { $0.def.name == dataStreamName })
     }
     
+    public func infoServiceHandler() -> InfoServiceHandler? {
+        return connectionManager?.infoServiceHandler
+    }
+    
     internal func connect(with connectionManager: FXBDeviceConnectionManager) {
         self.connectionState = .initializing
         self.connectionManager = connectionManager
@@ -70,9 +74,7 @@ public class FXBDevice: Identifiable, Device {
                         return
                     }
                     
-                    guard let specId = infoData.specId,
-                          let versionId = infoData.versionId,
-                          let referenceDate = infoData.referenceDate else { return }
+                    guard let referenceDate = infoData.referenceDate else { return }
                     
                     if self.connectionState != .connected {
                         bleLog.info("\(self.deviceName) Initialized: (\(referenceDate)")
@@ -89,18 +91,9 @@ public class FXBDevice: Identifiable, Device {
                         )
                     }
                     
-                    if specId == self.loadedSpecId,
-                       versionId == self.loadedSpecVersion {
-                        self.isSpecVersionMatched = true
-                    } else {
-                        self.isSpecVersionMatched = false
-                    }
-                    
                     Task(priority: .background) { [weak self] in
                         do {
                             self?.connectionRecord?.latestReferenceDate = referenceDate
-                            self?.connectionRecord?.specificationIdString = specId
-                            self?.connectionRecord?.specificationVersion = versionId
                             
                             if self?.connectionRecord != nil {
                                 try FlexiBLE.shared.dbAccess?.connection.update(&self!.connectionRecord!)

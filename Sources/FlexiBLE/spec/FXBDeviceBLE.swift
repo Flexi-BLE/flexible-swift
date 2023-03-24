@@ -12,7 +12,7 @@ internal struct FXBDeviceBLE: Codable {
     let bleRegisteredServices: [BLERegisteredService]
     let infoServiceUuid: String
     let epochCharUuid: String
-    let specVersionCharUuid: String
-    let specIdCharUuid: String
     let refreshEpochCharUuid: String
+    let deviceInCharUuid: String
+    let deviceOutCharUuid: String
 }

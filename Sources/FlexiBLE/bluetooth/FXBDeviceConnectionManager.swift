@@ -32,7 +32,8 @@ public class FXBDeviceConnectionManager: NSObject {
         self.peripheral = peripheral
         
         self.infoServiceHandler = InfoServiceHandler(
-            spec: self.spec
+            spec: self.spec,
+            peripheral: peripheral
         )
         
         super.init()
@@ -79,7 +80,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
         } else if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.setup(peripheral: peripheral, service: service)
         } else if service.uuid == spec.infoServiceUuid {
-            infoServiceHandler.setup(peripheral: peripheral, service: service)
+            infoServiceHandler.setup(service: service)
         }
         
         else {
@@ -105,7 +106,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
                 referenceDate: referenceDate
             )
         } else if service.uuid == spec.infoServiceUuid {
-            infoServiceHandler.didUpdate(peripheral: peripheral, characteristic: characteristic)
+            infoServiceHandler.didUpdate(characteristic: characteristic)
         }
     }
     
@@ -122,7 +123,7 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.didWrite(uuid: characteristic.uuid)
         } else if service.uuid == spec.infoServiceUuid {
-            infoServiceHandler.didWrite(peripheral: peripheral, uuid: characteristic.uuid)
+            infoServiceHandler.didWrite(uuid: characteristic.uuid)
         }
         
         peripheral.readValue(for: characteristic)

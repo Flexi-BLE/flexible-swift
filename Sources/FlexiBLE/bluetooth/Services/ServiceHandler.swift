@@ -10,9 +10,10 @@ import CoreBluetooth
 
 protocol ServiceHandler {
     var serviceUuid: CBUUID { get }
+    var peripheral: CBPeripheral { get }
     
-    func setup(peripheral: CBPeripheral, service: CBService)
+    func setup(service: CBService)
     
-    func didWrite(peripheral: CBPeripheral, uuid: CBUUID)
-    func didUpdate(peripheral: CBPeripheral, characteristic: CBCharacteristic)
+    func didWrite(uuid: CBUUID)
+    func didUpdate(characteristic: CBCharacteristic)
 }

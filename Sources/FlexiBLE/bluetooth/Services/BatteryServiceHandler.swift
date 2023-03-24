@@ -10,22 +10,24 @@ import CoreBluetooth
 
 internal class BatteryServiceHandler: ServiceHandler {
     var device: Device
+    internal let peripheral: CBPeripheral
     
     internal var serviceUuid: CBUUID = BLERegisteredService.battery.uuid
     
-    init(device: Device) {
+    init(device: Device, peripheral: CBPeripheral) {
         self.device = device
+        self.peripheral = peripheral
     }
     
-    func setup(peripheral: CBPeripheral, service: CBService) {
+    func setup(service: CBService) {
         
     }
     
-    func didWrite(peripheral: CBPeripheral, uuid: CBUUID) {
+    func didWrite(uuid: CBUUID) {
         bleLog.debug("did write value for \(self.serviceUuid)")
     }
     
-    func didUpdate(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+    func didUpdate(characteristic: CBCharacteristic) {
         
     }
 }

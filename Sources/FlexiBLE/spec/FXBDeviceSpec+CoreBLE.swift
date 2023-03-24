@@ -38,16 +38,16 @@ internal extension FXBDeviceSpec {
         return CBUUID(string: ble.epochCharUuid)
     }
     
-    var specVersionUuid: CBUUID {
-        return CBUUID(string: ble.specVersionCharUuid)
-    }
-    
-    var specIdUuid: CBUUID {
-        return CBUUID(string: ble.specIdCharUuid)
-    }
-    
     var refreshEpochUuid: CBUUID {
         return CBUUID(string: ble.refreshEpochCharUuid)
+    }
+    
+    var deviceInUuid: CBUUID {
+        return CBUUID(string: ble.deviceInCharUuid)
+    }
+    
+    var deviceOutUuid: CBUUID {
+        return CBUUID(string: ble.deviceOutCharUuid)
     }
     
     func dataStreams(from uuid: CBUUID) -> [FXBDataStream] {
