@@ -109,6 +109,15 @@ public extension FXBLocalDataAccessor {
                 return ts
             }
         }
+        
+        public func deleteTimestamp(
+            id: Int64
+        ) async throws {
+            
+            return try await connection.write({ db in
+                try FXBTimestamp.deleteOne(db, key: id)
+            })
+        }
     }
 }
 
