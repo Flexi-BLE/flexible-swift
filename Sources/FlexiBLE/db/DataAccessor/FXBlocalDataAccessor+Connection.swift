@@ -11,7 +11,7 @@ import GRDB
 // MARK: - Public
 extension FXBLocalDataAccessor {
     
-    public class ConnectionAccess {
+    public class DeviceAccess {
         
         private var connection: DatabaseWriter
         
@@ -19,17 +19,38 @@ extension FXBLocalDataAccessor {
             self.connection = conn
         }
         
-        public func get(connectedOnly: Bool = false) async throws -> [FXBConnection] {
-            
+        public func getRecords(conncetedOnly: Bool = false) async throws -> [FXBDeviceRecord] {
             return try await connection.read({ db in
-                if connectedOnly {
-                    return try FXBConnection
-                        .filter(Column(FXBConnection.CodingKeys.disconnectedAt.stringValue) == nil)
-                        .order(literal: "connected_at DESC")
+                if conncetedOnly {
+                    return try FXBDeviceRecord
+                        .filter(Column(FXBDeviceRecord.CodingKeys.disconnectedAt.stringValue) == nil)
+                        .order(Column(FXBDeviceRecord.CodingKeys.connectedAt).desc)
+                        .fetchAll(db)
+                } else {
+                    return try FXBDeviceRecord
+                        .order(Column(FXBDeviceRecord.CodingKeys.connectedAt).desc)
                         .fetchAll(db)
                 }
-                return try FXBConnection
-                    .order(literal: "connected_at DESC")
+            })
+        }
+        
+        public func getLastRefTime(for deviceType: String, with role: FlexiBLEDeviceRole) async throws -> Date? {
+            return try await connection.read({ db in
+                return try FXBDeviceRecord
+                    .filter(Column(FXBDeviceRecord.CodingKeys.disconnectedAt.stringValue) == nil) // connected
+                    .filter(Column(FXBDeviceRecord.CodingKeys.deviceType.stringValue) == deviceType)
+                    .filter(Column(FXBDeviceRecord.CodingKeys.role.stringValue) == Int(role.rawValue))
+                    .order(Column(FXBDeviceRecord.CodingKeys.referenceDate).desc)
+                    .fetchOne(db)?.referenceDate
+            })
+        }
+        
+        public func getFollowers(for deviceType: String) async throws -> [FXBDeviceRecord] {
+            return try await connection.read({ db in
+                return try FXBDeviceRecord
+                    .filter(Column(FXBDeviceRecord.CodingKeys.disconnectedAt.stringValue) == nil)
+                    .filter(Column(FXBDeviceRecord.CodingKeys.deviceType.stringValue) == deviceType)
+                    .filter(Column(FXBDeviceRecord.CodingKeys.role.stringValue) == Int(FlexiBLEDeviceRole.metroFollower.rawValue))
                     .fetchAll(db)
             })
         }
@@ -37,27 +58,51 @@ extension FXBLocalDataAccessor {
 }
 
 // MARK: - Internal
-internal extension FXBLocalDataAccessor.ConnectionAccess {
+internal extension FXBLocalDataAccessor.DeviceAccess {
+    func device(id: Int64?) -> FXBDeviceRecord? {
+        guard let id = id else { return nil }
+        return try? connection.read({ db in
+            return try FXBDeviceRecord.fetchOne(db, key: id)
+        })
+    }
+    
+    
     func updateOrphandedConnectionRecords() throws {
-        try connection.write { db in
+        try connection.write({ db in
             let sql = """
-                UPDATE \(FXBConnection.databaseTableName)
-                SET \(FXBConnection.CodingKeys.disconnectedAt.stringValue) = :date
-                WHERE \(FXBConnection.CodingKeys.disconnectedAt.stringValue) IS NULL;
+                UPDATE \(FXBDeviceRecord.databaseTableName)
+                SET \(FXBDeviceRecord.CodingKeys.disconnectedAt.stringValue) = :date
+                WHERE \(FXBDeviceRecord.CodingKeys.disconnectedAt.stringValue) IS NULL;
             """
+            
             try db.execute(sql: sql, arguments: ["date": Date.now.SQLiteFormat()])
-        }
-    }
-    
-    func update(_ rec: inout FXBConnection) throws {
-        try connection.write({ db in
-            try rec.update(db)
         })
     }
     
-    func insert(_ rec: inout FXBConnection) throws {
+    func updateFollers(referenceDate: Date, deviceType: String) throws {
         try connection.write({ db in
-            try rec.insert(db)
+            let sql = """
+                UPDATE \(FXBDeviceRecord.databaseTableName)
+                SET \(FXBDeviceRecord.CodingKeys.referenceDate) = :date
+                WHERE \(FXBDeviceRecord.CodingKeys.role.stringValue) = :roleRawValue
+                    AND \(FXBDeviceRecord.CodingKeys.deviceType.stringValue) = :deviceType
+            """
+            
+            try db.execute(
+                sql: sql,
+                arguments: [
+                    "date": referenceDate.SQLiteFormat(),
+                    "roleRawValue": FlexiBLEDeviceRole.metroFollower.rawValue,
+                    "deviceType": deviceType
+                ]
+            )
         })
     }
+    
+    func upsert(device: inout FXBDeviceRecord) throws {
+        try connection.write({ db in
+            try device.upsert(db)
+        })
+    }
+    
 }

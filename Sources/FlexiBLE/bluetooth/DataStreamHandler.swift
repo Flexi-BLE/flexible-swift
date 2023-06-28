@@ -89,6 +89,9 @@ public class DataStreamHandler {
             anchorDate = previousReferenceDate.timeIntervalSince1970 as Double
         } else {
             anchorDate = referenceDate.timeIntervalSince1970 as Double
+            
+            
+            
             previousReferenceDate = referenceDate
         }
         

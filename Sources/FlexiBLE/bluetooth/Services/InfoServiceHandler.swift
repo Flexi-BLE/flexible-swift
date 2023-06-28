@@ -10,6 +10,23 @@ import CoreBluetooth
 import Combine
 import GRDB
 
+public enum FlexiBLEDeviceRole: UInt, Codable {
+    case metroLeader = 2
+    case metroFollower = 1
+    case independent = 0
+    
+    public var description: String {
+        switch self {
+        case .metroLeader:
+            return "Metro Leader"
+        case .metroFollower:
+            return "Metro Follower"
+        case .independent:
+            return "Independent"
+        }
+    }
+}
+
 public class InfoServiceHandler: ServiceHandler, ObservableObject {
     var serviceUuid: CBUUID
 
@@ -19,9 +36,8 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         public let referenceDate: Date?
     }
 
-    private var referenceDate: Date?
-    
     private var tempRefDate: Date?
+    internal var deviceRecord: FXBDeviceRecord
     
     @Published public var infoData: InfoData?
     
@@ -29,10 +45,11 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
     
     internal var peripheral: CBPeripheral
     
-    init(spec: FXBDeviceSpec, peripheral: CBPeripheral) {
+    init(spec: FXBDeviceSpec, peripheral: CBPeripheral, deviceRecord: FXBDeviceRecord) {
         self.spec = spec
         self.peripheral = peripheral
         self.serviceUuid = spec.infoServiceUuid
+        self.deviceRecord = deviceRecord
     }
     
     private func writeEpoch() {
@@ -55,10 +72,21 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         self.tempRefDate = now // wait to commit until written
     }
     
-    private func updateInfoData() {
-        infoData = InfoData(
-            referenceDate: referenceDate
-        )
+    private func updateRole(_ data: Data) {
+        if let role = FlexiBLEDeviceRole(rawValue: UInt(data[0])) {
+            bleLog.debug("Did update device role: \(role.description)")
+            self.deviceRecord.role = role
+            try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
+            
+            if role == .metroFollower {
+                Task {
+                    if let referenceDate = try await FlexiBLE.shared.dbAccess?.device.getLastRefTime(for: spec.name, with: .metroLeader) {
+                        self.deviceRecord.referenceDate = referenceDate
+                        try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
+                    }
+                }
+            }
+        }
     }
     
     func setup(service: CBService) {
@@ -74,6 +102,10 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         
         if let deviceOutChar = service.characteristics?.first(where: { $0.uuid == spec.deviceOutUuid }) {
             peripheral.setNotifyValue(true, for: deviceOutChar)
+        }
+        
+        if let deviceRoleChar = service.characteristics?.first(where: { $0.uuid == spec.deviceRoleUuid }) {
+            peripheral.setNotifyValue(true, for: deviceRoleChar)
         }
     }
     
@@ -92,9 +124,23 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
     func didWrite(uuid: CBUUID) {
         if uuid == spec.epochTimeUuid {
             if let temp = tempRefDate {
-                self.referenceDate = temp
-                tempRefDate = nil
-                updateInfoData()
+                switch deviceRecord.role {
+                case .metroLeader:
+                    self.deviceRecord.referenceDate = temp
+                    try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
+                    self.infoData = InfoData(referenceDate: temp)
+                    try? FlexiBLE.shared.dbAccess?.device.updateFollers(referenceDate: temp, deviceType: spec.name)
+                    
+                    tempRefDate = nil
+                case .metroFollower:
+                    break
+                case .independent:
+                    self.deviceRecord.referenceDate = temp
+                    try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
+                    self.infoData = InfoData(referenceDate: temp)
+                    
+                    tempRefDate = nil
+                }
             }
         }
     }
@@ -110,6 +156,8 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             }
         } else if characteristic.uuid == spec.deviceOutUuid {
             bleLog.debug("Did reviece device out data: \(data)")
+        } else if characteristic.uuid == spec.deviceRoleUuid {
+            updateRole(data)
         }
     }
 }

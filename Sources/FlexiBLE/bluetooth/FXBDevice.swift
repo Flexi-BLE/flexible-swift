@@ -22,7 +22,7 @@ public protocol Device {
     var loadedSpecVersion: String { get }
     var deviceName: String { get }
     var cbPeripheral: CBPeripheral { get }
-    var connectionRecord: FXBConnection? { get }
+    var connectionRecord: FXBDeviceRecord? { get }
 }
 
 public class FXBDevice: Identifiable, Device {
@@ -40,7 +40,7 @@ public class FXBDevice: Identifiable, Device {
     public let deviceName: String
     
     public let cbPeripheral: CBPeripheral
-    public var connectionRecord: FXBConnection?
+    public var connectionRecord: FXBDeviceRecord?
     
     private var cancellables: [AnyCancellable] = []
     
@@ -60,9 +60,27 @@ public class FXBDevice: Identifiable, Device {
         return connectionManager?.infoServiceHandler
     }
     
-    internal func connect(with connectionManager: FXBDeviceConnectionManager) {
+    internal func connect(with peripheral: CBPeripheral) {
         self.connectionState = .initializing
-        self.connectionManager = connectionManager
+        var connectionRec = FXBDeviceRecord(
+            deviceType: spec.name,
+            deviceName: deviceName,
+            connectedAt: Date.now,
+            role: .independent
+        )
+        
+        do {
+            try FlexiBLE.shared.dbAccess?.device.upsert(device: &connectionRec)
+            self.connectionRecord = connectionRec
+        } catch {
+            pLog.error("unable to record connection")
+        }
+        
+        self.connectionManager = FXBDeviceConnectionManager(
+            spec: spec,
+            peripheral: peripheral,
+            deviceRecord: connectionRec
+        )
         
         self.connectionManager?.infoServiceHandler
             .$infoData
@@ -91,32 +109,19 @@ public class FXBDevice: Identifiable, Device {
                         )
                     }
                     
-                    Task(priority: .background) { [weak self] in
-                        do {
-                            self?.connectionRecord?.latestReferenceDate = referenceDate
-                            
-                            if self?.connectionRecord != nil {
-                                try FlexiBLE.shared.dbAccess?.connection.update(&self!.connectionRecord!)
-                            }
-                        } catch {
-                            pLog.error("unable to update reference date for connection record")
-                        }
-                    }
+//                    Task(priority: .background) { [weak self] in
+//                        do {
+//                            self?.connectionRecord?.referenceDate
+//
+//                            if self?.connectionRecord != nil {
+//                                try FlexiBLE.shared.dbAccess?.device.updateConnection(&self!.connectionRecord!)
+//                            }
+//                        } catch {
+//                            pLog.error("unable to update reference date for connection record")
+//                        }
+//                    }
                 }
             ).store(in: &cancellables)
-        
-        Task {
-            do {
-                self.connectionRecord = FXBConnection(
-                    deviceType: spec.name,
-                    deviceName: deviceName
-                )
-                self.connectionRecord?.connectedAt = Date.now
-                try FlexiBLE.shared.dbAccess?.connection.insert(&self.connectionRecord!)
-            } catch {
-                pLog.error("unable to record connection")
-            }
-        }
     }
     
     internal func disconnect() {
@@ -128,7 +133,7 @@ public class FXBDevice: Identifiable, Device {
         Task {
             self.connectionRecord?.disconnectedAt = Date()
             do {
-                try FlexiBLE.shared.dbAccess?.connection.update(&self.connectionRecord!)
+                try FlexiBLE.shared.dbAccess?.device.upsert(device: &self.connectionRecord!)
             } catch {
                 pLog.error("unable to update connection record with disconnected date")
             }
@@ -154,7 +159,7 @@ public class FXBRegisteredDevice: ObservableObject, Identifiable, Device {
     public let deviceName: String
     
     public let cbPeripheral: CBPeripheral
-    public var connectionRecord: FXBConnection?
+    public var connectionRecord: FXBDeviceRecord?
     
     @Published public var connectionManager: FXBRegisteredDeviceConnectionManager?
     @Published public var connectionState: DeviceConnectionState = .disconnected
@@ -166,23 +171,20 @@ public class FXBRegisteredDevice: ObservableObject, Identifiable, Device {
         self.cbPeripheral = cbPeripheral
     }
     
-    internal func connect(with connectionManager: FXBRegisteredDeviceConnectionManager) {
-        self.connectionManager = connectionManager
-        self.connectionState = .connected
-        
-        Task {
-            do {
-        
-                connectionRecord = FXBConnection(
-                    deviceType: spec.name,
-                    deviceName: deviceName
-                )
-                connectionRecord?.connectedAt = Date.now
-                try FlexiBLE.shared.dbAccess?.connection.insert(&connectionRecord!)
-                
-            } catch {
-                pLog.error("unable to record connection")
-            }
+    internal func connect(spec: FXBRegisteredDeviceSpec, peripheral: CBPeripheral) {
+        do {
+            connectionRecord = FXBDeviceRecord(
+                deviceType: spec.name,
+                deviceName: deviceName,
+                connectedAt: Date.now,
+                role: .independent
+            )
+            try FlexiBLE.shared.dbAccess?.device.upsert(device: &connectionRecord!)
+            self.connectionManager = FXBRegisteredDeviceConnectionManager(deviceRecord: connectionRecord!, spec: spec, periperal: peripheral)
+            self.connectionState = .connected
+            
+        } catch {
+            pLog.error("unable to setup regiestered device")
         }
     }
     
@@ -193,7 +195,7 @@ public class FXBRegisteredDevice: ObservableObject, Identifiable, Device {
         Task {
             self.connectionRecord?.disconnectedAt = Date()
             do {
-                try FlexiBLE.shared.dbAccess?.connection.update(&connectionRecord!)
+                try FlexiBLE.shared.dbAccess?.device.upsert(device: &connectionRecord!)
             } catch {
                 pLog.error("unable to update connection record with disconnected date")
             }

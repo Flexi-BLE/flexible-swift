@@ -15,4 +15,5 @@ internal struct FXBDeviceBLE: Codable {
     let refreshEpochCharUuid: String
     let deviceInCharUuid: String
     let deviceOutCharUuid: String
+    let deviceRoleCharUuid: String    
 }

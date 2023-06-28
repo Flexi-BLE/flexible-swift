@@ -11,6 +11,7 @@ import CoreBluetooth
 protocol ServiceHandler {
     var serviceUuid: CBUUID { get }
     var peripheral: CBPeripheral { get }
+    var deviceRecord: FXBDeviceRecord { get }
     
     func setup(service: CBService)
     

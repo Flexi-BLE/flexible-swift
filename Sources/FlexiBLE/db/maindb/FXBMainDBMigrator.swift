@@ -33,12 +33,12 @@ internal class FXBMainDBMigrator{
             dbLog.debug("created main database table: \(FXBExperiment.databaseTableName)")
             
             try? db.create(
-                table: FXBConnection.databaseTableName,
+                table: FXBDeviceRecord.databaseTableName,
                 ifNotExists: true,
-                body: FXBConnection.create
+                body: FXBDeviceRecord.create
             )
-            dbLog.debug("created main database table: \(FXBConnection.databaseTableName)")
-            
+            dbLog.debug("created main database table: \(FXBDeviceRecord.databaseTableName)")
+                        
             try? db.create(
                 table: FXBTimestamp.databaseTableName,
                 ifNotExists: true,

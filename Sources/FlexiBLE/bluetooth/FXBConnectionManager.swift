@@ -164,13 +164,13 @@ public class FXBConnectionManager: NSObject, ObservableObject {
             let device = handle(peripheral: peripheral, name: peripheralName, spec: spec)
             if let device = device as? FXBDevice {
                 bleLog.info("connceted to: \(device.spec.name)")
-                device.connect(with: FXBDeviceConnectionManager(spec: device.spec, peripheral: peripheral))
+                device.connect(with: peripheral)
                 
                 fxbConnectedDevices.append(device)
             } else if let device = device as? FXBRegisteredDevice {
                 bleLog.info("connceted to: \(device.deviceName)")
                 
-                device.connect(with: FXBRegisteredDeviceConnectionManager(device: device))
+                device.connect(spec: device.spec, peripheral: peripheral)
                 connectedRegisteredDevices.append(device)
             }
         }
@@ -293,7 +293,7 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
             
             bleLog.info("connceted to: \(device.spec.name)")
             
-            device.connect(with: FXBDeviceConnectionManager(spec: device.spec, peripheral: peripheral))
+            device.connect(with: peripheral)
             
             fxbFoundDevices.remove(at: i)
             fxbConnectedDevices.append(device)
@@ -302,7 +302,7 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
             
             bleLog.info("connceted to: \(device.deviceName)")
             
-            device.connect(with: FXBRegisteredDeviceConnectionManager(device: device))
+            device.connect(spec: device.spec, peripheral: peripheral)
             foundRegisteredDevices.remove(at: i)
             connectedRegisteredDevices.append(device)
         

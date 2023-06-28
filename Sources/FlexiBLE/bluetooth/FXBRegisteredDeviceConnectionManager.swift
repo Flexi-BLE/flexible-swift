@@ -13,23 +13,27 @@ public class FXBRegisteredDeviceConnectionManager: NSObject, ObservableObject {
     var isEnabled: Bool = true
     
     /// FlexiBLE device representation
-    public let device: FXBRegisteredDevice
+    public let deviceRecord: FXBDeviceRecord
+    private let spec: FXBRegisteredDeviceSpec
+    private let peripheral: CBPeripheral
     
     internal var serviceHandlers: [ServiceHandler] = []
     
     @Published public var batteryLevel: Int?
     @Published public var rssi: Int = 0
     
-    internal init(device: FXBRegisteredDevice) {
-        self.device = device
+    internal init(deviceRecord: FXBDeviceRecord, spec: FXBRegisteredDeviceSpec, periperal: CBPeripheral) {
+        self.deviceRecord = deviceRecord
+        self.spec = spec
+        self.peripheral = periperal
         
         super.init()
-        device.cbPeripheral.delegate = self
-        device.cbPeripheral.discoverServices(device.spec.serviceIds)
+        peripheral.delegate = self
+        peripheral.discoverServices(spec.serviceIds)
     }
     
     public func requestRSSI() {
-        device.cbPeripheral.readRSSI()
+        peripheral.readRSSI()
     }
 }
 
@@ -40,16 +44,14 @@ extension FXBRegisteredDeviceConnectionManager: CBPeripheralDelegate {
         
         for service in services {
             bleLog.debug("did discover registered service \(service.uuid)")
-            if device.spec.serviceIds.contains(service.uuid) {
+            if spec.serviceIds.contains(service.uuid) {
                 peripheral.discoverCharacteristics(nil, for: service)
                 
                 if let registeredService = BLERegisteredService.from(service.uuid) {
                     
-                    serviceHandlers.append(registeredService.handler(device: device, peripheral: peripheral))
+                    serviceHandlers.append(registeredService.handler(deviceRecord: deviceRecord, peripheral: peripheral))
                 }
             }
-            
-            
         }
     }
     

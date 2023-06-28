@@ -14,11 +14,11 @@ internal class HeartRateServiceHandler: ServiceHandler {
     private var sensorLocation: String = "unknown"
     private let heartRateMeasurementUuid = CBUUID(string: "2a37")
     private let bodyLocationUuid = CBUUID(string: "2a38")
-    internal var device: Device
+    internal var deviceRecord: FXBDeviceRecord
     internal var peripheral: CBPeripheral
     
-    init(device: Device, peripheral: CBPeripheral) {
-        self.device = device
+    init(deviceRecord: FXBDeviceRecord, peripheral: CBPeripheral) {
+        self.deviceRecord = deviceRecord
         self.peripheral = peripheral
     }
     
@@ -59,7 +59,7 @@ internal class HeartRateServiceHandler: ServiceHandler {
                     ts: Date.now,
                     bpm: hr,
                     sensorLocation: sensorLocation,
-                    deviceName: device.deviceName
+                    deviceName: deviceRecord.deviceName
                 )
                 
                 try FlexiBLE.shared.dbAccess?.heartRate.record(&rec)
@@ -67,7 +67,7 @@ internal class HeartRateServiceHandler: ServiceHandler {
                 var throughput = FXBThroughput(
                     dataStream: "heart_rate",
                     bytes: data.count,
-                    deviceName: device.deviceName
+                    deviceName: deviceRecord.deviceName
                 )
                 
                 try FlexiBLE.shared.dbAccess?.throughput.record(&throughput)

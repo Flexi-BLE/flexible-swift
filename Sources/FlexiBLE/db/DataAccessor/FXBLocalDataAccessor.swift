@@ -12,7 +12,8 @@ final public class FXBLocalDataAccessor {
     
     private var db: FXBDatabase
     
-    public let connection: ConnectionAccess
+    public let device: DeviceAccess
+    
     public let dataStreamConfig: DataStreamConfigAccess
     public let dataStream: DataStreamAccess
     public let dynamicTable: DynamicTableAccess
@@ -30,7 +31,7 @@ final public class FXBLocalDataAccessor {
     internal init(db: FXBDatabase) {
         self.db = db
         
-        connection = ConnectionAccess(conn: db.mainConnection)
+        device = DeviceAccess(conn: db.mainConnection)
         dataStreamConfig = DataStreamConfigAccess(conn: db.mainConnection, spec: db.spec)
         dataStream = DataStreamAccess(transactionalManager: db.transactionalDBMgr)
         dynamicTable = DynamicTableAccess(conn: db.mainConnection)

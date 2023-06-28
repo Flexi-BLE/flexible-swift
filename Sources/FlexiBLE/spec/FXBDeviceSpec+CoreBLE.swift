@@ -50,6 +50,10 @@ internal extension FXBDeviceSpec {
         return CBUUID(string: ble.deviceOutCharUuid)
     }
     
+    var deviceRoleUuid: CBUUID {
+        return CBUUID(string: ble.deviceRoleCharUuid)
+    }
+    
     func dataStreams(from uuid: CBUUID) -> [FXBDataStream] {
         return self.dataStreams
             .filter({ $0.serviceCbuuid == uuid })

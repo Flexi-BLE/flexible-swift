@@ -9,13 +9,13 @@ import Foundation
 import CoreBluetooth
 
 internal class CurrentTimeServiceHandler: ServiceHandler {
-    var device: Device
+    var deviceRecord: FXBDeviceRecord
     internal var peripheral: CBPeripheral
     
     internal var serviceUuid: CBUUID = BLERegisteredService.currentTime.uuid
     
-    init(device: Device, peripheral: CBPeripheral) {
-        self.device = device
+    init(deviceRecord: FXBDeviceRecord, peripheral: CBPeripheral) {
+        self.deviceRecord = deviceRecord
         self.peripheral = peripheral
     }
     
