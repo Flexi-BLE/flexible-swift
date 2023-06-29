@@ -40,7 +40,7 @@ extension FXBLocalDataAccessor {
                     .filter(Column(FXBDeviceRecord.CodingKeys.disconnectedAt.stringValue) == nil) // connected
                     .filter(Column(FXBDeviceRecord.CodingKeys.deviceType.stringValue) == deviceType)
                     .filter(Column(FXBDeviceRecord.CodingKeys.role.stringValue) == Int(role.rawValue))
-                    .order(Column(FXBDeviceRecord.CodingKeys.referenceDate).desc)
+                    .order(Column(FXBDeviceRecord.CodingKeys.referenceEpoch).desc)
                     .fetchOne(db)?.referenceDate
             })
         }
@@ -83,7 +83,7 @@ internal extension FXBLocalDataAccessor.DeviceAccess {
         try connection.write({ db in
             let sql = """
                 UPDATE \(FXBDeviceRecord.databaseTableName)
-                SET \(FXBDeviceRecord.CodingKeys.referenceDate) = :date
+                SET \(FXBDeviceRecord.CodingKeys.referenceEpoch.stringValue) = :epoch
                 WHERE \(FXBDeviceRecord.CodingKeys.role.stringValue) = :roleRawValue
                     AND \(FXBDeviceRecord.CodingKeys.deviceType.stringValue) = :deviceType
             """
@@ -91,7 +91,7 @@ internal extension FXBLocalDataAccessor.DeviceAccess {
             try db.execute(
                 sql: sql,
                 arguments: [
-                    "date": referenceDate.SQLiteFormat(),
+                    "epoch": referenceDate.timeIntervalSince1970 as Double,
                     "roleRawValue": FlexiBLEDeviceRole.metroFollower.rawValue,
                     "deviceType": deviceType
                 ]

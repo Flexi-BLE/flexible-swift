@@ -66,8 +66,9 @@ public class FXBDevice: Identifiable, Device {
             deviceType: spec.name,
             deviceName: deviceName,
             connectedAt: Date.now,
-            role: .independent
+            role: .unknown
         )
+        self.connectionRecord = connectionRec
         
         do {
             try FlexiBLE.shared.dbAccess?.device.upsert(device: &connectionRec)
@@ -108,18 +109,6 @@ public class FXBDevice: Identifiable, Device {
                             }
                         )
                     }
-                    
-//                    Task(priority: .background) { [weak self] in
-//                        do {
-//                            self?.connectionRecord?.referenceDate
-//
-//                            if self?.connectionRecord != nil {
-//                                try FlexiBLE.shared.dbAccess?.device.updateConnection(&self!.connectionRecord!)
-//                            }
-//                        } catch {
-//                            pLog.error("unable to update reference date for connection record")
-//                        }
-//                    }
                 }
             ).store(in: &cancellables)
     }

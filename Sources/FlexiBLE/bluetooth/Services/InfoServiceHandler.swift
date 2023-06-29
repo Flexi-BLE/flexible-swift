@@ -14,6 +14,7 @@ public enum FlexiBLEDeviceRole: UInt, Codable {
     case metroLeader = 2
     case metroFollower = 1
     case independent = 0
+    case unknown = 255
     
     public var description: String {
         switch self {
@@ -23,6 +24,8 @@ public enum FlexiBLEDeviceRole: UInt, Codable {
             return "Metro Follower"
         case .independent:
             return "Independent"
+        case .unknown:
+            return "Unknown"
         }
     }
 }
@@ -81,7 +84,7 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             if role == .metroFollower {
                 Task {
                     if let referenceDate = try await FlexiBLE.shared.dbAccess?.device.getLastRefTime(for: spec.name, with: .metroLeader) {
-                        self.deviceRecord.referenceDate = referenceDate
+                        self.deviceRecord.set(referenceDate: referenceDate)
                         try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
                     }
                 }
@@ -106,6 +109,7 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         
         if let deviceRoleChar = service.characteristics?.first(where: { $0.uuid == spec.deviceRoleUuid }) {
             peripheral.setNotifyValue(true, for: deviceRoleChar)
+            peripheral.readValue(for: deviceRoleChar)
         }
     }
     
@@ -126,7 +130,7 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             if let temp = tempRefDate {
                 switch deviceRecord.role {
                 case .metroLeader:
-                    self.deviceRecord.referenceDate = temp
+                    self.deviceRecord.set(referenceDate: temp)
                     try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
                     self.infoData = InfoData(referenceDate: temp)
                     try? FlexiBLE.shared.dbAccess?.device.updateFollers(referenceDate: temp, deviceType: spec.name)
@@ -134,8 +138,8 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
                     tempRefDate = nil
                 case .metroFollower:
                     break
-                case .independent:
-                    self.deviceRecord.referenceDate = temp
+                case .independent, .unknown:
+                    self.deviceRecord.set(referenceDate: temp)
                     try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
                     self.infoData = InfoData(referenceDate: temp)
                     

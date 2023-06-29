@@ -16,7 +16,7 @@ public struct FXBDeviceRecord: Codable {
     public let connectedAt: Date
     public var disconnectedAt: Date?=nil
     public var role: FlexiBLEDeviceRole
-    public var referenceDate: Date?=nil
+    public var referenceEpoch: Double
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -25,7 +25,7 @@ public struct FXBDeviceRecord: Codable {
         case connectedAt = "connected_at"
         case disconnectedAt = "disconnected_at"
         case role
-        case referenceDate = "reference_date"
+        case referenceEpoch = "reference_epoch"
     }
     
     init(deviceType: String, deviceName: String, connectedAt: Date, role: FlexiBLEDeviceRole) {
@@ -33,10 +33,19 @@ public struct FXBDeviceRecord: Codable {
         self.deviceName = deviceName
         self.connectedAt = connectedAt
         self.role = role
+        self.referenceEpoch = 0.0
     }
     
     var isConnected: Bool {
         return disconnectedAt == nil
+    }
+    
+    var referenceDate: Date {
+        return Date(timeIntervalSince1970: referenceEpoch)
+    }
+    
+    mutating func set(referenceDate date: Date) {
+        self.referenceEpoch = date.timeIntervalSince1970 as Double
     }
 }
 
@@ -49,7 +58,7 @@ extension FXBDeviceRecord: TableRecord, FetchableRecord, MutablePersistableRecor
         static let connectedAt = Column(CodingKeys.connectedAt)
         static let disconntedAt = Column(CodingKeys.disconnectedAt)
         static let role = Column(CodingKeys.role)
-        static let referenceDate = Column(CodingKeys.referenceDate)
+        static let referenceEpoch = Column(CodingKeys.referenceEpoch)
     }
     
     mutating public func didInsert(_ inserted: InsertionSuccess) {
@@ -65,6 +74,6 @@ extension FXBDeviceRecord: TableRecord, FetchableRecord, MutablePersistableRecor
         table.column(CodingKeys.connectedAt.stringValue, .datetime).notNull()
         table.column(CodingKeys.disconnectedAt.stringValue, .datetime)
         table.column(CodingKeys.role.stringValue, .integer).indexed()
-        table.column(CodingKeys.referenceDate.stringValue, .datetime).indexed()
+        table.column(CodingKeys.referenceEpoch.stringValue, .double)
     }
 }
