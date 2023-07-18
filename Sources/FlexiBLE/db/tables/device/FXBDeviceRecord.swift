@@ -15,7 +15,7 @@ public struct FXBDeviceRecord: Codable {
     public let deviceName: String
     public let connectedAt: Date
     public var disconnectedAt: Date?=nil
-    public var role: FlexiBLEDeviceRole
+    public var role: FlexiBLEDeviceRole = .unknown
     public var referenceEpoch: Double
     
     enum CodingKeys: String, CodingKey {
