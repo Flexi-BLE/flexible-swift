@@ -34,8 +34,8 @@ extension FXBLocalDataAccessor {
             })
         }
         
-        public func getLastRefTime(for deviceType: String, with role: FlexiBLEDeviceRole) async throws -> Date? {
-            return try await connection.read({ db in
+        public func getLastRefTime(for deviceType: String, with role: FlexiBLEDeviceRole) throws -> Date? {
+            return try connection.read({ db in
                 return try FXBDeviceRecord
                     .filter(Column(FXBDeviceRecord.CodingKeys.disconnectedAt.stringValue) == nil) // connected
                     .filter(Column(FXBDeviceRecord.CodingKeys.deviceType.stringValue) == deviceType)

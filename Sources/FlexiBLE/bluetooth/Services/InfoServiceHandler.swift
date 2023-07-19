@@ -37,6 +37,7 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
     
     public struct InfoData {
         public let referenceDate: Date?
+        public let deviceRole: FlexiBLEDeviceRole?
     }
 
     private var tempRefDate: Date?
@@ -81,21 +82,61 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             self.deviceRecord.role = role
             try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
             
+            switch role {
+            case .metroFollower:
+                // get a the a connected leaders reference time OR disconnect
+                if let referenceDate = try? FlexiBLE.shared.dbAccess?.device.getLastRefTime(for: spec.name, with: .metroLeader) {
+                    self.deviceRecord.set(referenceDate: referenceDate)
+                    try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
+                    self.infoData = InfoData(referenceDate: referenceDate, deviceRole: role)
+                } else {
+                    bleLog.error("connected Follower without a connected Leader, disconnecting ...")
+                    FlexiBLE.shared.conn.disconnect(peripheral)
+                }
+            case .metroLeader:
+                // read epoch time
+                if let epochChar = peripheral.services?.first(where: { $0.uuid == self.serviceUuid })?.characteristics?.first(where: { $0.uuid == spec.epochTimeUuid }) {
+                    peripheral.readValue(for: epochChar)
+                }
+            case .independent, .unknown:
+                // write the epoch time
+                writeEpoch()
+            }
+            
             if role == .metroFollower {
-                Task {
-                    if let referenceDate = try await FlexiBLE.shared.dbAccess?.device.getLastRefTime(for: spec.name, with: .metroLeader) {
-                        self.deviceRecord.set(referenceDate: referenceDate)
-                        try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
-                    }
+                if let referenceDate = try? FlexiBLE.shared.dbAccess?.device.getLastRefTime(for: spec.name, with: .metroLeader) {
+                    self.deviceRecord.set(referenceDate: referenceDate)
+                    try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
                 }
             }
         }
     }
     
+    func updateEpochTime(_ data: Data) {
+        guard data.count == 8 else {
+            bleLog.error("found epoch record less than 8 bytes, disconnecting ...")
+            FlexiBLE.shared.conn.disconnect(self.peripheral)
+            return
+        }
+        
+        guard deviceRecord.role != .unknown else {
+            bleLog.error("read epoch timestamp without role, disconnecting ...")
+            FlexiBLE.shared.conn.disconnect(self.peripheral)
+            return
+        }
+        
+        let epoch = data[0..<8].withUnsafeBytes({ $0.load(as: UInt64.self) })
+        let date = Date(timeIntervalSince1970: Double(epoch))
+        self.deviceRecord.set(referenceDate: date)
+        self.infoData = InfoData(referenceDate: date, deviceRole: deviceRecord.role)
+        bleLog.debug("read epoch time from device: \(date)")
+        
+    }
+    
     func setup(service: CBService) {
         
         if let _ = service.characteristics?.first(where: { $0.uuid == spec.epochTimeUuid }) {
-            writeEpoch()
+//            writeEpoch() // Do nothing, wait for role to update Epoch time
         }
         
         // set notify for epoch reset request
@@ -109,7 +150,6 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         
         if let deviceRoleChar = service.characteristics?.first(where: { $0.uuid == spec.deviceRoleUuid }) {
             peripheral.setNotifyValue(true, for: deviceRoleChar)
-            peripheral.readValue(for: deviceRoleChar)
         }
     }
     
@@ -127,26 +167,46 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
     
     func didWrite(uuid: CBUUID) {
         if uuid == spec.epochTimeUuid {
-            if let temp = tempRefDate {
-                switch deviceRecord.role {
-                case .metroLeader:
-                    self.deviceRecord.set(referenceDate: temp)
-                    try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
-                    self.infoData = InfoData(referenceDate: temp)
-                    try? FlexiBLE.shared.dbAccess?.device.updateFollers(referenceDate: temp, deviceType: spec.name)
-                    
-                    tempRefDate = nil
-                case .metroFollower:
-                    break
-                case .independent, .unknown:
-                    self.deviceRecord.set(referenceDate: temp)
-                    try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
-                    self.infoData = InfoData(referenceDate: temp)
-                    
-                    tempRefDate = nil
-                }
+            if deviceRecord.role == .independent,
+               let temp = tempRefDate {
+                self.deviceRecord.set(referenceDate: temp)
+                try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
+                self.infoData = InfoData(referenceDate: temp, deviceRole: .independent)
+                
+                tempRefDate = nil
             }
         }
+//            switch deviceRecord.role {
+//            case .metroLeader:
+//                self.deviceRecord.set(referenceDate: temp)
+//                try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
+//                self.infoData = InfoData(referenceDate: temp, deviceRole: .metroLeader)
+//                try? FlexiBLE.shared.dbAccess?.device.updateFollers(referenceDate: temp, deviceType: spec.name)
+//
+//                tempRefDate = nil
+//            case .metroFollower:
+//                if let leaderRef = try? FlexiBLE.shared.dbAccess?.device.getLastRefTime(for: spec.name, with: .metroLeader) {
+//                    self.deviceRecord.set(referenceDate: leaderRef)
+//                    self.deviceRecord.role = .metroFollower
+//                    try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
+//                    self.infoData = InfoData(referenceDate: leaderRef, deviceRole: .metroFollower)
+//                } else {
+//                    bleLog.error("follower connected without connected follower, disconnecting")
+//                    FlexiBLE.shared.conn.disconnect(self.peripheral)
+//                }
+//            case .independent:
+//                if let temp = tempRefDate {
+//                    self.deviceRecord.set(referenceDate: temp)
+//                    try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
+//                    self.infoData = InfoData(referenceDate: temp, deviceRole: .independent)
+//
+//                    tempRefDate = nil
+//                }
+//            case .unknown:
+//                // do nothing, we must know the role to handle the epochtime stamp
+//                break
+//            }
+//        }
     }
     
     func didUpdate(characteristic: CBCharacteristic) {
@@ -162,6 +222,8 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
             bleLog.debug("Did reviece device out data: \(data)")
         } else if characteristic.uuid == spec.deviceRoleUuid {
             updateRole(data)
+        } else if characteristic.uuid == spec.epochTimeUuid {
+            updateEpochTime(data)
         }
     }
 }

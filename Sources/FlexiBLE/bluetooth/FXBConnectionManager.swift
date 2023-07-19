@@ -59,6 +59,10 @@ public class FXBConnectionManager: NSObject, ObservableObject {
         })
     }
     
+    internal func disconnect(_ peripheral: CBPeripheral) {
+        centralManager.cancelPeripheralConnection(peripheral)
+    }
+    
     public func enable(device: FXBRegisteredDevice) {
         guard centralManager.state == .poweredOn else {
             return

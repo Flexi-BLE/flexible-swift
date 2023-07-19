@@ -12,11 +12,12 @@ public enum FXBTimeSeriesPrecision: String, Codable {
     case us = "us"
 }
 
-public struct FXBDataStream: Codable, Equatable {
+public class FXBDataStream: Codable, Equatable {
     public let id: String
     public let name: String
     public let description: String?
     internal let precision: FXBTimeSeriesPrecision
+    internal var anchorTimestampSize: Int
     
     public let offsetDataValue: FXBDataValueDefinition?
     public let dataValues: [FXBDataValueDefinition]

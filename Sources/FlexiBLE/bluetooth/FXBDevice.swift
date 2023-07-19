@@ -94,9 +94,11 @@ public class FXBDevice: Identifiable, Device {
                     }
                     
                     guard let referenceDate = infoData.referenceDate else { return }
+                    guard let role = infoData.deviceRole else { return }
+                
                     
                     if self.connectionState != .connected {
-                        bleLog.info("\(self.deviceName) Initialized: (\(referenceDate)")
+                        bleLog.info("\(self.deviceName) Initialized: (refDate: \(referenceDate), role: \(role.description))")
                         
                         self.connectionManager?.serviceHandlers.forEach {
                             $0.writeLastConfig(peripheral: self.cbPeripheral)

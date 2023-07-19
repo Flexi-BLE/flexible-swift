@@ -208,7 +208,7 @@ public class FlexiBLEProfile: Codable {
         do {
             return try Data.sharedJSONDecoder.decode(FXBSpec.self, from: Data(contentsOf: specificationPath))
         } catch {
-            fatalError("FXB Specifcation Corrupt")
+            fatalError("FXB Specification Corrupt")
         }
     }()
     

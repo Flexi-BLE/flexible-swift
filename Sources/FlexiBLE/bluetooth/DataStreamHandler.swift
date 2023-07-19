@@ -77,39 +77,40 @@ public class DataStreamHandler {
         if let offsetDef = def.offsetDataValue {
             packetSize += offsetDef.size
         }
-        
-        var dataStartByte = 0
-        
-        let uints = data[0..<4].withUnsafeBytes({ $0.load(as: UInt32.self) })
-        
+    
         var anchorDate: Double
         
-        if uints > previousAnchorMS && previousReferenceDate < referenceDate {
-            // reference date has changed, but anchor has not decreased (must wait)
-            anchorDate = previousReferenceDate.timeIntervalSince1970 as Double
+        if def.anchorTimestampSize > 0, def.anchorTimestampSize <= 8 {
+            let uints = data[0..<def.anchorTimestampSize].withUnsafeBytes({ $0.load(as: UInt32.self) })
+            
+            
+            if uints > previousAnchorMS && previousReferenceDate < referenceDate {
+                // reference date has changed, but anchor has not decreased (must wait)
+                anchorDate = previousReferenceDate.timeIntervalSince1970 as Double
+            } else {
+                anchorDate = referenceDate.timeIntervalSince1970 as Double
+                previousReferenceDate = referenceDate
+            }
+            
+            previousAnchorMS = uints
+            
+            
+            switch def.precision {
+            case .ms:
+                let ms = Double(uints) / 1_000.0
+                bleLog.debug("\(anchorDate): anchor ms: \(uints), seconds: \(ms), data size \(data.count)")
+                anchorDate = anchorDate + ms
+            case .us:
+                let us = Double(uints) / 1_000_000.0
+                bleLog.debug("\(anchorDate): anchor us: \(uints), seconds: \(us), data size \(data.count)")
+                anchorDate = anchorDate + us
+            }
         } else {
-            anchorDate = referenceDate.timeIntervalSince1970 as Double
-            
-            
-            
-            previousReferenceDate = referenceDate
-        }
-        
-        previousAnchorMS = uints
-
-        
-        switch def.precision {
-        case .ms:
-            let ms = Double(uints) / 1_000.0
-            bleLog.debug("\(anchorDate): anchor ms: \(uints), seconds: \(ms), data size \(data.count)")
-            anchorDate = anchorDate + ms
-        case .us:
-            let us = Double(uints) / 1_000_000.0
-            bleLog.debug("\(anchorDate): anchor us: \(uints), seconds: \(us), data size \(data.count)")
-            anchorDate = anchorDate + us
+            anchorDate = Date().timeIntervalSince1970
+            bleLog.debug("anchor date (current time): \(anchorDate)")
         }
        
-        dataStartByte = 4
+        let dataStartByte = def.anchorTimestampSize
         
         var allValues: [[AEDataValue]] = []
         var timestamps: [Double] = []
