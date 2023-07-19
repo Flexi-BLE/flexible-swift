@@ -95,6 +95,11 @@ public class FXBDevice: Identifiable, Device {
                     
                     guard let referenceDate = infoData.referenceDate else { return }
                     guard let role = infoData.deviceRole else { return }
+                    
+                    if let deviceId = self.connectionRecord?.id,
+                        let connectionRecord = FlexiBLE.shared.dbAccess?.device.device(id: deviceId) {
+                        self.connectionRecord = connectionRecord
+                    }
                 
                     
                     if self.connectionState != .connected {

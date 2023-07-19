@@ -126,8 +126,9 @@ public class InfoServiceHandler: ServiceHandler, ObservableObject {
         }
         
         let epoch = data[0..<8].withUnsafeBytes({ $0.load(as: UInt64.self) })
-        let date = Date(timeIntervalSince1970: Double(epoch))
+        let date = Date(timeIntervalSince1970: Double(epoch) / 1000.0)
         self.deviceRecord.set(referenceDate: date)
+        try? FlexiBLE.shared.dbAccess?.device.upsert(device: &self.deviceRecord)
         self.infoData = InfoData(referenceDate: date, deviceRole: deviceRecord.role)
         bleLog.debug("read epoch time from device: \(date)")
         
