@@ -24,7 +24,7 @@ public class DataStreamHandler {
     private var lastestConfig: Data?
     
     private var previousReferenceDate: Date = Date(timeIntervalSince1970: TimeInterval.infinity)
-    private var previousAnchorMS: UInt32 = 0
+    private var previousAnchorMS: UInt64 = 0
     
     private var defaultConfig: Data {
         return def.configValues.reduce(Data(), { $0 + $1.pack(value: $1.defaultValue) })
@@ -81,7 +81,7 @@ public class DataStreamHandler {
         var anchorDate: Double
         
         if def.anchorTimestampSize > 0, def.anchorTimestampSize <= 8 {
-            let uints = data[0..<def.anchorTimestampSize].withUnsafeBytes({ $0.load(as: UInt32.self) })
+            let uints = data[0..<def.anchorTimestampSize].withUnsafeBytes({ $0.load(as: UInt64.self) })
             
             
             if uints > previousAnchorMS && previousReferenceDate < referenceDate {
@@ -106,6 +106,7 @@ public class DataStreamHandler {
                 anchorDate = anchorDate + us
             }
         } else {
+            // no anchor date, use current time
             anchorDate = Date().timeIntervalSince1970
             bleLog.debug("anchor date (current time): \(anchorDate)")
         }
@@ -397,10 +398,10 @@ extension FXBDataValueDefinition {
             _data = data[self.byteStart..<self.byteEnd]
         }
          
-        var val : UInt = 0
+        var val : UInt64 = 0
         for byte in _data {
             val = val << 8
-            val = val | UInt(byte)
+            val = val | UInt64(byte)
         }
         
         return Int(val)
