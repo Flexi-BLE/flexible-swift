@@ -52,9 +52,13 @@ public class DataStreamHandler {
             peripheral.setNotifyValue(true, for: c)
         }
         
-        if let c = service.characteristics?.first(where: { $0.uuid == def.configCbuuid }) {
-            peripheral.readValue(for: c)
-        }
+//        if let c = service.characteristics?.first(where: { $0.uuid == def.configCbuuid }) {
+//            Task {
+//                let configData = await lastConfig()
+//                peripheral.writeValue(configData, for: c, type: .withResponse)
+//            }
+//            peripheral.readValue(for: c)
+//        }
     }
     
     func didUpdate(uuid: CBUUID, data: Data?, referenceDate: Date?=nil) {
@@ -192,7 +196,7 @@ public class DataStreamHandler {
             let unpackedVal = cv.unpack(data: data)
             values.append(String(describing: unpackedVal))
             
-            bleLog.debug("config value loaded: \(cv.name): \(String(describing: unpackedVal))")
+            bleLog.debug("\(self.def.name) config value loaded: \(cv.name): \(String(describing: unpackedVal))")
         }
         
         do {

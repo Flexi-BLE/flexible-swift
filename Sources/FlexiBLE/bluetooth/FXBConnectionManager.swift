@@ -336,12 +336,12 @@ extension FXBConnectionManager: CBCentralManagerDelegate {
                 stopScan()
                 // delay starting scan (peripheral will appear connected)
                 DispatchQueue.main.asyncAfter(
-                    deadline: .now() + .milliseconds(500),
+                    deadline: .now() + .milliseconds(3000),
                     execute: { [weak self] in
                         self?.startScan()
                     }
                 )
-                
+
             }
     
         } else if let i = connectedRegisteredDevices.firstIndex(where: { $0.deviceName == peripheral.name }) {

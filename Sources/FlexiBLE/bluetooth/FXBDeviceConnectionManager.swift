@@ -132,7 +132,15 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
             infoServiceHandler.didWrite(uuid: characteristic.uuid)
         }
         
-        peripheral.readValue(for: characteristic)
+        Task(priority: .userInitiated) {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            peripheral.readValue(for: characteristic)
+        }
+        
+        
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + .milliseconds(3500)) {
+            
+        }
     }
     
     public func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {

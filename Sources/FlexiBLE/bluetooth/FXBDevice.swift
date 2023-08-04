@@ -75,6 +75,7 @@ public class FXBDevice: Identifiable, Device {
             self.connectionRecord = connectionRec
         } catch {
             pLog.error("unable to record connection")
+            self.connectionState = .disconnected
         }
         
         self.connectionManager = FXBDeviceConnectionManager(
@@ -90,6 +91,7 @@ public class FXBDevice: Identifiable, Device {
             .sink(
                 receiveValue: { [weak self] infoData in
                     guard let self = self, let infoData = infoData else {
+//                        self?.connectionState = .disconnected
                         return
                     }
                     
@@ -121,10 +123,10 @@ public class FXBDevice: Identifiable, Device {
     }
     
     internal func disconnect() {
-        DispatchQueue.main.async {
+//        DispatchQueue.main.async {
             self.connectionManager = nil
             self.connectionState = .disconnected
-        }
+//        }
         
         Task {
             self.connectionRecord?.disconnectedAt = Date()
