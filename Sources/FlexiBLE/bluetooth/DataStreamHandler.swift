@@ -85,7 +85,13 @@ public class DataStreamHandler {
         var anchorDate: Double
         
         if def.anchorTimestampSize > 0, def.anchorTimestampSize <= 8 {
-            let uints = data[0..<def.anchorTimestampSize].withUnsafeBytes({ $0.load(as: UInt64.self) })
+            let uints: UInt64
+            
+            switch def.anchorTimestampSize {
+            case 4: uints = UInt64(data[0..<def.anchorTimestampSize].withUnsafeBytes({ $0.load(as: UInt32.self) }))
+            case 8: uints = data[0..<def.anchorTimestampSize].withUnsafeBytes({ $0.load(as: UInt64.self) })
+            default: uints = UInt64(data[0..<def.anchorTimestampSize].withUnsafeBytes({ $0.load(as: UInt32.self) }))
+            }
             
             
             if uints > previousAnchorMS && previousReferenceDate < referenceDate {

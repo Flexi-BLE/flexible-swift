@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by Blaine Rothrock on 1/18/23.
 //
@@ -175,6 +175,7 @@ internal extension FXBLocalDataAccessor.DataStreamAccess {
             args.append(Date())
             
             sql += "(\(placeholders), ?, ?, ?), "
+            
             
             if ds.offsetDataValue != nil {
                 args.append(Int64(timestamps[i]*1_000_000.0))

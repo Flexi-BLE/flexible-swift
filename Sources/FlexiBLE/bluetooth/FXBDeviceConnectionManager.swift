@@ -133,13 +133,8 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
         }
         
         Task(priority: .userInitiated) {
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            try? await Task.sleep(nanoseconds: 5_000_000)
             peripheral.readValue(for: characteristic)
-        }
-        
-        
-        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + .milliseconds(3500)) {
-            
         }
     }
     
