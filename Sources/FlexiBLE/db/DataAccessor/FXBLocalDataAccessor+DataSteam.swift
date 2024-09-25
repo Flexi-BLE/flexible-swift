@@ -50,6 +50,7 @@ extension FXBLocalDataAccessor {
             for db in dbs {
                 let conn = try transactionalManager.connection(for: db)
                 let rows = try await conn.read({ db in
+                    print("SQL FOR \(tableName):: \(sql) (args: \(arguments))")
                     return try Row.fetchAll(db, sql: sql, arguments: arguments)
                 })
                 records += rows.map({ GenericRow(metadata: tableInfos, row: $0) })

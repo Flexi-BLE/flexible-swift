@@ -30,6 +30,7 @@ public enum FXBUploadableTable {
 
 internal extension FXBUploadableTable {
     func ILPQuery(from start: Date?=nil, to end: Date?=nil, uploaded: Bool=false, limit: Int, deviceId: String) async throws -> [ILPRecord] {
+    
         switch self {
         case .heartRate: return try await IRPQueryHeartRate(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)
         case .location: return try await IRPQueryLocation(from: start, to: end, uploaded: uploaded, limit: limit, deviceId: deviceId)

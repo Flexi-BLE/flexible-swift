@@ -110,6 +110,7 @@ extension FXBRegisteredDeviceConnectionManager: CBPeripheralDelegate {
         
         if let handler = serviceHandlers.first(where: { $0.serviceUuid == service.uuid }) {
             handler.didWrite(uuid: service.uuid)
+            peripheral.readValue(for: characteristic)
         }
     }
     

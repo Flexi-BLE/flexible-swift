@@ -66,11 +66,12 @@ public extension FXBLocalDataAccessor {
                 // query for latest record
                 let q = """
                     SELECT * FROM \(dataStreamName)_config
+                    WHERE device = :deviceName
                     ORDER BY ts DESC
                     LIMIT 1
                 """
                 
-                guard let configRow = try Row.fetchOne(db, sql: q) else {
+                guard let configRow = try Row.fetchOne(db, sql: q, arguments: ["deviceName": deviceName]) else {
                     pLog.info("no latest config record found for \(dataStreamName)")
                     return nil
                 }

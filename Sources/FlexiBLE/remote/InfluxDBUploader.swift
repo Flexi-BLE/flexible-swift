@@ -17,6 +17,7 @@ public class InfluxDBCredentials {
     public var batchSize: Int
     public var deviceId: String
     public var uploadInterval: TimeInterval?
+    public var maxLookback: TimeInterval?
     public var purgeOnUpload: Bool
     
     public init(
@@ -27,7 +28,8 @@ public class InfluxDBCredentials {
         batchSize: Int,
         deviceId: String,
         purgeOnUpload: Bool,
-        uploadInterval: TimeInterval?
+        uploadInterval: TimeInterval?,
+        maxLookback: TimeInterval?
     ) {
         self.url = url
         self.org = org
@@ -37,6 +39,7 @@ public class InfluxDBCredentials {
         self.deviceId = deviceId
         self.purgeOnUpload = purgeOnUpload
         self.uploadInterval = uploadInterval
+        self.maxLookback = maxLookback
     }
 }
 
