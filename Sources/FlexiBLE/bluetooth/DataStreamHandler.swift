@@ -57,7 +57,9 @@ public class DataStreamHandler {
         
         if let c = service.characteristics?.first(where: { $0.uuid == def.configCbuuid }) {
             peripheral.readValue(for: c)
-            peripheral.setNotifyValue(true, for: c)
+            if c.properties.contains(.notify) || c.properties.contains(.indicate) {
+                peripheral.setNotifyValue(true, for: c)
+            }
         }
     }
     
@@ -202,7 +204,8 @@ public class DataStreamHandler {
                     values: values,
                     device: deviceName
                 )
-            configUpdate.send(data)
+            
+            configUpdate.send(data)  
         } catch {
             dbLog.error("unable to insert data stream config record: \(error.localizedDescription)")
         }

@@ -125,12 +125,19 @@ extension FXBDeviceConnectionManager: CBPeripheralDelegate {
         } else if service.uuid == spec.infoServiceUuid {
             infoServiceHandler.didWrite(uuid: characteristic.uuid)
         }
-        
-        peripheral.readValue(for: characteristic)
     }
     
     public func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
         self.rssi = Int(truncating: RSSI)
+    }
+    
+    public func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: (any Error)?) {
+        if let error = error {
+            bleLog.error("BLE Notification Error: \(error.localizedDescription)")
+            return
+        } else {
+            bleLog.info("did update notification state for characteristic \(characteristic.uuid) \(characteristic.isNotifying)")
+        }
     }
 }
 
